@@ -1,0 +1,47 @@
+﻿@{
+    Layout = "_LayoutAccount";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-image" style="background-image: url('https://placehold.co/700x800');">
+        @* <div class="text-white p-5">
+            <h3>Lorem Ipsum is simply</h3>
+            <p>Lorem Ipsum is simply dummy text.</p>
+        </div> *@
+    </div>
+
+    <div class="auth-form">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <h4>Welcome to lorem!</h4>
+            </div>
+
+            <div class="auth-tabs">
+                <a href="@Url.Action("Login", "Account")">Login</a>
+                <a href="@Url.Action("Register", "Account")" class="active">Register</a>
+            </div>
+
+            <form asp-action="Register" method="post">
+                <div class="mb-3">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-control auth-input" placeholder="Enter your Email Address" required />
+                </div>
+                <div class="mb-3">
+                    <label>User name</label>
+                    <input type="text" name="username" class="form-control auth-input" placeholder="Enter your User name" required />
+                </div>
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control auth-input" placeholder="Enter your Password" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-auth">Register</button>
+
+                @if (ViewBag.Success != null)
+                {
+                    <div class="alert alert-success mt-3">@ViewBag.Success</div>
+                }
+            </form>
+        </div>
+    </div>
+</div>
