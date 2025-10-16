@@ -11,20 +11,44 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Quiz_Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+
+                <a class="navbar-brand" href="#">
+                    <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy Logo" height="34">
+                </a>
+                <a class="nav-link d-none d-lg-block" href="#">Khám phá</a> <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+                    <form class="d-flex flex-grow-1 my-2 my-lg-0 mx-lg-3" role="search">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-0 pe-0">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input class="form-control border-start-0" type="search" placeholder="Tìm kiếm nội dung bất kỳ">
+                        </div>
+                    </form>
+
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex flex-row align-items-center">
+                        <li class="nav-item d-none d-lg-block">
+                            <a class="nav-link" href="#">Udemy Business</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        <li class="nav-item d-none d-lg-block">
+                            <a class="nav-link" href="#">Giảng viên</a>
+                        </li>
+                        <li class="nav-item d-none d-lg-block">
+                            <a class="nav-link" href="#">Học tập</a>
+                        </li>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link fs-5" href="#"><i class="bi bi-cart"></i></a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <div class="user-avatar bg-dark text-white rounded-circle d-flex align-items-center justify-content-center fw-bold">
+                                DN
+                            </div>
                         </li>
                     </ul>
                 </div>
@@ -37,9 +61,55 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="site-footer text-white py-4">
         <div class="container">
-            &copy; 2025 - Quiz_Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="row g-4">
+                <div class="col-6 col-md-3">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#">Giới thiệu về chúng tôi</a></li>
+                        <li class="mb-2"><a href="#">Việc làm</a></li>
+                        <li class="mb-2"><a href="#">Liên hệ với chúng tôi</a></li>
+                        <li class="mb-2"><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#">Tải ứng dụng</a></li>
+                        <li class="mb-2"><a href="#">Giảng dạy với chúng tôi</a></li>
+                        <li class="mb-2"><a href="#">Gói và Giá cả</a></li>
+                        <li class="mb-2"><a href="#">Đơn vị liên kết</a></li>
+                        <li class="mb-2"><a href="#">Trợ giúp và Hỗ trợ</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#">Business</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#">Tuyên bố về khả năng tiếp cận</a></li>
+                        <li class="mb-2"><a href="#">Chính sách về quyền riêng tư</a></li>
+                        <li class="mb-2"><a href="#">Sơ đồ trang web</a></li>
+                        <li class="mb-2"><a href="#">Điều khoản</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-5">
+                <a href="#">
+                    <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy-inverted.svg" alt="Udemy Logo" width="91" height="34">
+                </a>
+
+                <span class="text-white-50">&copy; 2025 Udemy, Inc.</span>
+
+                <button class="btn btn-outline-light d-flex align-items-center">
+                    <i class="bi bi-globe me-2"></i> <span>Tiếng Việt</span>
+                </button>
+            </div>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

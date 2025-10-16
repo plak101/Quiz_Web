@@ -1,5 +1,30 @@
-html {
+﻿html {
   font-size: 14px;
+}
+
+.navbar .form-control {
+    border-radius: 999px; /* Bo tròn thanh tìm kiếm */
+    background-color: #f7f9fa;
+}
+
+    .navbar .form-control:focus {
+        background-color: #fff;
+        box-shadow: none;
+        border-color: #212529;
+    }
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+}
+
+.navbar-nav .nav-link {
+    white-space: nowrap; /* Chống xuống dòng chữ */
+}
+
+.navbar .nav-link:hover, .navbar-brand:hover {
+    color: #5624d0 !important;
 }
 
 @media (min-width: 768px) {
@@ -28,4 +53,23 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+
+.site-footer {
+    padding-bottom: 500px;
+    background-color: #1c1d1f;
+}
+
+    .site-footer a {
+        text-decoration: none;
+        color: #fff;
+    }
+
+        .site-footer a:hover {
+            text-decoration: underline;
+        }
+
+.footer-logo {
+    filter: brightness(0) invert(1);
 }
