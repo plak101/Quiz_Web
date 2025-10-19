@@ -7,6 +7,8 @@ public partial class User
 {
     public int UserId { get; set; }
 
+    public string Username { get; set; } = null!;
+
     public string Email { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
@@ -16,6 +18,8 @@ public partial class User
     public string? AvatarUrl { get; set; }
 
     public string? Phone { get; set; }
+
+    public int? RoleId { get; set; }
 
     public int Status { get; set; }
 
@@ -55,6 +59,8 @@ public partial class User
 
     public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
 
+    public virtual Role? Role { get; set; }
+
     public virtual ICollection<TestAttempt> TestAttempts { get; set; } = new List<TestAttempt>();
 
     public virtual ICollection<Test> Tests { get; set; } = new List<Test>();
@@ -62,6 +68,4 @@ public partial class User
     public virtual UserProfile? UserProfile { get; set; }
 
     public virtual UserSetting? UserSetting { get; set; }
-
-    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 }
