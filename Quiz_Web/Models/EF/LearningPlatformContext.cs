@@ -97,7 +97,8 @@ public partial class LearningPlatformContext : DbContext
     public virtual DbSet<UserSetting> UserSettings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("name=ConnectionStrings:DefaultConnection");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -579,7 +580,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasIndex(e => e.Name, "UQ_Roles_Name").IsUnique();
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A8134F170");
+
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6A0BBF669").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
@@ -687,7 +690,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasIndex(e => e.Email, "UQ_Users_Email").IsUnique();
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C779A87BA");
+
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D105348E0C20F2").IsUnique();
 
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -698,23 +703,13 @@ public partial class LearningPlatformContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.Username)
+                .HasMaxLength(100)
+                .IsUnicode(false);
 
-            entity.HasMany(d => d.Roles).WithMany(p => p.Users)
-                .UsingEntity<Dictionary<string, object>>(
-                    "UserRole",
-                    r => r.HasOne<Role>().WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_UserRoles_Role"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_UserRoles_User"),
-                    j =>
-                    {
-                        j.HasKey("UserId", "RoleId");
-                        j.ToTable("UserRoles");
-                    });
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .HasForeignKey(d => d.RoleId)
+                .HasConstraintName("FK__Users__RoleId__3D5E1FD2");
         });
 
         modelBuilder.Entity<UserProfile>(entity =>

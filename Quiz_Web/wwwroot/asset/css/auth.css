@@ -29,20 +29,24 @@
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
+    background-color: #c6d8ff;
+    width: fit-content;
+    padding: 10px;
+    border-radius: 100px;
 }
 
     .auth-tabs a {
         padding: 10px 20px;
         border-radius: 25px;
         text-decoration: none;
-        color: #555;
+        color: #4880ff;
         font-weight: 500;
         border: 1px solid transparent;
         transition: all 0.3s;
     }
 
         .auth-tabs a.active {
-            background-color: #1abc9c;
+            background-color: #4880ff;
             color: white;
             border: 1px solid #1abc9c;
         }
@@ -50,15 +54,30 @@
 .auth-input {
     border-radius: 25px;
     padding: 10px 20px;
+    overflow: hidden;
 }
 
 .btn-auth {
     width: 100%;
     border-radius: 25px;
-    background-color: #1abc9c;
+    background-color: #4880ff;
     border: none;
 }
 
     .btn-auth:hover {
-        background-color: #16a085;
+        background-color: #4173e6;
+    }
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 68%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    transition: color 0.3s ease;
+}
+
+    .toggle-password:hover {
+        color: #333;
     }

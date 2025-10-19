@@ -10,8 +10,8 @@
     <Folder Include="Models\EF\" />
     <Folder Include="Models\Entities\" />
     <Folder Include="wwwroot\asset\font\" />
-    <Folder Include="wwwroot\asset\image\" />
     <Folder Include="wwwroot\asset\js\" />
+    <Folder Include="wwwroot\asset\image\" />
   </ItemGroup>
 
   <ItemGroup>
