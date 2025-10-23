@@ -2,8 +2,8 @@
 	Layout = "_LayoutAccount";
 	ViewData["Title"] = "Login";
 }
-<section class="container p-5" id="login">
-	<div class="auth-wrapper">
+<section class="container" id="login">
+	<div class="auth-wrapper px-5 mt-5">
 		<div class="auth-image" style="background-image: url('/asset/image/Login.svg');">
 			@* <div class="text-white p-5">
             <h3>Lorem Ipsum is simply</h3>
@@ -18,31 +18,31 @@
 				</div>
 
 				<div class="auth-tabs mx-auto">
-					<a href="@Url.Action("Login", "Account")" class="active">Login</a>
-					<a href="@Url.Action("Register", "Account")">Register</a>
+					<a href="@Url.Action("Login", "Account")" class="active">Đăng nhập</a>
+					<a href="@Url.Action("Register", "Account")">Đăng ký</a>
 				</div>
 
 				<form asp-action="Login" id="login_form" method="post">
 					<div class="mb-3">
-						<label>User name</label>
+						<label>Tài khoản</label>
 						<input type="text" name="username" id="usernameInput" class="form-control auth-input"
-							   placeholder="Enter your User name" required />
+							   placeholder="Nhập tài khoản" required />
 					</div>
 					<div class="mb-3 position-relative">
-						<label>Password</label>
+						<label>Mật khẩu</label>
 						<input type="password" name="password" class="form-control auth-input pe-5" id="passwordInput"
-							   placeholder="Enter your Password" required />
+							   placeholder="Nhập mật khẩu" required />
 						<i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
 					</div>
 					@* quen mat khau*@
-					<div class="d-flex justify-content-between align-items-center mb-3">
-						<div class="form-check">
+					<div class="d-flex justify-content-end align-items-center mb-3">
+						@* <div class="form-check">
 							<input class="form-check-input" type="checkbox" />
 							<label class="form-check-label">Remember me</label>
-						</div>
+						</div> *@
 						<a href="@Url.Action("ForgotPassword", "Account")" class="text-decoraiton-none small text-primary">Forgot password?</a>
 					</div>
-					<button type="submit" class="btn btn-primary btn-auth">Login</button>
+					<button type="submit" class="btn btn-primary btn-auth">Đăng nhập</button>
 
 					@if (ViewBag.Error != null)
 					{

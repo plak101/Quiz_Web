@@ -6,13 +6,23 @@ function loginAccount(userInput) {
     userInput.__RequestVerificationToken = token();
     $.ajax({
         type: "POST",
-        url: "/Account/LoginToSystem", 
+        url: "/Account/LoginToSystem",
         data: userInput,
         dataType: 'json',
 
         success: function (res) {
+
             if (res.status === 'success') {
-                location.href = '/Home/index';
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập thành công! Vui lòng chờ giây lát',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    //location.href = res.redirectUrl || '/admin/dashboard';
+                    location.href = '/Home/index';
+                });
+
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -22,9 +32,12 @@ function loginAccount(userInput) {
             }
         },
         error: function () {
-            x = 3;
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi hệ thống',
+                text: 'Vui lòng thử lại sau'
+            });
         }
-
     });
 }
 
@@ -62,6 +75,76 @@ function registerAccount(userInput) {
     });
 }
 
+function forgotPassword(userInput) {
+    userInput.__RequestVerificationToken = token();
+    $.ajax({
+        type: "POST",
+        url: "/Account/ForgotPasswordSubmit",
+        data: userInput,
+        dataType: 'json',
+
+        success: function (res) {
+            if (res.status === "success") {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    text: res.message
+                }).then(() => location.href = '/Login');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: res.message
+                });
+            }
+        },
+        error: function () {
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi hệ thống',
+                text: 'Vui lòng thử lại sau'
+            });
+        }
+    });
+}
+
+
+function resetPassword(userInput) {
+    userInput.__RequestVerificationToken = token();
+    $.ajax({
+        type: "POST",
+        url: "/Account/ResetPasswordSubmit",
+        data: userInput,
+        dataType: 'json',
+
+        success: function (res) {
+            if (res.status === "success") {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    text: res.message
+                }).then(() => location.href = '/login');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: res.message
+                });
+            }
+        },
+
+        error: function () {
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi hệ thống',
+                text: 'Vui lòng thử lại sau'
+            });
+
+        }
+    }
+    );
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     //login form
     $(document).off('submit', '#login_form');
@@ -83,5 +166,25 @@ document.addEventListener('DOMContentLoaded', function () {
             password: $('#password').val(),
             confirmPassword: $('#confirmPassword').val()
         });
-    })
-})
+    });
+
+    //forgot password form
+    $(document).off('submit', '#forgot_password_form');
+    $(document).on('submit', '#forgot_password_form', function (e) {
+        e.preventDefault();
+        forgotPassword({
+            email: $('#emailInput').val()
+        });
+    });
+
+    //reset password form
+    $(document).off('submit', '#reset_password_form');
+    $(document).on('submit', '#reset_password_form', function (e) {
+        e.preventDefault();
+        resetPassword({
+            token: $('#tokenInput').val(),
+            password: $('#passwordInput').val(),
+            confirmPassword: $('#confirmPasswordInput').val()
+        });
+    });
+});

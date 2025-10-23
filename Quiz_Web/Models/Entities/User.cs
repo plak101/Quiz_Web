@@ -27,6 +27,10 @@ public partial class User
 
     public DateTime? LastLoginAt { get; set; }
 
+    public string? PasswordResetToken { get; set; }
+
+    public DateTime? PasswordResetTokenExpiry { get; set; }
+
     public virtual ICollection<AttemptAnswer> AttemptAnswers { get; set; } = new List<AttemptAnswer>();
 
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
