@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.Entities;
+using File = Quiz_Web.Models.Entities.File;
+
 
 namespace Quiz_Web.Models.EF;
 
@@ -44,7 +46,7 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<ErrorLog> ErrorLogs { get; set; }
 
-    public virtual DbSet<Entities.File> Files { get; set; }
+    public virtual DbSet<File> Files { get; set; }
 
     public virtual DbSet<Flashcard> Flashcards { get; set; }
 
@@ -331,7 +333,7 @@ public partial class LearningPlatformContext : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Entities.File>(entity =>
+        modelBuilder.Entity<File>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(255);
@@ -580,9 +582,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A8134F170");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AB137C0C2");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6A0BBF669").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69696D9E6").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
@@ -690,15 +692,16 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C779A87BA");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C4F06248F");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105348E0C20F2").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534A50D9115").IsUnique();
 
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(200);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(255);
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
                 .IsUnicode(false);

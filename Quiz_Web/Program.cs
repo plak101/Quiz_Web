@@ -34,7 +34,10 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 });
 
 builder.Services.AddDbContext<LearningPlatformContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
+
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
