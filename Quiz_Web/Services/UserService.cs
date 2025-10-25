@@ -24,7 +24,7 @@ namespace Quiz_Web.Services
 			{
 				var user = _context.Users.
 					Include(u => u.Role).
-					FirstOrDefault(u => u.Username == username.ToLower().Trim() && u.PasswordHash == password.ToLower().Trim());
+					FirstOrDefault(u => u.Username == username.ToLower().Trim() && u.PasswordHash == password);
 				return user;
 			}
 			catch (Exception ex)
