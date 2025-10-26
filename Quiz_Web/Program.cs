@@ -37,6 +37,7 @@ builder.Services.AddDbContext<LearningPlatformContext>(options => options.UseSql
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 
 var app = builder.Build();
