@@ -37,6 +37,7 @@ builder.Services.AddDbContext<LearningPlatformContext>(options => options.UseSql
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 
 var app = builder.Build();
 
@@ -57,8 +58,8 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    //pattern: "{controller=Home}/{action=Index}/{id?}")
-    pattern: "{controller=Account}/{action=Login}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
+    //pattern: "{controller=Account}/{action=Login}/{id?}")
     .WithStaticAssets();
 
 
