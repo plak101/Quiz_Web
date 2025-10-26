@@ -2,15 +2,49 @@
   font-size: 14px;
 }
 
-.navbar .form-control {
-    border-radius: 999px; /* Bo tròn thanh tìm kiếm */
+/* Input Group - Fix cho thanh tìm kiếm */
+.navbar .input-group {
+    border: 1px solid #1c1d1f;
+    border-radius: 999px;
     background-color: #f7f9fa;
+    overflow: hidden;
+}
+
+.navbar .input-group-text {
+    background-color: transparent;
+    border: none;
+    padding-left: 1rem;
+}
+
+.navbar .form-control {
+    border-radius: 999px;
+    background-color: transparent;
+    border: none;
+    width: 200px; /* Mobile */
+}
+
+@media (min-width: 768px) {
+    .navbar .form-control {
+        width: 400px; /* Tablet */
+    }
+}
+
+@media (min-width: 992px) {
+    .navbar .form-control {
+        width: 400px; /* Desktop */
+    }
 }
 
     .navbar .form-control:focus {
         background-color: #fff;
         box-shadow: none;
-        border-color: #212529;
+        border: none;
+        outline: none;
+    }
+
+    .navbar .input-group:focus-within {
+        background-color: #fff;
+        border-color: #1c1d1f;
     }
 
 .user-avatar {
