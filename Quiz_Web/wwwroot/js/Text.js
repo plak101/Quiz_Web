@@ -1,8 +1,8 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    const tabs = document.querySelectorAll('#libraryTabs button[data-bs-toggle="tab"]');
+    const tabs = document.querySelectorAll('#testTabs button[data-bs-toggle="tab"]');
 
     // Load initial content
-    loadContent('AllCourses', document.getElementById('all-courses'));
+    loadContent('UpcomingTests', document.getElementById('upcoming-tests'));
 
     // Add event listeners to tabs
     tabs.forEach(tab => {
@@ -28,7 +28,7 @@ function loadContent(viewName, targetElement) {
     `;
 
     // Fetch content from server
-    fetch(`/Library/${viewName}`)
+    fetch(`/Text/${viewName}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -47,4 +47,4 @@ function loadContent(viewName, targetElement) {
                 </div>
             `;
         });
-}
+}   

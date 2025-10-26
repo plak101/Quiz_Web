@@ -44,7 +44,7 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<ErrorLog> ErrorLogs { get; set; }
 
-    public virtual DbSet<Entities.File> Files { get; set; }
+    public virtual DbSet<File> Files { get; set; }
 
     public virtual DbSet<Flashcard> Flashcards { get; set; }
 
@@ -55,6 +55,8 @@ public partial class LearningPlatformContext : DbContext
     public virtual DbSet<Folder> Folders { get; set; }
 
     public virtual DbSet<Invitation> Invitations { get; set; }
+
+    public virtual DbSet<Lesson> Lessons { get; set; }
 
     public virtual DbSet<Library> Libraries { get; set; }
 
@@ -98,7 +100,7 @@ public partial class LearningPlatformContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
+        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=Solar;Password=Abcd@1234;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -331,7 +333,7 @@ public partial class LearningPlatformContext : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Entities.File>(entity =>
+        modelBuilder.Entity<File>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(255);
@@ -441,6 +443,21 @@ public partial class LearningPlatformContext : DbContext
                 .HasForeignKey(d => d.InviterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Invitations_Inviter");
+        });
+
+        modelBuilder.Entity<Lesson>(entity =>
+        {
+            entity.Property(e => e.CoverUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Visibility)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Lessons_Owner");
         });
 
         modelBuilder.Entity<Library>(entity =>
@@ -580,9 +597,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A8134F170");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AD711602B");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6A0BBF669").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69379C895").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
@@ -690,9 +707,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C779A87BA");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CCA2BF316");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105348E0C20F2").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534076DC7DC").IsUnique();
 
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
