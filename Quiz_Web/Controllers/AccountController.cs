@@ -47,7 +47,7 @@ namespace Quiz_Web.Controllers
 				{
 					var claims = new List<Claim>();
 					claims.Add(new Claim(ClaimTypes.Name, user.FullName));
-					claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Username));
+					claims.Add(new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()));
 					claims.Add(new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty)); // Fix: null-safe access
 
 					var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
