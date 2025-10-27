@@ -2,8 +2,8 @@
 	Layout = "_LayoutAccount";
 	ViewData["Title"] = "Register";
 }
-<section class="container p-5" id="register">
-	<div class="auth-wrapper">
+<section class="container" id="register">
+	<div class="auth-wrapper px-5 mt-5">
 		<div class="auth-image" style="background-image: url('/asset/image/Login.svg');">
 			@* <div class="text-white p-5">
             <h3>Lorem Ipsum is simply</h3>
@@ -18,35 +18,35 @@
 				</div>
 
 				<div class="auth-tabs mx-auto">
-					<a href="@Url.Action("Login", "Account")">Login</a>
-					<a href="@Url.Action("Register", "Account")" class="active">Register</a>
+					<a href="@Url.Action("Login", "Account")">Đăng nhập</a>
+					<a href="@Url.Action("Register", "Account")" class="active">Đăng ký</a>
 				</div>
 
 
 
 				<form asp-action="Register" id="register_form" method="post">
 					<div class="mb-3">
-						<label>Full name</label>
-						<input type="fullname" name="full name" id="fullname" class="form-control auth-input" placeholder="Enter your Full name" required />
+						<label>Họ tên</label>
+						<input type="fullname" name="full name" id="fullname" class="form-control auth-input" placeholder="Nhập họ tên" required />
 					</div>
 					<div class="mb-3">
-						<label>Email Address</label>
-						<input type="email" name="email" id="email" class="form-control auth-input" placeholder="Enter your Email Address" required />
+						<label>Email</label>
+						<input type="email" name="email" id="email" class="form-control auth-input" placeholder="Nhập email" required />
 					</div>
 					<div class="mb-3">
-						<label>User name</label>
-						<input type="text" name="username" id="username" class="form-control auth-input" placeholder="Enter your User name" required />
+						<label>Tài khoản</label>
+						<input type="text" name="username" id="username" class="form-control auth-input" placeholder="Nhập tài khoản" required />
 					</div>
 					<div class="mb-3">
-						<label>Password</label>
-						<input type="password" name="password" id="password" class="form-control auth-input" placeholder="Enter your Password" required />
+						<label>Mật khẩu</label>
+						<input type="password" name="password" id="password" class="form-control auth-input" placeholder="Nhập mật khẩu" required />
 					</div>
 					<div class="mb-3">
-						<label>Confirm password</label>
-						<input type="password" name="password" id="confirmPassword" class="form-control auth-input" placeholder="Enter your Confirm password" required />
+						<label>Xác nhận nhận khẩu</label>
+						<input type="password" name="password" id="confirmPassword" class="form-control auth-input" placeholder="Nhập lại mật khẩu" required />
 					</div>
 
-					<button type="submit" class="btn btn-primary btn-auth">Register</button>
+					<button type="submit" class="btn btn-primary btn-auth">Đăng ký</button>
 
 					@if (ViewBag.Success != null)
 					{

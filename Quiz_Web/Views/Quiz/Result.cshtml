@@ -1,0 +1,199 @@
+@model Quiz_Web.Models.Entities.TestAttempt
+@{
+    ViewData["Title"] = "Quiz Results";
+    var percentageScore = Model.MaxScore > 0 ? (decimal)(Model.Score / Model.MaxScore * 100) : 0;
+}
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Score Summary Card -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-body text-center py-5">
+                    <h1 class="display-4 mb-3">Quiz Completed!</h1>
+                    
+                    <div class="score-display mb-4">
+                        <div class="score-circle mx-auto mb-3">
+                            <span class="percentage">@Math.Round(percentageScore, 0)%</span>
+                        </div>
+                        <h2 class="mb-0">
+                            <span class="text-primary">@Model.Score</span> / @Model.MaxScore points
+                        </h2>
+                    </div>
+
+                    <!-- Quiz Info -->
+                    <div class="row g-3 justify-content-center mb-4">
+                        <div class="col-auto">
+                            <div class="stat-box">
+                                <i class="bi bi-clock-fill text-info"></i>
+                                <div class="stat-value">@(Model.TimeSpentSec.HasValue ? TimeSpan.FromSeconds(Model.TimeSpentSec.Value).ToString(@"mm\:ss") : "00:00")</div>
+                                <div class="stat-label">Time Spent</div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stat-box">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <div class="stat-value">@Model.AttemptAnswers.Count(a => a.IsCorrect == true)</div>
+                                <div class="stat-label">Correct</div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="stat-box">
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                <div class="stat-value">@Model.AttemptAnswers.Count(a => a.IsCorrect == false)</div>
+                                <div class="stat-label">Incorrect</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2 justify-content-center flex-wrap">
+                        <a href="@Url.Action("Index", "Quiz")" class="btn btn-primary">
+                            <i class="bi bi-list me-2"></i>Back to Quizzes
+                        </a>
+                        <a href="@Url.Action("Details", "Quiz", new { id = Model.TestId })" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-repeat me-2"></i>Take Again
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Answers -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clipboard-check me-2"></i>Detailed Results
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @{
+                        int questionNumber = 1;
+                    }
+                    @foreach (var answer in Model.AttemptAnswers.OrderBy(a => a.Question.OrderIndex))
+                    {
+                        var question = answer.Question;
+                        var selectedOption = question.QuestionOptions.FirstOrDefault(o => o.OptionId.ToString() == answer.AnswerPayload);
+                        var correctOption = question.QuestionOptions.FirstOrDefault(o => o.IsCorrect);
+                        var isCorrect = answer.IsCorrect ?? false;
+
+                        <div class="question-result mb-4 @(isCorrect ? "correct-answer" : "incorrect-answer")">
+                            <div class="question-header d-flex align-items-start mb-3">
+                                <div class="question-number me-3">
+                                    @if (isCorrect)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-2">Question @questionNumber</h5>
+                                    <p class="mb-2">@question.StemText</p>
+                                    <small class="text-muted">Points: @question.Points</small>
+                                </div>
+                            </div>
+
+                            <div class="answers-section ms-5">
+                                @foreach (var option in question.QuestionOptions.OrderBy(o => o.OrderIndex))
+                                {
+                                    var isSelected = selectedOption?.OptionId == option.OptionId;
+                                    var isCorrectOption = option.IsCorrect;
+                                    var badgeClass = isCorrectOption ? "badge-success" : (isSelected ? "badge-danger" : "badge-light");
+                                    var iconClass = isCorrectOption ? "bi-check-circle-fill text-success" : (isSelected ? "bi-x-circle-fill text-danger" : "");
+
+                                    <div class="answer-option mb-2 p-3 rounded @(isSelected || isCorrectOption ? "border-2" : "border") @(isCorrectOption ? "border-success bg-success bg-opacity-10" : isSelected ? "border-danger bg-danger bg-opacity-10" : "border-light")">
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(iconClass))
+                                            {
+                                                <i class="bi @iconClass me-2"></i>
+                                            }
+                                            <span class="flex-grow-1">@option.OptionText</span>
+                                            @if (isCorrectOption)
+                                            {
+                                                <span class="badge bg-success">Correct Answer</span>
+                                            }
+                                            else if (isSelected)
+                                            {
+                                                <span class="badge bg-danger">Your Answer</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        questionNumber++;
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .score-circle {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+
+    .score-circle .percentage {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: white;
+    }
+
+    .stat-box {
+        text-align: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        min-width: 120px;
+    }
+
+    .stat-box i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .question-result {
+        padding: 1.5rem;
+        border-radius: 12px;
+        background: white;
+        border: 2px solid #e5e7eb;
+    }
+
+    .question-result.correct-answer {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.02);
+    }
+
+    .question-result.incorrect-answer {
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, 0.02);
+    }
+
+    .answer-option {
+        transition: all 0.2s ease;
+    }
+</style>
