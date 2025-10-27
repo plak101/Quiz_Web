@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Text";
+    ViewData["Title"] = "Tests";
 }
 
 <!-- Import Google Fonts and Font Awesome -->
@@ -12,33 +12,33 @@
 <div class="library-header">
     <div class="library-header-content">
         <div class="first-top">
-            <h1 class="library-title">Library</h1>
+            <h1 class="library-title">Tests</h1>
         </div>
         <div class="second-top">
             <nav class="submenu-nav">
-                <ul class="nav nav-tabs" id="libraryTabs" role="tablist">
+                <ul class="nav nav-tabs" id="testTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="all-courses-tab" data-bs-toggle="tab"
-                                data-bs-target="#all-courses" type="button" role="tab"
-                                aria-controls="all-courses" aria-selected="true"
-                                data-view="Text ">
-                            <i class="fas fa-book-open me-2"></i>Upcoming text
+                        <button class="nav-link active" id="upcoming-tests-tab" data-bs-toggle="tab"
+                                data-bs-target="#upcoming-tests" type="button" role="tab"
+                                aria-controls="upcoming-tests" aria-selected="true"
+                                data-view="UpcomingTests">
+                            <i class="fas fa-clock me-2"></i>Upcoming Tests
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="wishlist-tab" data-bs-toggle="tab"
-                                data-bs-target="#wishlist" type="button" role="tab"
-                                aria-controls="wishlist" aria-selected="false"
-                                data-view="Wishlist">
-                            <i class="fas fa-heart me-2"></i>Due text
+                        <button class="nav-link" id="due-tests-tab" data-bs-toggle="tab"
+                                data-bs-target="#due-tests" type="button" role="tab"
+                                aria-controls="due-tests" aria-selected="false"
+                                data-view="DueTests">
+                            <i class="fas fa-exclamation-circle me-2"></i>Due Tests
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="wishlist-tab" data-bs-toggle="tab"
-                                data-bs-target="#wishlist" type="button" role="tab"
-                                aria-controls="wishlist" aria-selected="false"
-                                data-view="Wishlist">
-                            <i class="fas fa-heart me-2"></i>Completed text
+                        <button class="nav-link" id="completed-tests-tab" data-bs-toggle="tab"
+                                data-bs-target="#completed-tests" type="button" role="tab"
+                                aria-controls="completed-tests" aria-selected="false"
+                                data-view="CompletedTests">
+                            <i class="fas fa-check-circle me-2"></i>Completed Tests
                         </button>
                     </li>
                 </ul>
@@ -50,17 +50,25 @@
 <!-- Content Section with Container -->
 <section class="library-container">
     <div class="library-content">
-        <div class="tab-content" id="libraryTabContent">
-            <div class="tab-pane fade show active" id="all-courses" role="tabpanel"
-                 aria-labelledby="all-courses-tab">
+        <div class="tab-content" id="testTabContent">
+            <div class="tab-pane fade show active" id="upcoming-tests" role="tabpanel"
+                 aria-labelledby="upcoming-tests-tab">
                 <div class="content-loader">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="wishlist" role="tabpanel"
-                 aria-labelledby="wishlist-tab">
+            <div class="tab-pane fade" id="due-tests" role="tabpanel"
+                 aria-labelledby="due-tests-tab">
+                <div class="content-loader">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="completed-tests" role="tabpanel"
+                 aria-labelledby="completed-tests-tab">
                 <div class="content-loader">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>

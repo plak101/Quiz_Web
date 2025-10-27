@@ -55,6 +55,8 @@ public partial class User
 
     public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+
     public virtual ICollection<Library> Libraries { get; set; } = new List<Library>();
 
     public virtual ICollection<NotificationChannel> NotificationChannels { get; set; } = new List<NotificationChannel>();

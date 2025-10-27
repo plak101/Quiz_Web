@@ -6,8 +6,6 @@ using Quiz_Web.Services.IServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 //session
@@ -36,6 +34,8 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 builder.Services.AddDbContext<LearningPlatformContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ILibraryService, LibraryService>();
+builder.Services.AddScoped<ITextService, TextService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();

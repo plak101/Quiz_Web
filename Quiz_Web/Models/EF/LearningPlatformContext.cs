@@ -58,6 +58,8 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<Invitation> Invitations { get; set; }
 
+    public virtual DbSet<Lesson> Lessons { get; set; }
+
     public virtual DbSet<Library> Libraries { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
@@ -100,7 +102,7 @@ public partial class LearningPlatformContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
+        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=Solar;Password=Abcd@1234;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -445,6 +447,21 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Invitations_Inviter");
         });
 
+        modelBuilder.Entity<Lesson>(entity =>
+        {
+            entity.Property(e => e.CoverUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Visibility)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Lessons_Owner");
+        });
+
         modelBuilder.Entity<Library>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -582,9 +599,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AB137C0C2");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AD711602B");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69696D9E6").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69379C895").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
@@ -692,10 +709,8 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C4F06248F");
-
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534A50D9115").IsUnique();
-
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CCA2BF316");
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534076DC7DC").IsUnique();
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Email).HasMaxLength(255);
