@@ -1,0 +1,29 @@
+﻿/* Course Cards */
+.course-card {
+    transition: all 0.3s ease;
+}
+
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Badges */
+.badge {
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+}
+
+/* Sticky Sidebar */
+.sticky-top {
+    position: sticky;
+    top: 20px;
+    z-index: 1020;
+}

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.Entities;
+using File = Quiz_Web.Models.Entities.File;
+
 
 namespace Quiz_Web.Models.EF;
 
@@ -708,14 +710,13 @@ public partial class LearningPlatformContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CCA2BF316");
-
             entity.HasIndex(e => e.Email, "UQ__Users__A9D10534076DC7DC").IsUnique();
-
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(200);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(255);
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
                 .IsUnicode(false);

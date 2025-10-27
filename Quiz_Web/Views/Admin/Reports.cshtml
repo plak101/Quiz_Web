@@ -1,0 +1,88 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Reports & Analytics";
+    Layout = "_LayoutAdmin";
+}
+
+<h2>Reports & Analytics</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Test Attempts</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Test</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attempt in Model.RecentAttempts)
+                        {
+                            <tr>
+                                <td>@attempt.User?.FullName</td>
+                                <td>@attempt.Test?.Title</td>
+                                <td>
+                                    @if (attempt.Score.HasValue && attempt.MaxScore.HasValue)
+                                    {
+                                        <span>@attempt.Score/@attempt.MaxScore</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">In Progress</span>
+                                    }
+                                </td>
+                                <td>@attempt.StartedAt.ToString("dd/MM HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Top Scores</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Test</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attempt in Model.TopScores)
+                        {
+                            <tr>
+                                <td>@attempt.User?.FullName</td>
+                                <td>@attempt.Test?.Title</td>
+                                <td>@attempt.Score/@attempt.MaxScore</td>
+                                <td>
+                                    @if (attempt.Score.HasValue && attempt.MaxScore.HasValue && attempt.MaxScore > 0)
+                                    {
+                                        var percentage = (attempt.Score.Value / attempt.MaxScore.Value) * 100;
+                                        <span class="badge @(percentage >= 80 ? "bg-success" : percentage >= 60 ? "bg-warning" : "bg-danger")">
+                                            @percentage.ToString("F1")%
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

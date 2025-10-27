@@ -1,5 +1,57 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+@model dynamic
 @{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "_LayoutAdmin";
 }
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Total Users</h5>
+                <h2>@Model.TotalUsers</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>Total Courses</h5>
+                <h2>@Model.TotalCourses</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5>Total Tests</h5>
+                <h2>@Model.TotalTests</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5>Total Classes</h5>
+                <h2>@Model.TotalClasses</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="@Url.Action("Users")" class="btn btn-primary me-2">Manage Users</a>
+                <a href="@Url.Action("Courses")" class="btn btn-success me-2">Manage Courses</a>
+                <a href="@Url.Action("Tests")" class="btn btn-warning me-2">Manage Tests</a>
+                <a href="@Url.Action("Classes")" class="btn btn-info me-2">Manage Classes</a>
+                <a href="@Url.Action("Reports")" class="btn btn-secondary">View Reports</a>
+            </div>
+        </div>
+    </div>
+</div>

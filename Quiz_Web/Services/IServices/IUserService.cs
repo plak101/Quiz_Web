@@ -9,5 +9,11 @@ namespace Quiz_Web.Services.IServices
 
 		bool ExistsUsername(string username);
 		bool ExistsEmail(string email);
+
+		//send mail
+		User? GetUserByEmail(string email);
+		bool GeneratePasswordResetToken(string email, out string token);
+		bool ValidatePasswordResetToken(string token);
+		bool ResetPassword(string token, string newPassword);
 	}
 }
