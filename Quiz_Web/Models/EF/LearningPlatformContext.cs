@@ -44,7 +44,7 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<ErrorLog> ErrorLogs { get; set; }
 
-    public virtual DbSet<File> Files { get; set; }
+    public virtual DbSet<Entities.File> Files { get; set; }
 
     public virtual DbSet<Flashcard> Flashcards { get; set; }
 
@@ -333,7 +333,7 @@ public partial class LearningPlatformContext : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<File>(entity =>
+        modelBuilder.Entity<Entities.File>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(255);
