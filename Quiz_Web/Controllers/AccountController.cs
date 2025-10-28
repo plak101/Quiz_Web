@@ -168,33 +168,33 @@ namespace Quiz_Web.Controllers
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public async Task<JsonResult> ResetPasswordSubmit(string token, string password, string confirmPassword)
+		public Task<JsonResult> ResetPasswordSubmit(string token, string password, string confirmPassword)
 		{
 			try
 			{
 				if (string.IsNullOrEmpty(token))
-					return Json(new { status = WebConstants.ERROR, message = "Liên kết đặt lại mật khẩu không hợp lệ." });
+					return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Liên kết đặt lại mật khẩu không hợp lệ." }));
 
 				if (!Validation.IsValidPassword(password))
-					return Json(new { status = WebConstants.ERROR, message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt" });
+					return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt" }));
 				if (!password.Equals(confirmPassword))
-					return Json(new { status = WebConstants.ERROR, message = "Mật khẩu xác nhận không khớp." });
+					return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Mật khẩu xác nhận không khớp." }));
 
 				if (!_userService.ValidatePasswordResetToken(token))
-					return Json(new { status = WebConstants.ERROR, message = "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
+					return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." }));
 
 				if (_userService.ResetPassword(token, HashHelper.ComputeHash(password)))
 				{
-					return Json(new { status = WebConstants.SUCCESS, message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới." });
+					return Task.FromResult(Json(new { status = WebConstants.SUCCESS, message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới." }));
 				}
 				else
 				{
-					return Json(new { status = WebConstants.ERROR, message = "Đặt lại mật khẩu thất bại. Vui lòng thử lại." });
+					return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Đặt lại mật khẩu thất bại. Vui lòng thử lại." }));
 				}
 			}
 			catch (Exception ex)
 			{
-				return Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() });
+				return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() }));
 			}
 		}
 	}
