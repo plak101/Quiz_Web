@@ -27,3 +27,34 @@
     top: 20px;
     z-index: 1020;
 }
+.course-content figure.image {
+    margin: 1rem 0;
+}
+
+/* Enforce fixed size; use !important to override width/height attributes */
+    .course-content img,
+    .course-content figure.image img,
+    .ck-content figure.image img{
+        width: auto !important; /* fixed width you want */
+        height: auto !important;
+        max-height: 200px !important;
+        max-width: 100% !important; /* still responsive on smaller screens */
+        display: block;
+    }
+
+    .course-img {
+        width: auto !important; /* fixed width you want */
+        height: auto !important;
+        max-height: 400px !important;
+        max-width: 100% !important; /* still responsive on smaller screens */
+        display: block;
+    }
+
+/* Action buttons style */
+.btn-action{
+  min-width: 72px;
+  border-radius: .5rem;
+  font-weight: 600;
+}
+.btn-action i{ margin-right:.25rem; }
+

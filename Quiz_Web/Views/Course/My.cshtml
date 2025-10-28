@@ -1,0 +1,122 @@
+﻿@model List<Quiz_Web.Models.Entities.Course>
+@{
+    ViewData["Title"] = "Khoá học của tôi";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Khóa học của tôi</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fa-solid fa-plus me-1"></i> Tạo khóa học
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">Bạn chưa tạo khóa học nào.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle" id="coursesTable">
+                <thead>
+                <tr>
+                    <th style="width:60px">ID</th>
+                    <th class="d-none">Slug</th>
+                    <th>Tiêu đề</th>
+                    <th>Trạng thái</th>
+                    <th>Giá</th>
+                    <th>Tạo lúc</th>
+                    <th class="text-end w-100">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td class="text-start ">@c.CourseId</td>
+                        <td class="d-none">@c.Slug</td>
+                        <td >
+                            <div class="fw-semibold">@c.Title</div>
+                            <div class="text-muted small">@c.Slug</div>
+                        </td>
+                        <td>
+                            <span class="badge @(c.IsPublished ? "bg-success" : "bg-secondary")">
+                                @(c.IsPublished ? "Đã xuất bản" : "Nháp")
+                            </span>
+                        </td>
+                        <td>@c.Price.ToString("N0") @c.Currency</td>
+                        <td>@c.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end"><!-- filled by DataTables render --></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Hidden delete form for POST + AntiForgery -->
+<form id="deleteForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.5/css/dataTables.bootstrap5.min.css" />
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.5/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        function submitDelete(id) {
+            if (!confirm('Bạn chắc muốn xóa khóa học này?')) return;
+            const f = document.getElementById('deleteForm');
+            f.action = `/courses/delete/${id}`;
+            f.submit();
+        }
+
+        $(function () {
+            $('#coursesTable').DataTable({
+                order: [[5, 'desc']], // sort by "Tạo lúc"
+                columnDefs: [
+                    { targets: [1], visible: false, searchable: false }, // chỉ ẩn Slug
+                    {
+                        targets: -1,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-end',
+                        render: function (data, type, row) {
+                            const id = row[0];      // ID hiển thị
+                            const slug = row[1];    // Slug (ẩn)
+                            const viewUrl = `/courses/${slug}`;
+                            const editUrl = `/courses/edit/${id}`;
+
+                            return `
+                                <a href="${viewUrl}" class="btn btn-sm btn-info text-white btn-action">
+                                    <i class="fa-solid fa-eye me-1"></i>Xem
+                                </a>
+                                <a href="${editUrl}" class="btn btn-sm btn-warning text-dark btn-action">
+                                    <i class="fa-solid fa-pen-to-square me-1"></i>Sửa
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger btn-action" onclick="submitDelete(${id})">
+                                    <i class="fa-solid fa-trash-can me-1"></i>Xóa
+                                </button>`;
+                        }
+                    }
+                ],
+                language: { url: 'https://cdn.datatables.net/plug-ins/2.1.5/i18n/vi.json' }
+            });
+        });
+    </script>
+}

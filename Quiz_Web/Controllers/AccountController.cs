@@ -25,20 +25,26 @@ namespace Quiz_Web.Controllers
 		{
 			return View();
 		}
+
 		[Route("/login")]
-		public IActionResult Login()
+		public IActionResult Login(string? returnUrl = null)
 		{
 			if (User.Identities != null && User.Identity.IsAuthenticated)
 			{
-				return Redirect("/admin/Index");
+				if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+				{
+					return LocalRedirect(returnUrl);
+				}
+				return Redirect("/");
 			}
+			ViewBag.ReturnUrl = returnUrl;
 			return View();
 		}
-		// POST: /Account/Login
 
+		// POST: /Account/Login
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public async Task<JsonResult> LoginToSystem(string username, string password)
+		public async Task<JsonResult> LoginToSystem(string username, string password, string? returnUrl)
 		{
 			try
 			{
@@ -48,12 +54,13 @@ namespace Quiz_Web.Controllers
 					var claims = new List<Claim>();
 					claims.Add(new Claim(ClaimTypes.Name, user.FullName));
 					claims.Add(new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()));
-					claims.Add(new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty)); // Fix: null-safe access
+					claims.Add(new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty));
 
 					var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 					await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-					return Json(new { status = WebConstants.SUCCESS });
+					var redirect = (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) ? returnUrl : "/";
+					return Json(new { status = WebConstants.SUCCESS, redirectUrl = redirect });
 				}
 				else
 				{
@@ -69,7 +76,6 @@ namespace Quiz_Web.Controllers
 		[Route("/register")]
 		public IActionResult Register()
 		{
-
 			return View();
 		}
 
@@ -131,7 +137,7 @@ namespace Quiz_Web.Controllers
 
 				if (_userService.GeneratePasswordResetToken(email, out string token))
 				{
-					var resetLink = Url.Action("ResetPassword", "Account", new { token }, Request.Scheme);
+					string? resetLink = Url.Action("ResetPassword", "Account", new { token }, Request.Scheme);
 
 					if (await _emailService.SendPasswordResetEmail(email, resetLink))
 					{
