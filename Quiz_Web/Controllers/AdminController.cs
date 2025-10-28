@@ -5,6 +5,7 @@ using Quiz_Web.Models.EF;
 using Quiz_Web.Models.Entities;
 using Quiz_Web.Helper;
 using Quiz_Web.Utils;
+using Quiz_Web.Services.IServices;
 
 namespace Quiz_Web.Controllers
 {
@@ -12,23 +13,93 @@ namespace Quiz_Web.Controllers
 	public class AdminController : Controller
 	{
 		private readonly LearningPlatformContext _context;
+		private readonly IDashboardService _dashboardService;
 
-		public AdminController(LearningPlatformContext context)
+		public AdminController(LearningPlatformContext context, IDashboardService dashboardService)
 		{
 			_context = context;
+			_dashboardService = dashboardService;
 		}
 
 		[Route("/admin")]
-		public async Task<IActionResult> Index()
+		public IActionResult Index()
 		{
-			var stats = new
-			{
-				TotalUsers = await _context.Users.CountAsync(),
-				TotalCourses = await _context.Courses.CountAsync(),
-				TotalTests = await _context.Tests.CountAsync(),
-				TotalClasses = await _context.Classes.CountAsync()
-			};
-			return View(stats);
+			var data = _dashboardService.GetOverviewData();
+			return View(data);
+		}
+
+		// DASHBOARD ACTIONS
+		public IActionResult UserAnalytics()
+		{
+			var data = _dashboardService.GetUserAnalytics();
+			return View(data);
+		}
+
+		public IActionResult LearningActivities()
+		{
+			var data = _dashboardService.GetLearningActivities();
+			return View(data);
+		}
+
+		public IActionResult RevenuePayments()
+		{
+			var data = _dashboardService.GetRevenuePayments();
+			return View(data);
+		}
+
+		public IActionResult LearningResults()
+		{
+			var data = _dashboardService.GetLearningResults();
+			return View(data);
+		}
+
+		public IActionResult SystemActivity()
+		{
+			var data = _dashboardService.GetSystemActivity();
+			return View(data);
+		}
+
+		// DASHBOARD API ENDPOINTS
+		[HttpGet]
+		public JsonResult GetOverviewData()
+		{
+			var data = _dashboardService.GetOverviewData();
+			return Json(data);
+		}
+
+		[HttpGet]
+		public JsonResult GetUserAnalyticsData()
+		{
+			var data = _dashboardService.GetUserAnalytics();
+			return Json(data);
+		}
+
+		[HttpGet]
+		public JsonResult GetLearningActivitiesData()
+		{
+			var data = _dashboardService.GetLearningActivities();
+			return Json(data);
+		}
+
+		[HttpGet]
+		public JsonResult GetRevenuePaymentsData()
+		{
+			var data = _dashboardService.GetRevenuePayments();
+			return Json(data);
+		}
+
+		[HttpGet]
+		public JsonResult GetLearningResultsData()
+		{
+			var data = _dashboardService.GetLearningResults();
+			return Json(data);
+		}
+
+		[HttpGet]
+		public JsonResult GetSystemActivityData()
+		{
+			var data = _dashboardService.GetSystemActivity();
+			return Json(data);
 		}
 
 		// USER MANAGEMENT
