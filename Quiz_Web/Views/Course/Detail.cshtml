@@ -1,0 +1,71 @@
+﻿@model Quiz_Web.Models.Entities.Course
+@{
+    ViewData["Title"] = Model.Title;
+    var isOwner = (ViewBag.IsOwner as bool?) ?? false;
+}
+
+<div class="container py-5">
+    <div class="row">
+        <div class="@(isOwner ? "col-12 col-lg-10 mx-auto" : "col-lg-8")">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Course" asp-action="Index">Khóa học</a>
+                    </li>
+                    <li class="breadcrumb-item active">@Model.Title</li>
+                </ol>
+            </nav>
+
+            <h1 class="display-5 fw-bold mb-3">@Model.Title</h1>
+
+            @* Render CKEditor HTML here *@
+            @if (!string.IsNullOrWhiteSpace(Model.Summary))
+            {
+                <div class="course-content ck-content">
+                    @Html.Raw(Model.Summary)
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CoverUrl))
+            {
+                <img src="@Model.CoverUrl" class="img-fluid rounded mb-4 course-img" alt="@Model.Title" />
+            }
+        </div>
+
+        @if (!isOwner)
+        {
+            <div class="col-lg-4">
+                <div class="card shadow sticky-top" style="top: 20px;">
+                    <div class="card-body text-center">
+                        @if (Model.Price == 0)
+                        {
+                            <h2 class="text-success fw-bold">MIỄN PHÍ</h2>
+                        }
+                        else
+                        {
+                            <h2 class="fw-bold">@Model.Price.ToString("N0") ₫</h2>
+                        }
+
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-primary btn-lg" onclick="alert('Tính năng đang phát triển!')">
+                                <i class="fa-solid fa-shopping-cart"></i> Đăng ký ngay
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Optional: remove width/height attributes so CSS fully controls size
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.course-content img').forEach(img => {
+                img.removeAttribute('width');
+                img.removeAttribute('height');
+            });
+        });
+    </script>
+}

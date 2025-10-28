@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Quiz_Web.Models;
 using Quiz_Web.Services;
@@ -32,12 +32,31 @@ namespace Quiz_Web.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-        [Route("/course")]        
-        public IActionResult Course()
-        {
-            var courses = _courseService.GetAllPublishedCourses();
+  //      [Route("/course")]        
+  //      public IActionResult Course()
+  //      {
+  //          var courses = _courseService.GetAllPublishedCourses();
 
-			return View(courses);
-        }
-    }
+		//	return View(courses);
+  //      }
+
+		//[Route("/course/{slug}")]
+		//public IActionResult CourseDetail(string slug)
+		//{
+		//	if (string.IsNullOrEmpty(slug))
+		//	{
+		//		return RedirectToAction("Course");
+		//	}
+
+		//	var course = _courseService.GetCourseBySlug(slug);
+
+		//	if (course == null)
+		//	{
+		//		_logger.LogWarning($"Course not found with slug: {slug}");
+		//		return NotFound();
+		//	}
+
+		//	return View(course);
+		//}
+	}
 }
