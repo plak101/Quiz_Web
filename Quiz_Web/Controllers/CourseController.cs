@@ -191,7 +191,7 @@ namespace Quiz_Web.Controllers
                 Slug = course.Slug,
                 Description = course.Summary,
                 Price = course.Price,
-                Currency = course.Currency,
+                //Currency = course.Currency,
                 IsPublished = course.IsPublished,
                 CoverUrl = course.CoverUrl
             };

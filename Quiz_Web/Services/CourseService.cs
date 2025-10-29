@@ -113,7 +113,7 @@ namespace Quiz_Web.Services
                     Summary = model.Description,
                     CoverUrl = model.CoverUrl,
                     Price = model.Price ?? 0,
-                    Currency = model.Currency,
+                    //Currency = model.Currency,
                     IsPublished = model.IsPublished,
                     CreatedAt = DateTime.Now
                 };
@@ -187,7 +187,7 @@ namespace Quiz_Web.Services
                 course.Slug = model.Slug;
                 course.Summary = sanitizedDescription ?? model.Description;
                 course.Price = model.Price ?? 0;
-                course.Currency = model.Currency;
+                //course.Currency = model.Currency;
                 course.IsPublished = model.IsPublished;
                 course.CoverUrl = model.CoverUrl;
                 course.UpdatedAt = DateTime.UtcNow;

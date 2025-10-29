@@ -54,7 +54,7 @@
                                 @(c.IsPublished ? "Đã xuất bản" : "Nháp")
                             </span>
                         </td>
-                        <td>@c.Price.ToString("N0") @c.Currency</td>
+                        @* <td>@c.Price.ToString("N0") @c.Currency</td> *@
                         <td>@c.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td class="text-end text-nowrap"><!-- filled by DataTables render --></td>
                     </tr>
