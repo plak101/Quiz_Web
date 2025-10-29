@@ -24,7 +24,6 @@ namespace Quiz_Web.Controllers
             _env = env;
         }
 
-<<<<<<< HEAD
         // GET: /flashcards - List all public flashcard sets
         [HttpGet("")]
         public IActionResult Index(string? search, int page = 1, int pageSize = 12)
@@ -270,13 +269,9 @@ namespace Quiz_Web.Controllers
 
         // Route: /flashcards/study/{setId}
         // Example: /flashcards/study/5
-        [HttpGet("study/{setId:int}")]
-        public async Task<IActionResult> Study(int setId)
-=======
         [HttpGet]
         [Route ("/flashcard/study/{setId}")]
         public async Task<IActionResult> Index(int setId)
->>>>>>> 11c39892bcb2e29f35eb7a96b5e0491e4c4b2bd4
         {
             if (setId <= 0)
             {
@@ -310,11 +305,7 @@ namespace Quiz_Web.Controllers
         // Route: /flashcards/finish/{setId}
         // Example: /flashcards/finish/5
         [HttpGet]
-<<<<<<< HEAD
         [Route("/flashcards/finish/{setId}")]
-=======
-        [Route("/flashcard/finish/{setId}")]
->>>>>>> 11c39892bcb2e29f35eb7a96b5e0491e4c4b2bd4
         public async Task<IActionResult> Finish(int setId)
         {
             if (setId <= 0)
