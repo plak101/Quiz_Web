@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.EF;
 using Quiz_Web.Models.Entities;
+using Quiz_Web.Models.ViewModels;
 using Quiz_Web.Services.IServices;
 
 namespace Quiz_Web.Services
@@ -16,6 +17,7 @@ namespace Quiz_Web.Services
             _logger = logger;
         }
 
+        // Existing async methods
         public async Task<FlashcardSet?> GetFlashcardSetByIdAsync(int setId)
         {
             try
@@ -64,6 +66,298 @@ namespace Quiz_Web.Services
             }
         }
 
+<<<<<<< HEAD
+        // FlashcardSet CRUD Operations
+        public List<FlashcardSet> GetAllPublishedFlashcardSets()
+        {
+            try
+            {
+                return _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards)
+                    .Where(fs => !fs.IsDeleted && fs.Visibility == "Public")
+                    .OrderByDescending(fs => fs.CreatedAt)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving published flashcard sets");
+                return new List<FlashcardSet>();
+            }
+        }
+
+        public List<FlashcardSet> GetFlashcardSetsByOwner(int ownerId)
+        {
+            try
+            {
+                return _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards)
+                    .Where(fs => fs.OwnerId == ownerId && !fs.IsDeleted)
+                    .OrderByDescending(fs => fs.CreatedAt)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving flashcard sets by owner");
+                return new List<FlashcardSet>();
+            }
+        }
+
+        public FlashcardSet? GetFlashcardSetById(int setId)
+        {
+            try
+            {
+                return _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards.OrderBy(f => f.OrderIndex))
+                    .FirstOrDefault(fs => fs.SetId == setId && !fs.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving flashcard set by ID: {setId}");
+                return null;
+            }
+        }
+
+        public FlashcardSet? GetOwnedFlashcardSet(int setId, int ownerId)
+        {
+            try
+            {
+                return _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards.OrderBy(f => f.OrderIndex))
+                    .FirstOrDefault(fs => fs.SetId == setId && fs.OwnerId == ownerId && !fs.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving owned flashcard set");
+                return null;
+            }
+        }
+
+        public List<FlashcardSet> SearchFlashcardSets(string keyword)
+        {
+            try
+            {
+                return _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards)
+                    .Where(fs => !fs.IsDeleted && fs.Visibility == "Public" &&
+                        (fs.Title.Contains(keyword) || 
+                         (fs.Description != null && fs.Description.Contains(keyword)) ||
+                         (fs.TagsText != null && fs.TagsText.Contains(keyword))))
+                    .OrderByDescending(fs => fs.CreatedAt)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"SearchFlashcardSets error: {ex.Message}");
+                return new List<FlashcardSet>();
+            }
+        }
+
+        public FlashcardSet? CreateFlashcardSet(CreateFlashcardSetViewModel model, int ownerId)
+        {
+            try
+            {
+                var flashcardSet = new FlashcardSet
+                {
+                    OwnerId = ownerId,
+                    Title = model.Title,
+                    Description = model.Description,
+                    Visibility = model.Visibility,
+                    CoverUrl = model.CoverUrl,
+                    TagsText = model.TagsText,
+                    Language = model.Language,
+                    CreatedAt = DateTime.Now,
+                    IsDeleted = false
+                };
+
+                _context.FlashcardSets.Add(flashcardSet);
+                _context.SaveChanges();
+
+                return flashcardSet;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating flashcard set");
+                return null;
+            }
+        }
+
+        public FlashcardSet? UpdateFlashcardSet(EditFlashcardSetViewModel model, int ownerId)
+        {
+            try
+            {
+                var flashcardSet = _context.FlashcardSets
+                    .FirstOrDefault(fs => fs.SetId == model.SetId && fs.OwnerId == ownerId && !fs.IsDeleted);
+                
+                if (flashcardSet == null) return null;
+
+                flashcardSet.Title = model.Title;
+                flashcardSet.Description = model.Description;
+                flashcardSet.Visibility = model.Visibility;
+                flashcardSet.CoverUrl = model.CoverUrl ?? flashcardSet.CoverUrl;
+                flashcardSet.TagsText = model.TagsText;
+                flashcardSet.Language = model.Language;
+                flashcardSet.UpdatedAt = DateTime.Now;
+
+                _context.SaveChanges();
+                return flashcardSet;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating flashcard set");
+                return null;
+            }
+        }
+
+        public bool DeleteFlashcardSet(int setId, int ownerId, string? webRootPath)
+        {
+            try
+            {
+                var flashcardSet = _context.FlashcardSets
+                    .FirstOrDefault(fs => fs.SetId == setId && fs.OwnerId == ownerId && !fs.IsDeleted);
+                
+                if (flashcardSet == null) return false;
+
+                // Soft delete
+                flashcardSet.IsDeleted = true;
+                flashcardSet.UpdatedAt = DateTime.Now;
+
+                // Try delete physical cover file if stored locally
+                if (!string.IsNullOrWhiteSpace(flashcardSet.CoverUrl) &&
+                    webRootPath != null &&
+                    flashcardSet.CoverUrl.StartsWith("/"))
+                {
+                    var relative = flashcardSet.CoverUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
+                    var physicalPath = Path.Combine(webRootPath, relative);
+                    if (System.IO.File.Exists(physicalPath))
+                        System.IO.File.Delete(physicalPath);
+                }
+
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting flashcard set {SetId}", setId);
+                return false;
+            }
+        }
+
+        // Flashcard CRUD Operations
+        public List<Flashcard> GetFlashcardsBySetId(int setId)
+        {
+            try
+            {
+                return _context.Flashcards
+                    .Where(f => f.SetId == setId)
+                    .OrderBy(f => f.OrderIndex)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving flashcards for set {setId}");
+                return new List<Flashcard>();
+            }
+        }
+
+        public Flashcard? GetFlashcardById(int cardId)
+        {
+            try
+            {
+                return _context.Flashcards
+                    .Include(f => f.Set)
+                    .FirstOrDefault(f => f.CardId == cardId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving flashcard by ID: {cardId}");
+                return null;
+            }
+        }
+
+        public Flashcard? CreateFlashcard(CreateFlashcardViewModel model, int ownerId)
+        {
+            try
+            {
+                // Verify ownership of the set
+                var set = _context.FlashcardSets
+                    .FirstOrDefault(fs => fs.SetId == model.SetId && fs.OwnerId == ownerId && !fs.IsDeleted);
+                
+                if (set == null) return null;
+
+                var flashcard = new Flashcard
+                {
+                    SetId = model.SetId,
+                    FrontText = model.FrontText,
+                    BackText = model.BackText,
+                    Hint = model.Hint,
+                    OrderIndex = model.OrderIndex,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Flashcards.Add(flashcard);
+                _context.SaveChanges();
+
+                return flashcard;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating flashcard");
+                return null;
+            }
+        }
+
+        public Flashcard? UpdateFlashcard(EditFlashcardViewModel model, int ownerId)
+        {
+            try
+            {
+                var flashcard = _context.Flashcards
+                    .Include(f => f.Set)
+                    .FirstOrDefault(f => f.CardId == model.CardId && f.Set.OwnerId == ownerId && !f.Set.IsDeleted);
+                
+                if (flashcard == null) return null;
+
+                flashcard.FrontText = model.FrontText;
+                flashcard.BackText = model.BackText;
+                flashcard.Hint = model.Hint;
+                flashcard.OrderIndex = model.OrderIndex;
+                flashcard.UpdatedAt = DateTime.Now;
+
+                _context.SaveChanges();
+                return flashcard;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating flashcard");
+                return null;
+            }
+        }
+
+        public bool DeleteFlashcard(int cardId, int ownerId)
+        {
+            try
+            {
+                var flashcard = _context.Flashcards
+                    .Include(f => f.Set)
+                    .FirstOrDefault(f => f.CardId == cardId && f.Set.OwnerId == ownerId && !f.Set.IsDeleted);
+                
+                if (flashcard == null) return false;
+
+                _context.Flashcards.Remove(flashcard);
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting flashcard {CardId}", cardId);
+                return false;
+            }
+        }
+=======
         public async Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync()
         {
             try
@@ -82,5 +376,6 @@ namespace Quiz_Web.Services
                 return new List<FlashcardSet>();
             }
         }
+>>>>>>> 11c39892bcb2e29f35eb7a96b5e0491e4c4b2bd4
     }
 }
