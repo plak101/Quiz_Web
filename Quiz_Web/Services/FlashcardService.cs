@@ -66,6 +66,7 @@ namespace Quiz_Web.Services
             }
         }
 
+<<<<<<< HEAD
         // FlashcardSet CRUD Operations
         public List<FlashcardSet> GetAllPublishedFlashcardSets()
         {
@@ -356,5 +357,25 @@ namespace Quiz_Web.Services
                 return false;
             }
         }
+=======
+        public async Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync()
+        {
+            try
+            {
+                var publicFlashcardSets = await _context.FlashcardSets
+                    .Include(fs => fs.Owner)
+                    .Where(fs => fs.Visibility == "public" && !fs.IsDeleted)
+                    .OrderByDescending(fs => fs.CreatedAt)
+                    .ToListAsync();
+
+                return publicFlashcardSets;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting public flashcard sets: {ex.Message}");
+                return new List<FlashcardSet>();
+            }
+        }
+>>>>>>> 11c39892bcb2e29f35eb7a96b5e0491e4c4b2bd4
     }
 }

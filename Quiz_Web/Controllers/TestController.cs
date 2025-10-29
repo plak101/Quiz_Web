@@ -6,22 +6,22 @@ using System.Security.Claims;
 
 namespace Quiz_Web.Controllers
 {
-    public class TextController : Controller
+    public class TestController : Controller
     {
         private readonly LearningPlatformContext _context;
-        private readonly ITextService _textService;
+        private readonly ITestService _testService;
 
-        public TextController(LearningPlatformContext context, ITextService textService)
+        public TestController(LearningPlatformContext context, ITestService testService)
         {
             _context = context;
-            _textService = textService;
+            _testService = testService;
         }
 
         [HttpGet]
-        [Route("/admin/Text")]
-        public IActionResult Text()
+        [Route("/admin/Test")]
+        public IActionResult Test()
         {
-            return View("~/Views/Text/Text.cshtml");
+            return View("~/Views/Test/Test.cshtml");
         }
 
         [HttpGet]

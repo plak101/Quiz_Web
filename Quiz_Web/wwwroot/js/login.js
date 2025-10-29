@@ -19,8 +19,7 @@ function loginAccount(userInput) {
                     showConfirmButton: false,
                     timer: 1500
                 }).then(() => {
-                    //location.href = res.redirectUrl || '/admin/dashboard';
-                    location.href = '/Home/index';
+                    location.href = res.redirectUrl || '/';
                 });
 
             } else {
@@ -146,13 +145,17 @@ function resetPassword(userInput) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    const returnUrl = params.get('ReturnUrl') || params.get('returnUrl');
+
     //login form
     $(document).off('submit', '#login_form');
     $(document).on('submit', '#login_form', function (e) {
         e.preventDefault();
         loginAccount({
             username: $('#usernameInput').val(),
-            password: $('#passwordInput').val()
+            password: $('#passwordInput').val(),
+            returnUrl: returnUrl
         });
     })
     //register form

@@ -167,13 +167,25 @@
             </div>
         </div>
         <ul class="app-menu">
-            <li><a class="app-menu__item" href="@Url.Action("Index", "Admin")"><i class="app-menu__icon bi bi-speedometer"></i><span class="app-menu__label">Dashboard</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Users", "Admin")"><i class="app-menu__icon bi bi-people"></i><span class="app-menu__label">Users</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Courses", "Admin")"><i class="app-menu__icon bi bi-book"></i><span class="app-menu__label">Courses</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Tests", "Admin")"><i class="app-menu__icon bi bi-clipboard-check"></i><span class="app-menu__label">Tests</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Classes", "Admin")"><i class="app-menu__icon bi bi-mortarboard"></i><span class="app-menu__label">Classes</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Reports", "Admin")"><i class="app-menu__icon bi bi-bar-chart"></i><span class="app-menu__label">Reports</span></a></li>
-            <li><a class="app-menu__item" href="@Url.Action("Index", "Home")"><i class="app-menu__icon bi bi-house"></i><span class="app-menu__label">Back to Site</span></a></li>
+            <li class="treeview">
+                <a class="app-menu__item" href="#" data-toggle="treeview">
+                    <i class="app-menu__icon bi bi-speedometer"></i>
+                    <span class="app-menu__label">Dashboard</span>
+                </a>
+                <ul class="treeview-menu">
+                    <li><a class="treeview-item" href="@Url.Action("Index", "Admin")"><i class="icon bi bi-house-door"></i> Tổng quan</a></li>
+                    <li><a class="treeview-item" href="@Url.Action("UserAnalytics", "Admin")"><i class="icon bi bi-people-fill"></i> Người dùng</a></li>
+                    <li><a class="treeview-item" href="@Url.Action("LearningActivities", "Admin")"><i class="icon bi bi-book-half"></i> Học tập</a></li>
+                    <li><a class="treeview-item" href="@Url.Action("RevenuePayments", "Admin")"><i class="icon bi bi-currency-dollar"></i> Doanh thu</a></li>
+                    <li><a class="treeview-item" href="@Url.Action("SystemActivity", "Admin")"><i class="icon bi bi-gear-fill"></i> Hệ thống</a></li>
+                </ul>
+            </li>
+            <li><a class="app-menu__item" href="@Url.Action("Users", "Admin")"><i class="app-menu__icon bi bi-people"></i><span class="app-menu__label">Người dùng</span></a></li>
+            <li><a class="app-menu__item" href="@Url.Action("Courses", "Admin")"><i class="app-menu__icon bi bi-book"></i><span class="app-menu__label">Khóa học</span></a></li>
+            <li><a class="app-menu__item" href="@Url.Action("Tests", "Admin")"><i class="app-menu__icon bi bi-clipboard-check"></i><span class="app-menu__label">Bài kiểm tra</span></a></li>
+            <li><a class="app-menu__item" href="@Url.Action("Classes", "Admin")"><i class="app-menu__icon bi bi-mortarboard"></i><span class="app-menu__label">Lớp học</span></a></li>
+            <li><a class="app-menu__item" href="@Url.Action("Reports", "Admin")"><i class="app-menu__icon bi bi-bar-chart"></i><span class="app-menu__label">Báo cáo</span></a></li>
+            <li><a class="app-menu__item" href="@Url.Action("Index", "Home")"><i class="app-menu__icon bi bi-house"></i><span class="app-menu__label">Trở về trang chủ</span></a></li>
         </ul>
     </aside>
     <main class="app-content">

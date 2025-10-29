@@ -29,6 +29,12 @@ public partial class File
 
     public virtual ICollection<Flashcard> FlashcardFrontMedia { get; set; } = new List<Flashcard>();
 
+    public virtual ICollection<LessonSlideFlashcard> LessonSlideFlashcards { get; set; } = new List<LessonSlideFlashcard>();
+
+    public virtual ICollection<LessonSlideOption> LessonSlideOptions { get; set; } = new List<LessonSlideOption>();
+
+    public virtual ICollection<LessonSlide> LessonSlides { get; set; } = new List<LessonSlide>();
+
     public virtual User Owner { get; set; } = null!;
 
     public virtual ICollection<QuestionOption> QuestionOptions { get; set; } = new List<QuestionOption>();

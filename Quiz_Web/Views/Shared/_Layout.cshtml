@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Quiz_Web.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CourseStyle.css" asp-append-version="true"/>
+
+    @await RenderSectionAsync("Styles", required:false)
 </head>
 <body>
     <header>
@@ -40,7 +42,7 @@
                             <a class="nav-link" href="#">Udemy Business</a>
                         </li>
                         <li class="nav-item d-none d-lg-block">
-                            <a class="nav-link" href="#">Giảng viên</a>
+                            <a class="nav-link" href="@Url.Action("Create", "Lesson")">Giảng viên</a>
                         </li>
                         <li class="nav-item d-none d-lg-block">
                             <a class="nav-link" href="#">Học tập</a>
@@ -119,5 +121,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    @await Html.PartialAsync("_Toastr")
 </body>
 </html>

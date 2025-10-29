@@ -3,10 +3,10 @@ using Quiz_Web.Services.IServices;
 
 namespace Quiz_Web.Services
 {
-    public class TextService : ITextService
+    public class TestService : ITestService
     {
         private readonly LearningPlatformContext _context;
-        public TextService(LearningPlatformContext context)
+        public TestService(LearningPlatformContext context)
         {
             _context = context;
         }

@@ -16716,3 +16716,147 @@ textarea.form-control-lg {
 .user .user-settings label {
     color: #666;
 }
+
+/* Treeview Menu Styles */
+.treeview-menu {
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.treeview.is-expanded .treeview-menu {
+    display: block;
+}
+
+.treeview-item {
+    display: block;
+    padding: 8px 20px 8px 50px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.treeview-item:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.treeview-item.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.treeview-indicator {
+    float: right;
+    transition: transform 0.3s;
+}
+
+.treeview.is-expanded .treeview-indicator {
+    transform: rotate(90deg);
+}
+
+.app-menu .treeview > .app-menu__item {
+    position: relative;
+}
+
+.app-menu .treeview > .app-menu__item:after {
+    content: '';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid rgba(255, 255, 255, 0.6);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform 0.3s;
+}
+
+.app-menu .treeview.is-expanded > .app-menu__item:after {
+    transform: translateY(-50%) rotate(90deg);
+}
+/* Treeview icon improvements */
+.treeview-item .icon {
+    margin-right: 8px;
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Notification dropdown improvements */
+.app-notification {
+    min-width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.app-notification__item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.app-notification__item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Card color fixes for dashboard pages */
+.card.bg-white {
+    background-color: #f8f9fa !important;
+    color: #333 !important;
+}
+
+.card.bg-white .card-title {
+    color: #333 !important;
+}
+
+.card.bg-white .text-white {
+    color: #333 !important;
+}
+/* Active menu states */
+.app-menu__item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+}
+
+.treeview-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff !important;
+    font-weight: 500;
+}
+
+.treeview-item.active::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    width: 0px;
+    height: 100%;
+    background-color: #fff;
+    top: 0;
+}
+
+/* Hover effects */
+.app-menu__item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s;
+}
+
+.treeview-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding-left: 42px;
+    transition: all 0.2s;
+}
+
+/* Export buttons styling */
+.btn-group .btn {
+    margin-left: 5px;
+}
+
+.btn-group .btn:first-child {
+    margin-left: 0;
+}
