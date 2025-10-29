@@ -18,13 +18,13 @@
         </p>
         
         <div class="finish-actions d-flex flex-column gap-3 mx-auto" style="max-width: 400px;">
-            <a href="@Url.Action("Index", "Flashcard", new { setId = ViewBag.SetId })" 
+            <a href="/flashcards/study/@ViewBag.SetId" 
                class="btn btn-warning btn-lg rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
                 <i class="bi bi-arrow-clockwise"></i>
                 <span>Bắt đầu lại</span>
             </a>
             
-            <a href="@Url.Action("Library", "Home")" 
+            <a href="/flashcards" 
                class="btn btn-success btn-lg rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
                 <i class="bi bi-book"></i>
                 <span>Xem thêm các flashcard khác</span>

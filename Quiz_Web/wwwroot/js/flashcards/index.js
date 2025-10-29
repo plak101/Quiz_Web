@@ -92,7 +92,7 @@ function checkCompletion() {
  * Navigate to finish page
  */
 function goToFinish() {
-    window.location.href = `/Flashcard/Finish?setId=${currentSetId}`;
+    window.location.href = `/flashcards/finish/${currentSetId}`;
 }
 
 /**
