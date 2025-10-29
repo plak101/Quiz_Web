@@ -35,10 +35,12 @@ builder.Services.AddDbContext<LearningPlatformContext>(options => options.UseSql
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILibraryService, LibraryService>();
-builder.Services.AddScoped<ITextService, TextService>();
+builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICreateTestService, CreateTestService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
 
 var app = builder.Build();
 

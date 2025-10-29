@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.Entities;
-using File = Quiz_Web.Models.Entities.File;
-
 
 namespace Quiz_Web.Models.EF;
 
@@ -59,6 +57,14 @@ public partial class LearningPlatformContext : DbContext
     public virtual DbSet<Invitation> Invitations { get; set; }
 
     public virtual DbSet<Lesson> Lessons { get; set; }
+
+    public virtual DbSet<LessonSlide> LessonSlides { get; set; }
+
+    public virtual DbSet<LessonSlideFlashcard> LessonSlideFlashcards { get; set; }
+
+    public virtual DbSet<LessonSlideOption> LessonSlideOptions { get; set; }
+
+    public virtual DbSet<LessonSlideShortText> LessonSlideShortTexts { get; set; }
 
     public virtual DbSet<Library> Libraries { get; set; }
 
@@ -449,9 +455,11 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Lesson>(entity =>
         {
+            entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD0DA710ACA");
+
             entity.Property(e => e.CoverUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Visibility)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -460,6 +468,74 @@ public partial class LearningPlatformContext : DbContext
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lessons_Owner");
+        });
+
+        modelBuilder.Entity<LessonSlide>(entity =>
+        {
+            entity.HasKey(e => e.SlideId).HasName("PK__LessonSl__9E7CB650D90E2C50");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Points).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.SlideType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Lesson).WithMany(p => p.LessonSlides)
+                .HasForeignKey(d => d.LessonId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LessonSlides_Lesson");
+
+            entity.HasOne(d => d.StemMedia).WithMany(p => p.LessonSlides)
+                .HasForeignKey(d => d.StemMediaId)
+                .HasConstraintName("FK_LessonSlides_StemMedia");
+        });
+
+        modelBuilder.Entity<LessonSlideFlashcard>(entity =>
+        {
+            entity.HasKey(e => e.SlideId);
+
+            entity.ToTable("LessonSlide_Flashcard");
+
+            entity.Property(e => e.SlideId).ValueGeneratedNever();
+
+            entity.HasOne(d => d.BackMedia).WithMany(p => p.LessonSlideFlashcards)
+                .HasForeignKey(d => d.BackMediaId)
+                .HasConstraintName("FK_LSFlashcard_BackMedia");
+
+            entity.HasOne(d => d.Slide).WithOne(p => p.LessonSlideFlashcard)
+                .HasForeignKey<LessonSlideFlashcard>(d => d.SlideId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LSFlashcard_Slide");
+        });
+
+        modelBuilder.Entity<LessonSlideOption>(entity =>
+        {
+            entity.HasKey(e => e.OptionId).HasName("PK__LessonSl__92C7A1FFD44C7F44");
+
+            entity.ToTable("LessonSlide_Options");
+
+            entity.HasOne(d => d.OptionMedia).WithMany(p => p.LessonSlideOptions)
+                .HasForeignKey(d => d.OptionMediaId)
+                .HasConstraintName("FK_LSOptions_Media");
+
+            entity.HasOne(d => d.Slide).WithMany(p => p.LessonSlideOptions)
+                .HasForeignKey(d => d.SlideId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LSOptions_Slide");
+        });
+
+        modelBuilder.Entity<LessonSlideShortText>(entity =>
+        {
+            entity.HasKey(e => e.AnswerId).HasName("PK__LessonSl__D482500485AA220B");
+
+            entity.ToTable("LessonSlide_ShortText");
+
+            entity.Property(e => e.CorrectText).HasMaxLength(400);
+
+            entity.HasOne(d => d.Slide).WithMany(p => p.LessonSlideShortTexts)
+                .HasForeignKey(d => d.SlideId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LSShortText_Slide");
         });
 
         modelBuilder.Entity<Library>(entity =>
@@ -599,9 +675,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AD711602B");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A31F1AF5E");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69379C895").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69325EF16").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
@@ -709,8 +785,10 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CCA2BF316");
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534076DC7DC").IsUnique();
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C46C79E9D");
+
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534D20DFD6C").IsUnique();
+
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Email).HasMaxLength(255);

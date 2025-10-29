@@ -21,19 +21,19 @@ function loadContent(viewName, targetElement) {
     // Show loader
     targetElement.innerHTML = `
         <div class="content-loader">
-            <div class="spinner-border text-primary" role="status">
+            <div class="spinner-border test-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
     `;
 
     // Fetch content from server
-    fetch(`/Text/${viewName}`)
+    fetch(`/Test/${viewName}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.text();
+            return response.test();
         })
         .then(html => {
             targetElement.innerHTML = html;
@@ -47,4 +47,4 @@ function loadContent(viewName, targetElement) {
                 </div>
             `;
         });
-}   
+}
