@@ -287,7 +287,6 @@ CREATE TABLE dbo.Courses (
     Summary       NVARCHAR(MAX)  NULL,
     CoverUrl      NVARCHAR(500)  NULL,
     Price         DECIMAL(12,2)  NOT NULL CONSTRAINT DF_Courses_Price DEFAULT (0),
-    Currency      NVARCHAR(10)   NOT NULL CONSTRAINT DF_Courses_Currency DEFAULT (N'VND'),
     IsPublished   BIT            NOT NULL CONSTRAINT DF_Courses_IsPublished DEFAULT (0),
     AverageRating DECIMAL(3,2)   NOT NULL DEFAULT (0),
     TotalReviews  INT            NOT NULL DEFAULT (0),
@@ -630,16 +629,16 @@ VALUES
 GO
 
 /* Khóa học mẫu */
-INSERT INTO dbo.Courses (OwnerId, CategoryId, Title, Slug, Summary, Price, Currency, IsPublished)
+INSERT INTO dbo.Courses (OwnerId, CategoryId, Title, Slug, Summary, Price, IsPublished)
 VALUES
-(2, 2, N'Khoá học SQL Cơ bản', 'sql-co-ban', N'Học SQL từ cơ bản đến nâng cao', 199000, N'VND', 1),
-(2, 1, N'Lập trình C# cơ bản', 'lap-trinh-csharp', N'Học C# và OOP cho người mới bắt đầu', 299000, N'VND', 1),
-(2, 3, N'Phân tích dữ liệu với Excel', 'phan-tich-excel', N'Học kỹ năng phân tích dữ liệu bằng Excel', 149000, N'VND', 1);
+(2, 2, N'Khoá học SQL Cơ bản', 'sql-co-ban', N'Học SQL từ cơ bản đến nâng cao', 199000, 1),
+(2, 1, N'Lập trình C# cơ bản', 'lap-trinh-csharp', N'Học C# và OOP cho người mới bắt đầu', 299000, 1),
+(2, 3, N'Phân tích dữ liệu với Excel', 'phan-tich-excel', N'Học kỹ năng phân tích dữ liệu bằng Excel', 149000, 1);
 GO
 
 
-INSERT INTO dbo.Courses (OwnerId, CategoryId, Title, Slug, Summary, Price, Currency, IsPublished)
-VALUES (2, 2, N'Khoá học SQL Cơ bản', 'sql-co-ban2', N'Học SQL từ cơ bản', 199000, N'VND', 1);
+INSERT INTO dbo.Courses (OwnerId, CategoryId, Title, Slug, Summary, Price,  IsPublished)
+VALUES (2, 2, N'Khoá học SQL Cơ bản', 'sql-co-ban2', N'Học SQL từ cơ bản', 199000,  1);
 GO
 
 

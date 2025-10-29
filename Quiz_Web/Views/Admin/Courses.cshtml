@@ -47,7 +47,7 @@
                         <td>@course.CourseId</td>
                         <td>@course.Title</td>
                         <td>@course.Owner?.FullName</td>
-                        <td>@course.Price.ToString("C") @course.Currency</td>
+                        @* <td>@course.Price.ToString("C") @course.Currency</td> *@
                         <td>
                             <span class="badge @(course.IsPublished ? "bg-success" : "bg-warning")">
                                 @(course.IsPublished ? "Published" : "Draft")
