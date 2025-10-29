@@ -25,6 +25,12 @@ public partial class Test
 
     public string GradingMode { get; set; } = null!;
 
+    public decimal? MaxScore { get; set; }
+
+    public DateTime? OpenAt { get; set; }
+
+    public DateTime? CloseAt { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
@@ -34,8 +40,6 @@ public partial class Test
     public virtual User Owner { get; set; } = null!;
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
-
-    public virtual ICollection<TestAssignment> TestAssignments { get; set; } = new List<TestAssignment>();
 
     public virtual ICollection<TestAttempt> TestAttempts { get; set; } = new List<TestAttempt>();
 }

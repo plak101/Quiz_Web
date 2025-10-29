@@ -9,6 +9,8 @@ public partial class Course
 
     public int OwnerId { get; set; }
 
+    public int? CategoryId { get; set; }
+
     public string Title { get; set; } = null!;
 
     public string Slug { get; set; } = null!;
@@ -23,17 +25,25 @@ public partial class Course
 
     public bool IsPublished { get; set; }
 
+    public decimal AverageRating { get; set; }
+
+    public int TotalReviews { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual CourseCategory? Category { get; set; }
+
     public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
 
-    public virtual ICollection<CourseContent> CourseContents { get; set; } = new List<CourseContent>();
+    public virtual ICollection<CourseChapter> CourseChapters { get; set; } = new List<CourseChapter>();
+
+    public virtual ICollection<CourseProgress> CourseProgresses { get; set; } = new List<CourseProgress>();
 
     public virtual ICollection<CoursePurchase> CoursePurchases { get; set; } = new List<CoursePurchase>();
 
-    public virtual ICollection<CourseSection> CourseSections { get; set; } = new List<CourseSection>();
+    public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
 
     public virtual User Owner { get; set; } = null!;
 }

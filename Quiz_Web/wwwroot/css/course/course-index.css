@@ -1,0 +1,90 @@
+/* ==================== SEARCH BAR STYLES ==================== */
+.search-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-form {
+    display: flex;
+    gap: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 50px;
+    overflow: hidden;
+    background: white;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    padding: 14px 24px;
+    font-size: 15px;
+    outline: none;
+}
+.search-input:focus { box-shadow: none; }
+.search-input::placeholder { color: #999; }
+
+.search-btn {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+.search-btn:hover { background: #0b5ed7; }
+.search-btn i { font-size: 18px; }
+
+/* ==================== COURSE CARD STYLES ==================== */
+.course-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.course-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 48px;
+    line-height: 1.4;
+    max-height: 3.36em;
+}
+
+/* ==================== RATING STYLES ==================== */
+.rating-section { display: flex; align-items: center; font-size: 14px; }
+.rating-value { font-size: 16px; }
+.stars i { font-size: 12px; }
+.stars .fa-star, .stars .fa-star-half-stroke { color: #f59e0b; }
+.stars .fa-star.fa-regular { color: #d1d5db; }
+
+/* ==================== PAGINATION STYLES ==================== */
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 4px;
+    border: 1px solid #dee2e6;
+    color: #0d6efd;
+    padding: 8px 12px;
+}
+.pagination .page-item.active .page-link { background: #0d6efd; border-color: #0d6efd; }
+.pagination .page-link:hover { background: #e7f1ff; border-color: #0d6efd; }
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .search-wrapper { max-width: 100%; }
+    .search-btn span { display: none; }
+    .search-btn { padding: 14px 20px; }
+}
+
+.search-section { background: #fff; border-bottom: 1px solid #f1f3f5; }

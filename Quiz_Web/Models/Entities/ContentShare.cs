@@ -26,4 +26,6 @@ public partial class ContentShare
     public int CreatedBy { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public virtual User CreatedByNavigation { get; set; } = null!;
 }

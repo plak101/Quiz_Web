@@ -19,7 +19,7 @@ public partial class User
 
     public string? Phone { get; set; }
 
-    public int? RoleId { get; set; }
+    public int RoleId { get; set; }
 
     public int Status { get; set; }
 
@@ -37,13 +37,13 @@ public partial class User
 
     public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
 
-    public virtual ICollection<ClassAnnouncement> ClassAnnouncements { get; set; } = new List<ClassAnnouncement>();
+    public virtual ICollection<ContentShare> ContentShares { get; set; } = new List<ContentShare>();
 
-    public virtual ICollection<ClassStudent> ClassStudents { get; set; } = new List<ClassStudent>();
-
-    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+    public virtual ICollection<CourseProgress> CourseProgresses { get; set; } = new List<CourseProgress>();
 
     public virtual ICollection<CoursePurchase> CoursePurchases { get; set; } = new List<CoursePurchase>();
+
+    public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 
@@ -53,19 +53,13 @@ public partial class User
 
     public virtual ICollection<FlashcardSet> FlashcardSets { get; set; } = new List<FlashcardSet>();
 
-    public virtual ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
-
-    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
-
     public virtual ICollection<Library> Libraries { get; set; } = new List<Library>();
-
-    public virtual ICollection<NotificationChannel> NotificationChannels { get; set; } = new List<NotificationChannel>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
 
-    public virtual Role? Role { get; set; }
+    public virtual Role Role { get; set; } = null!;
 
     public virtual ICollection<TestAttempt> TestAttempts { get; set; } = new List<TestAttempt>();
 
