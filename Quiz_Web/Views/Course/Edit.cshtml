@@ -1,0 +1,172 @@
+﻿@model Quiz_Web.Models.ViewModels.EditCourseViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa khóa học";
+}
+
+<div class="container py-4">
+    <h2 class="mb-3">Chỉnh sửa khóa học</h2>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="CourseId" />
+
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label fw-bold"></label>
+            <input asp-for="Title" class="form-control" id="titleInput" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Slug" class="form-label fw-bold"></label>
+            <input asp-for="Slug" class="form-control" id="slugInput" />
+            <span asp-validation-for="Slug" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label fw-bold"></label>
+            <textarea asp-for="Description" class="form-control" id="Description" rows="10"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Price" class="form-label fw-bold"></label>
+                <input asp-for="Price" type="number" class="form-control" id="priceInput" min="0" step="0.01" />
+                <small id="priceHelp" class="text-muted d-block mt-1"></small>
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Currency" class="form-label fw-bold"></label>
+                <select asp-for="Currency" class="form-select" id="currencySelect">
+                    <option value="VND">VND</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <span asp-validation-for="Currency" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                    <input asp-for="IsPublished" class="form-check-input" type="checkbox" />
+                    <label asp-for="IsPublished" class="form-check-label fw-bold"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3 mt-3">
+            <label class="form-label fw-bold">Ảnh bìa</label>
+            <input type="file" name="coverFile" accept="image/*" class="form-control" id="coverFileInput" />
+            <input type="hidden" asp-for="CoverUrl" />
+            <span asp-validation-for="CoverUrl" class="text-danger"></span>
+            <div id="imagePreview" class="mt-3" style="display:@(string.IsNullOrWhiteSpace(Model.CoverUrl) ? "none" : "block");">
+                <img id="previewImg" src="@(Model.CoverUrl ?? "")" class="img-fluid rounded" style="max-height: 320px; object-fit: contain;" />
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-check me-1"></i> Lưu thay đổi
+            </button>
+            <a asp-action="My" class="btn btn-outline-secondary">Quay lại danh sách</a>
+
+            <!-- Delete -->
+            <form asp-action="Delete" method="post" class="ms-auto" onsubmit="return confirm('Bạn chắc muốn xóa khóa học này?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="courseId" value="@Model.CourseId" />
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fa-solid fa-trash me-1"></i> Xóa khóa học
+                </button>
+            </form>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+    <script>
+        // Auto-generate slug from title
+        document.getElementById('titleInput')?.addEventListener('input', function (e) {
+            const title = e.target.value;
+            const slug = title
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+            const slugEl = document.getElementById('slugInput');
+            if (slugEl) slugEl.value = slug;
+        });
+
+        // Currency-aware price behavior
+        const priceInput = document.getElementById('priceInput');
+        const currencySelect = document.getElementById('currencySelect');
+        const priceHelp = document.getElementById('priceHelp');
+
+        function formatPricePreview() {
+            if (!priceInput) return;
+            const val = Number(priceInput.value || 0);
+            const ccy = currencySelect?.value || 'VND';
+            const locale = ccy === 'VND' ? 'vi-VN' : 'en-US';
+            const nf = new Intl.NumberFormat(locale, { style: 'currency', currency: ccy, maximumFractionDigits: ccy === 'VND' ? 0 : 2 });
+            priceHelp.textContent = val ? `Xem trước: ${nf.format(val)}` : '';
+        }
+
+        function applyCurrencyRules() {
+            if (!priceInput || !currencySelect) return;
+            if (currencySelect.value === 'VND') {
+                priceInput.step = '1000';
+                priceInput.min = '0';
+                // round to nearest 1000
+                if (priceInput.value) {
+                    const v = Math.max(0, Math.round(Number(priceInput.value) / 1000) * 1000);
+                    priceInput.value = isFinite(v) ? v : '';
+                }
+            } else {
+                priceInput.step = '0.01';
+                priceInput.min = '0';
+                // keep at most 2 decimals
+                if (priceInput.value) {
+                    const v = Math.max(0, Number(priceInput.value));
+                    priceInput.value = isFinite(v) ? v.toFixed(2).replace(/\.00$/, '') : '';
+                }
+            }
+            formatPricePreview();
+        }
+
+        currencySelect?.addEventListener('change', applyCurrencyRules);
+        priceInput?.addEventListener('input', formatPricePreview);
+        applyCurrencyRules();
+
+        // File preview for cover image
+        document.getElementById('coverFileInput')?.addEventListener('change', (e) => {
+            const [file] = e.target.files || [];
+            const preview = document.getElementById('imagePreview');
+            const img = document.getElementById('previewImg');
+            if (!file || !preview || !img) { if (preview) preview.style.display = 'none'; return; }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                img.src = ev.target.result;
+                preview.style.display = 'block';
+            };
+            reader.onerror = () => { preview.style.display = 'none'; };
+            reader.readAsDataURL(file);
+        });
+
+        ClassicEditor
+            .create(document.querySelector('#Description'), {
+                ckfinder: { uploadUrl: '/upload/ck-editor' },
+                image: {
+                    toolbar: ['imageStyle:inline','imageStyle:block','imageStyle:side','|','toggleImageCaption','imageTextAlternative','|','resizeImage'],
+                    resizeUnit: 'px',
+                    resizeOptions: [
+                        { name: 'resizeImage:720', value: 720, label: '720px' },
+                        { name: 'resizeImage:600', value: 600, label: '600px' }
+                    ]
+                }
+            })
+            .catch(console.error);
+    </script>
+}

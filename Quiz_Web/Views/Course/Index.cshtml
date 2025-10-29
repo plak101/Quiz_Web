@@ -1,0 +1,329 @@
+﻿@model List<Quiz_Web.Models.Entities.Course>
+@{
+    ViewData["Title"] = "Danh sách khóa học";
+}
+
+<!-- Compact Search Section -->
+<section class="py-4 search-section">
+    <div class="container">
+        <div class="search-wrapper">
+            <form asp-action="Search" method="get" class="search-form">
+                <input type="text" 
+                       name="q" 
+                       class="search-input" 
+                       placeholder="Tìm kiếm khóa học..." 
+                       value="@ViewBag.SearchKeyword" />
+                <button type="submit" class="search-btn">
+                    <i class="fa-solid fa-search"></i>
+                    <span>Tìm</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Courses Grid -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                @if (ViewBag.SearchKeyword != null)
+                {
+                    <text>Kết quả tìm kiếm: "@ViewBag.SearchKeyword"</text>
+                }
+                else if (ViewBag.Category != null)
+                {
+                    <text>Danh mục: @ViewBag.Category</text>
+                }
+                else
+                {
+                    <text>Tất cả khóa học</text>
+                }
+            </h2>
+            <span class="text-muted">@((ViewBag.TotalCount ?? ViewBag.SearchResults) ?? 0) khóa học</span>
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-inbox fa-5x text-muted mb-3"></i>
+                <h3>Không tìm thấy khóa học</h3>
+                <a asp-action="Index" class="btn btn-primary mt-3">Xem tất cả</a>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var course in Model)
+                {
+                    // Generate random rating between 4.0 and 5.0 using CourseId as seed
+                    var random = new Random(course.CourseId);
+                    var rating = Math.Round(4.0 + random.NextDouble(), 1);
+                    var reviewCount = course.CoursePurchases.Count > 0 
+                        ? course.CoursePurchases.Count 
+                        : random.Next(10, 500);
+                    
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <a asp-action="Detail" asp-route-slug="@course.Slug" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm course-card">
+                                <div class="position-relative">
+                                    @if (!string.IsNullOrEmpty(course.CoverUrl))
+                                    {
+                                        <img src="@course.CoverUrl" class="card-img-top" 
+                                             alt="@course.Title" style="height: 180px; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-primary d-flex align-items-center justify-content-center" 
+                                             style="height: 180px;">
+                                            <i class="fa-solid fa-book fa-3x text-white"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="card-title fw-bold text-dark mb-2 course-title" 
+                                        title="@course.Title">
+                                        @course.Title
+                                    </h6>
+                                    <p class="text-muted small mb-2" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @course.Owner.FullName
+                                    </p>
+                                    
+                                    <!-- Rating Section -->
+                                    <div class="rating-section mb-2">
+                                        <span class="rating-value fw-bold text-warning">@rating</span>
+                                        <span class="stars ms-1">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= Math.Floor(rating))
+                                                {
+                                                    <i class="fa-solid fa-star text-warning"></i>
+                                                }
+                                                else if (i - rating < 1 && i - rating > 0)
+                                                {
+                                                    <i class="fa-solid fa-star-half-stroke text-warning"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fa-regular fa-star text-warning"></i>
+                                                }
+                                            }
+                                        </span>
+                                        <span class="text-muted small ms-1" style="white-space: nowrap;">(@reviewCount.ToString("N0"))</span>
+                                    </div>
+                                    
+                                    @if (course.Price == 0)
+                                    {
+                                        <span class="badge bg-success mb-2" style="width: fit-content;">MIỄN PHÍ</span>
+                                    }
+                                    else
+                                    {
+                                        <p class="h5 text-primary fw-bold mb-2" style="white-space: nowrap;">
+                                            @course.Price.ToString("N0") ₫
+                                        </p>
+                                    }
+
+                                    <span class="btn btn-outline-primary mt-auto w-100" style="white-space: nowrap;">
+                                        Xem chi tiết
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        @if (ViewBag.CurrentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   asp-action="Index" 
+                                   asp-route-page="@(ViewBag.CurrentPage - 1)"
+                                   asp-route-search="@ViewBag.SearchKeyword"
+                                   asp-route-category="@ViewBag.Category">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" 
+                                   asp-action="Index" 
+                                   asp-route-page="@i"
+                                   asp-route-search="@ViewBag.SearchKeyword"
+                                   asp-route-category="@ViewBag.Category">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   asp-action="Index" 
+                                   asp-route-page="@(ViewBag.CurrentPage + 1)"
+                                   asp-route-search="@ViewBag.SearchKeyword"
+                                   asp-route-category="@ViewBag.Category">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
+</section>
+
+@section Styles {
+    <style>
+        /* ==================== SEARCH BAR STYLES ==================== */
+        .search-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-radius: 50px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 14px 24px;
+            font-size: 15px;
+            outline: none;
+        }
+
+            .search-input:focus {
+                box-shadow: none;
+            }
+
+            .search-input::placeholder {
+                color: #999;
+            }
+
+        .search-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+            .search-btn:hover {
+                background: #0b5ed7;
+            }
+
+            .search-btn i {
+                font-size: 18px;
+            }
+
+        /* ==================== COURSE CARD STYLES ==================== */
+        .course-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+            .course-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+            }
+
+        .course-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 48px;
+            line-height: 1.4;
+            max-height: 3.36em; /* 1.4 * 2 lines + small buffer */
+        }
+
+        /* ==================== RATING STYLES ==================== */
+        .rating-section {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .rating-value {
+            font-size: 16px;
+        }
+
+        .stars i {
+            font-size: 12px;
+        }
+
+        .stars .fa-star,
+        .stars .fa-star-half-stroke {
+            color: #f59e0b;
+        }
+
+        .stars .fa-star.fa-regular {
+            color: #d1d5db;
+        }
+
+        /* ==================== PAGINATION STYLES ==================== */
+        .pagination .page-link {
+            border-radius: 8px;
+            margin: 0 4px;
+            border: 1px solid #dee2e6;
+            color: #0d6efd;
+            padding: 8px 12px;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .pagination .page-link:hover {
+            background: #e7f1ff;
+            border-color: #0d6efd;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @@media (max-width: 768px) {
+            .search-wrapper {
+                max-width: 100%;
+            }
+
+            .search-btn span {
+                display: none;
+            }
+
+            .search-btn {
+                padding: 14px 20px;
+            }
+        }
+
+        .search-section{
+            background: #fff;           /* đồng bộ nền */
+            border-bottom: 1px solid #f1f3f5;
+        }
+    </style>
+}
