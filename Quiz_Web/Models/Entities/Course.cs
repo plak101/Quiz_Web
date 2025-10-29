@@ -21,8 +21,6 @@ public partial class Course
 
     public decimal Price { get; set; }
 
-    public string Currency { get; set; } = null!;
-
     public bool IsPublished { get; set; }
 
     public decimal AverageRating { get; set; }
