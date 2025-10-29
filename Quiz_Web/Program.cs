@@ -53,6 +53,7 @@ builder.Services.AddSingleton(sp =>
     s.AllowedSchemes.Add("data"); // allow data URLs if you paste images
     return s;
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
