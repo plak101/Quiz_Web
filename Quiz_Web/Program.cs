@@ -38,10 +38,14 @@ builder.Services.AddDbContext<LearningPlatformContext>(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILibraryService, LibraryService>();
-builder.Services.AddScoped<ITextService, TextService>();
+builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+<<<<<<< HEAD
+builder.Services.AddScoped<ICreateTestService, CreateTestService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
+=======
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Html sanitizer for CKEditor content
@@ -51,6 +55,7 @@ builder.Services.AddSingleton(sp =>
     s.AllowedSchemes.Add("data"); // allow data URLs if you paste images
     return s;
 });
+>>>>>>> master
 
 var app = builder.Build();
 

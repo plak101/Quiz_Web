@@ -1,6 +1,6 @@
 ﻿namespace Quiz_Web.Services.IServices
 {
-    public interface ITextService
+    public interface ICreateTextService
     {
     }
 }

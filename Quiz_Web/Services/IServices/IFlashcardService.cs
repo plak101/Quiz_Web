@@ -7,5 +7,6 @@ namespace Quiz_Web.Services.IServices
         Task<FlashcardSet?> GetFlashcardSetByIdAsync(int setId);
         Task<List<Flashcard>> GetFlashcardsBySetIdAsync(int setId);
         Task<bool> FlashcardSetExistsAsync(int setId);
+        Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync();
     }
 }

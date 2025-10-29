@@ -11,19 +11,19 @@ public partial class Lesson
 
     public string Title { get; set; } = null!;
 
-    public string Content { get; set; } = null!;
+    public string? Description { get; set; }
 
     public string Visibility { get; set; } = null!;
 
     public string? CoverUrl { get; set; }
-
-    public int? EstimatedTime { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<LessonSlide> LessonSlides { get; set; } = new List<LessonSlide>();
 
     public virtual User Owner { get; set; } = null!;
 }

@@ -16,6 +16,7 @@ namespace Quiz_Web.Controllers
         }
 
         [HttpGet]
+        [Route ("/flashcard/study/{setId}")]
         public async Task<IActionResult> Index(int setId)
         {
             if (setId <= 0)
@@ -48,6 +49,7 @@ namespace Quiz_Web.Controllers
         }
 
         [HttpGet]
+        [Route("/flashcard/finish/{setId}")]
         public async Task<IActionResult> Finish(int setId)
         {
             if (setId <= 0)
@@ -67,6 +69,14 @@ namespace Quiz_Web.Controllers
 
             ViewBag.SetId = setId;
             return View();
+        }
+
+        [HttpGet]
+        [Route("/flashcard/explore")]
+        public async Task<IActionResult> Explore()
+        {
+            var publicFlashcardSets = await _flashcardService.GetPublicFlashcardSetsAsync();
+            return View(publicFlashcardSets);
         }
     }
 }
