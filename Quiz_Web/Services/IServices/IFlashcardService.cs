@@ -9,7 +9,6 @@ namespace Quiz_Web.Services.IServices
         Task<FlashcardSet?> GetFlashcardSetByIdAsync(int setId);
         Task<List<Flashcard>> GetFlashcardsBySetIdAsync(int setId);
         Task<bool> FlashcardSetExistsAsync(int setId);
-<<<<<<< HEAD
 
         // FlashcardSet CRUD
         List<FlashcardSet> GetAllPublishedFlashcardSets();
@@ -27,8 +26,6 @@ namespace Quiz_Web.Services.IServices
         Flashcard? CreateFlashcard(CreateFlashcardViewModel model, int ownerId);
         Flashcard? UpdateFlashcard(EditFlashcardViewModel model, int ownerId);
         bool DeleteFlashcard(int cardId, int ownerId);
-=======
         Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync();
->>>>>>> 11c39892bcb2e29f35eb7a96b5e0491e4c4b2bd4
     }
 }
