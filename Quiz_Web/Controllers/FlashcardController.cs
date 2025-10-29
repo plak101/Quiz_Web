@@ -122,7 +122,7 @@ namespace Quiz_Web.Controllers
                 var ext = Path.GetExtension(coverFile.FileName).ToLowerInvariant();
                 if (!allowed.Contains(ext))
                 {
-                    ModelState.AddModelError(nameof(model.CoverUrl), "??nh d?ng ?nh kh�ng h?p l? (jpg, jpeg, png, gif, webp).");
+                    ModelState.AddModelError(nameof(model.CoverUrl), "Định dạng ảnh không hợp lệ(jpg, jpeg, png, gif, webp).");
                     return View(model);
                 }
 
@@ -145,11 +145,11 @@ namespace Quiz_Web.Controllers
 
             if (flashcardSet == null)
             {
-                TempData["Error"] = "C� l?i x?y ra khi t?o b? flashcard";
+                TempData["Error"] = "Có lỗi xảy ra khi tạo bộ flashcard";
                 return View(model);
             }
 
-            TempData["Success"] = "T?o b? flashcard th�nh c�ng!";
+            TempData["Success"] = "Tạo bộ flashcard thành công!";
             return RedirectToAction("Detail", new { id = flashcardSet.SetId });
         }
 
@@ -219,7 +219,7 @@ namespace Quiz_Web.Controllers
                 var ext = Path.GetExtension(coverFile.FileName).ToLowerInvariant();
                 if (!allowed.Contains(ext))
                 {
-                    ModelState.AddModelError(nameof(model.CoverUrl), "??nh d?ng ?nh kh�ng h?p l? (jpg, jpeg, png, gif, webp).");
+                    ModelState.AddModelError(nameof(model.CoverUrl), "Định dạng ảnh không hợp lệ (jpg, jpeg, png, gif, webp).");
                     return View("Edit", model);
                 }
 
@@ -240,11 +240,11 @@ namespace Quiz_Web.Controllers
             var updated = _flashcardService.UpdateFlashcardSet(model, userId);
             if (updated == null)
             {
-                TempData["Error"] = "Kh�ng th? c?p nh?t b? flashcard.";
+                TempData["Error"] = "Không thể cập nhật bộ flashcard.";
                 return View("Edit", model);
             }
 
-            TempData["Success"] = "C?p nh?t b? flashcard th�nh c�ng!";
+            TempData["Success"] = "Cập nhật bộ flashcard thành công!";
             return RedirectToAction("Detail", new { id = updated.SetId });
         }
 
@@ -260,18 +260,17 @@ namespace Quiz_Web.Controllers
 
             var ok = _flashcardService.DeleteFlashcardSet(id, userId, _env.WebRootPath);
             if (!ok)
-                TempData["Error"] = "Kh�ng th? x�a b? flashcard.";
+                TempData["Error"] = "Không thể xóa bộ flashcard.";
             else
-                TempData["Success"] = "?� x�a b? flashcard.";
+                TempData["Success"] = "Đã xóa bộ flashcard.";
 
             return RedirectToAction(nameof(My));
         }
 
         // Route: /flashcards/study/{setId}
         // Example: /flashcards/study/5
-        [HttpGet]
-        [Route ("/flashcard/study/{setId}")]
-        public async Task<IActionResult> Index(int setId)
+        [HttpGet("study/{setId:int}")]
+        public async Task<IActionResult> Study(int setId)
         {
             if (setId <= 0)
             {
@@ -304,8 +303,7 @@ namespace Quiz_Web.Controllers
 
         // Route: /flashcards/finish/{setId}
         // Example: /flashcards/finish/5
-        [HttpGet]
-        [Route("/flashcards/finish/{setId}")]
+        [HttpGet("finish/{setId:int}")]
         public async Task<IActionResult> Finish(int setId)
         {
             if (setId <= 0)
@@ -327,11 +325,10 @@ namespace Quiz_Web.Controllers
             return View();
         }
 
-        [HttpGet]
-        [Route("/flashcard/explore")]
-        public async Task<IActionResult> Explore()
+        [HttpGet("explore")]
+        public IActionResult Explore()
         {
-            var publicFlashcardSets = await _flashcardService.GetPublicFlashcardSetsAsync();
+            var publicFlashcardSets = _flashcardService.GetAllPublishedFlashcardSets();
             return View(publicFlashcardSets);
         }
     }

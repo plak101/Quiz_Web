@@ -1,4 +1,4 @@
-﻿using Quiz_Web.Models.EF;
+using Quiz_Web.Models.EF;
 using Quiz_Web.Services.IServices;
 
 namespace Quiz_Web.Services
