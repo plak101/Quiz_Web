@@ -53,9 +53,10 @@
                 @foreach (var set in Model)
                 {
                     var cardCount = set.Flashcards?.Count ?? 0;
+                    var lastUpdated = set.UpdatedAt ?? set.CreatedAt;
                     
                     <div class="col-lg-3 col-md-4 col-sm-6">
-                        <a asp-action="Detail" asp-route-id="@set.SetId" class="text-decoration-none">
+                        <div class="flashcard-card-wrapper">
                             <div class="card h-100 shadow-sm flashcard-card">
                                 <div class="position-relative">
                                     @if (!string.IsNullOrEmpty(set.CoverUrl))
@@ -104,14 +105,57 @@
                                         </div>
                                     }
 
-                                    <div class="mt-auto">
-                                        <span class="btn btn-outline-info w-100" style="white-space: nowrap;">
+                                    <!-- Action Buttons -->
+                                    <div class="mt-auto d-grid gap-2">
+                                        <a asp-action="Detail" asp-route-id="@set.SetId" 
+                                           class="btn btn-outline-info">
                                             <i class="fa-solid fa-eye me-1"></i>Xem chi tiết
-                                        </span>
+                                        </a>
+                                        <a asp-action="Study" asp-route-setId="@set.SetId" 
+                                           class="btn btn-primary">
+                                            <i class="fa-solid fa-play me-1"></i>Học ngay
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        </a>
+                            
+                            <!-- Hover Detail Card (Left Side) -->
+                            <div class="hover-detail-card">
+                                <div class="hover-card-content">
+                                    <h5 class="fw-bold mb-3">@set.Title</h5>
+                                    
+                                    <div class="mb-2">
+                                        <small class="text-muted">Đã cập nhật</small>
+                                        <strong class="d-block">@lastUpdated.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <small class="text-muted">Tổng số</small>
+                                        <strong class="d-block">@cardCount thẻ</strong>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">Tạo bởi</small>
+                                        <strong class="d-block">@set.Owner.FullName</strong>
+                                    </div>
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(set.Language))
+                                    {
+                                        <div class="mb-3">
+                                            <small class="text-muted">Ngôn ngữ:</small>
+                                            <strong>@set.Language</strong>
+                                        </div>
+                                    }
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(set.Description))
+                                    {
+                                        <div class="mb-3">
+                                            <p class="small mb-0">@set.Description</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 }
             </div>

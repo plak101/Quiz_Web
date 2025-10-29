@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Models\EF\" />
-    <Folder Include="Models\Entities\" />
     <Folder Include="Views\User\" />
     <Folder Include="wwwroot\asset\font\" />
     <Folder Include="wwwroot\asset\js\" />
