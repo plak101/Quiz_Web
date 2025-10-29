@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.Entities;
+using File = Quiz_Web.Models.Entities.File;
 
 namespace Quiz_Web.Models.EF;
 
@@ -22,29 +23,25 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<Certificate> Certificates { get; set; }
 
-    public virtual DbSet<Class> Classes { get; set; }
-
-    public virtual DbSet<ClassAnnouncement> ClassAnnouncements { get; set; }
-
-    public virtual DbSet<ClassAssignment> ClassAssignments { get; set; }
-
-    public virtual DbSet<ClassStudent> ClassStudents { get; set; }
-
     public virtual DbSet<ContentShare> ContentShares { get; set; }
 
     public virtual DbSet<ContentTag> ContentTags { get; set; }
 
     public virtual DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<CourseContent> CourseContents { get; set; }
+    public virtual DbSet<CourseCategory> CourseCategories { get; set; }
+
+    public virtual DbSet<CourseChapter> CourseChapters { get; set; }
+
+    public virtual DbSet<CourseProgress> CourseProgresses { get; set; }
 
     public virtual DbSet<CoursePurchase> CoursePurchases { get; set; }
 
-    public virtual DbSet<CourseSection> CourseSections { get; set; }
+    public virtual DbSet<CourseReview> CourseReviews { get; set; }
 
     public virtual DbSet<ErrorLog> ErrorLogs { get; set; }
 
-    public virtual DbSet<Entities.File> Files { get; set; }
+    public virtual DbSet<File> Files { get; set; }
 
     public virtual DbSet<Flashcard> Flashcards { get; set; }
 
@@ -54,23 +51,13 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<Folder> Folders { get; set; }
 
-    public virtual DbSet<Invitation> Invitations { get; set; }
-
     public virtual DbSet<Lesson> Lessons { get; set; }
 
-    public virtual DbSet<LessonSlide> LessonSlides { get; set; }
-
-    public virtual DbSet<LessonSlideFlashcard> LessonSlideFlashcards { get; set; }
-
-    public virtual DbSet<LessonSlideOption> LessonSlideOptions { get; set; }
-
-    public virtual DbSet<LessonSlideShortText> LessonSlideShortTexts { get; set; }
+    public virtual DbSet<LessonContent> LessonContents { get; set; }
 
     public virtual DbSet<Library> Libraries { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
-
-    public virtual DbSet<NotificationChannel> NotificationChannels { get; set; }
 
     public virtual DbSet<Payment> Payments { get; set; }
 
@@ -88,15 +75,9 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<SavedItem> SavedItems { get; set; }
 
-    public virtual DbSet<Submission> Submissions { get; set; }
-
-    public virtual DbSet<SubmissionItem> SubmissionItems { get; set; }
-
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<Test> Tests { get; set; }
-
-    public virtual DbSet<TestAssignment> TestAssignments { get; set; }
 
     public virtual DbSet<TestAttempt> TestAttempts { get; set; }
 
@@ -108,12 +89,14 @@ public partial class LearningPlatformContext : DbContext
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=Solar;Password=Abcd@1234;Encrypt=True;Trust Server Certificate=True");
+//        => optionsBuilder.UseSqlServer("Server=DESKTOP-3Q3UNK4\\MSSQLSERVER01;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AttemptAnswer>(entity =>
         {
+            entity.HasKey(e => e.AttemptAnswerId).HasName("PK__AttemptA__EC6FE54E426B8345");
+
             entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
 
             entity.HasOne(d => d.Attempt).WithMany(p => p.AttemptAnswers)
@@ -133,7 +116,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<AuditLog>(entity =>
         {
-            entity.HasKey(e => e.AuditId);
+            entity.HasKey(e => e.AuditId).HasName("PK__AuditLog__A17F239801F73910");
 
             entity.Property(e => e.Action).HasMaxLength(100);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -149,7 +132,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Certificate>(entity =>
         {
-            entity.HasKey(e => e.CertId);
+            entity.HasKey(e => e.CertId).HasName("PK__Certific__E5BD38C52E82E79B");
 
             entity.HasIndex(e => e.VerifyCode, "UQ_Certificates_Verify").IsUnique();
 
@@ -168,75 +151,9 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Certificates_User");
         });
 
-        modelBuilder.Entity<Class>(entity =>
-        {
-            entity.HasIndex(e => e.Code, "UQ_Classes_Code").IsUnique();
-
-            entity.Property(e => e.Code).HasMaxLength(50);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.Term).HasMaxLength(50);
-
-            entity.HasOne(d => d.Teacher).WithMany(p => p.Classes)
-                .HasForeignKey(d => d.TeacherId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Classes_Teacher");
-        });
-
-        modelBuilder.Entity<ClassAnnouncement>(entity =>
-        {
-            entity.HasKey(e => e.AnnouncementId);
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Title).HasMaxLength(200);
-
-            entity.HasOne(d => d.Author).WithMany(p => p.ClassAnnouncements)
-                .HasForeignKey(d => d.AuthorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_CAnnouncements_Author");
-
-            entity.HasOne(d => d.Class).WithMany(p => p.ClassAnnouncements)
-                .HasForeignKey(d => d.ClassId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_CAnnouncements_Class");
-        });
-
-        modelBuilder.Entity<ClassAssignment>(entity =>
-        {
-            entity.HasKey(e => e.AssignmentId);
-
-            entity.Property(e => e.GradingPolicy).HasMaxLength(50);
-            entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.Class).WithMany(p => p.ClassAssignments)
-                .HasForeignKey(d => d.ClassId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_CAssignments_Class");
-        });
-
-        modelBuilder.Entity<ClassStudent>(entity =>
-        {
-            entity.HasKey(e => new { e.ClassId, e.StudentId });
-
-            entity.Property(e => e.JoinedAt).HasDefaultValueSql("(sysutcdatetime())");
-
-            entity.HasOne(d => d.Class).WithMany(p => p.ClassStudents)
-                .HasForeignKey(d => d.ClassId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ClassStudents_Class");
-
-            entity.HasOne(d => d.Student).WithMany(p => p.ClassStudents)
-                .HasForeignKey(d => d.StudentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ClassStudents_Student");
-        });
-
         modelBuilder.Entity<ContentShare>(entity =>
         {
-            entity.HasKey(e => e.ShareId);
+            entity.HasKey(e => e.ShareId).HasName("PK__ContentS__D32A3FEE66695CC2");
 
             entity.Property(e => e.CanView).HasDefaultValue(true);
             entity.Property(e => e.ContentType)
@@ -246,10 +163,17 @@ public partial class LearningPlatformContext : DbContext
             entity.Property(e => e.TargetType)
                 .HasMaxLength(10)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ContentShares)
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ContentShares_Creator");
         });
 
         modelBuilder.Entity<ContentTag>(entity =>
         {
+            entity.HasKey(e => e.ContentTagId).HasName("PK__ContentT__8FE57485AA4C4D72");
+
             entity.Property(e => e.ContentType)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -262,8 +186,11 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Course>(entity =>
         {
+            entity.HasKey(e => e.CourseId).HasName("PK__Courses__C92D71A7B3651BC8");
+
             entity.HasIndex(e => e.Slug, "UQ_Courses_Slug").IsUnique();
 
+            entity.Property(e => e.AverageRating).HasColumnType("decimal(3, 2)");
             entity.Property(e => e.CoverUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Currency)
@@ -273,32 +200,66 @@ public partial class LearningPlatformContext : DbContext
             entity.Property(e => e.Slug).HasMaxLength(200);
             entity.Property(e => e.Title).HasMaxLength(200);
 
+            entity.HasOne(d => d.Category).WithMany(p => p.Courses)
+                .HasForeignKey(d => d.CategoryId)
+                .HasConstraintName("FK_Courses_Category");
+
             entity.HasOne(d => d.Owner).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Courses_Owner");
         });
 
-        modelBuilder.Entity<CourseContent>(entity =>
+        modelBuilder.Entity<CourseCategory>(entity =>
         {
+            entity.HasKey(e => e.CategoryId).HasName("PK__CourseCa__19093A0B9A87366A");
+
+            entity.HasIndex(e => e.Slug, "UQ__CourseCa__BC7B5FB6BACFCFCD").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IconUrl).HasMaxLength(500);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Slug).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<CourseChapter>(entity =>
+        {
+            entity.HasKey(e => e.ChapterId).HasName("PK__CourseCh__0893A36A67F4324A");
+
+            entity.Property(e => e.Title).HasMaxLength(200);
+
+            entity.HasOne(d => d.Course).WithMany(p => p.CourseChapters)
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Chapters_Course");
+        });
+
+        modelBuilder.Entity<CourseProgress>(entity =>
+        {
+            entity.HasKey(e => e.ProgressId).HasName("PK__CoursePr__BAE29CA5CECE1985");
+
+            entity.ToTable("CourseProgress");
+
             entity.Property(e => e.ContentType)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.TitleOverride).HasMaxLength(200);
+            entity.Property(e => e.LastViewedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Score).HasColumnType("decimal(6, 2)");
 
-            entity.HasOne(d => d.Course).WithMany(p => p.CourseContents)
+            entity.HasOne(d => d.Course).WithMany(p => p.CourseProgresses)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_CContents_Course");
+                .HasConstraintName("FK__CoursePro__Cours__3587F3E0");
 
-            entity.HasOne(d => d.Section).WithMany(p => p.CourseContents)
-                .HasForeignKey(d => d.SectionId)
-                .HasConstraintName("FK_CContents_Section");
+            entity.HasOne(d => d.User).WithMany(p => p.CourseProgresses)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__CoursePro__UserI__3493CFA7");
         });
 
         modelBuilder.Entity<CoursePurchase>(entity =>
         {
-            entity.HasKey(e => e.PurchaseId);
+            entity.HasKey(e => e.PurchaseId).HasName("PK__CoursePu__6B0A6BBE5BCE0D30");
 
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.PricePaid).HasColumnType("decimal(12, 2)");
@@ -318,21 +279,33 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_CPurchases_Course");
         });
 
-        modelBuilder.Entity<CourseSection>(entity =>
+        modelBuilder.Entity<CourseReview>(entity =>
         {
-            entity.HasKey(e => e.SectionId);
+            entity.HasKey(e => e.ReviewId).HasName("PK__CourseRe__74BC79CE0F8A1BF5");
 
-            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.ToTable(tb => tb.HasTrigger("trg_UpdateCourseRating"));
 
-            entity.HasOne(d => d.Course).WithMany(p => p.CourseSections)
+            entity.HasIndex(e => e.CourseId, "IX_CourseReviews_Course");
+
+            entity.Property(e => e.Comment).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IsApproved).HasDefaultValue(true);
+            entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
+
+            entity.HasOne(d => d.Course).WithMany(p => p.CourseReviews)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_CSections_Course");
+                .HasConstraintName("FK__CourseRev__Cours__1DB06A4F");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CourseReviews)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__CourseRev__UserI__1EA48E88");
         });
 
         modelBuilder.Entity<ErrorLog>(entity =>
         {
-            entity.HasKey(e => e.ErrorId);
+            entity.HasKey(e => e.ErrorId).HasName("PK__ErrorLog__35856A2AC7D8BFC8");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Message).HasMaxLength(4000);
@@ -341,8 +314,10 @@ public partial class LearningPlatformContext : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Entities.File>(entity =>
+        modelBuilder.Entity<File>(entity =>
         {
+            entity.HasKey(e => e.FileId).HasName("PK__Files__6F0F98BF51BD70E8");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(255);
             entity.Property(e => e.MimeType).HasMaxLength(100);
@@ -356,7 +331,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Flashcard>(entity =>
         {
-            entity.HasKey(e => e.CardId);
+            entity.HasKey(e => e.CardId).HasName("PK__Flashcar__55FECDAED698B4EB");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Hint).HasMaxLength(500);
@@ -377,7 +352,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<FlashcardPracticeLog>(entity =>
         {
-            entity.HasKey(e => e.LogId);
+            entity.HasKey(e => e.LogId).HasName("PK__Flashcar__5E548648B44515F5");
 
             entity.Property(e => e.EaseFactor).HasColumnType("decimal(4, 2)");
 
@@ -399,7 +374,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<FlashcardSet>(entity =>
         {
-            entity.HasKey(e => e.SetId);
+            entity.HasKey(e => e.SetId).HasName("PK__Flashcar__7E08471DBE6332D3");
 
             entity.Property(e => e.CoverUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -418,6 +393,8 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Folder>(entity =>
         {
+            entity.HasKey(e => e.FolderId).HasName("PK__Folders__ACD7107F48A01A2A");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Name).HasMaxLength(200);
 
@@ -431,115 +408,45 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Folders_Parent");
         });
 
-        modelBuilder.Entity<Invitation>(entity =>
-        {
-            entity.HasKey(e => e.InviteId);
-
-            entity.HasIndex(e => e.Token, "UQ_Invitations_Token").IsUnique();
-
-            entity.Property(e => e.Email).HasMaxLength(255);
-            entity.Property(e => e.RoleSuggested)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-            entity.Property(e => e.Token).HasMaxLength(100);
-
-            entity.HasOne(d => d.Class).WithMany(p => p.Invitations)
-                .HasForeignKey(d => d.ClassId)
-                .HasConstraintName("FK_Invitations_Class");
-
-            entity.HasOne(d => d.Inviter).WithMany(p => p.Invitations)
-                .HasForeignKey(d => d.InviterId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Invitations_Inviter");
-        });
-
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD0DA710ACA");
+            entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD00DB1E3B5");
 
-            entity.Property(e => e.CoverUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Visibility)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(false)
+                .HasDefaultValue("Course");
 
-            entity.HasOne(d => d.Owner).WithMany(p => p.Lessons)
-                .HasForeignKey(d => d.OwnerId)
+            entity.HasOne(d => d.Chapter).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.ChapterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Lessons_Owner");
+                .HasConstraintName("FK_Lessons_Chapter");
         });
 
-        modelBuilder.Entity<LessonSlide>(entity =>
+        modelBuilder.Entity<LessonContent>(entity =>
         {
-            entity.HasKey(e => e.SlideId).HasName("PK__LessonSl__9E7CB650D90E2C50");
+            entity.HasKey(e => e.ContentId).HasName("PK__LessonCo__2907A81E84870B4E");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Points).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.SlideType)
+            entity.HasIndex(e => new { e.LessonId, e.OrderIndex }, "IX_LessonContents_Lesson_Order");
+
+            entity.Property(e => e.ContentType)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Title).HasMaxLength(200);
 
-            entity.HasOne(d => d.Lesson).WithMany(p => p.LessonSlides)
+            entity.HasOne(d => d.Lesson).WithMany(p => p.LessonContents)
                 .HasForeignKey(d => d.LessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_LessonSlides_Lesson");
-
-            entity.HasOne(d => d.StemMedia).WithMany(p => p.LessonSlides)
-                .HasForeignKey(d => d.StemMediaId)
-                .HasConstraintName("FK_LessonSlides_StemMedia");
-        });
-
-        modelBuilder.Entity<LessonSlideFlashcard>(entity =>
-        {
-            entity.HasKey(e => e.SlideId);
-
-            entity.ToTable("LessonSlide_Flashcard");
-
-            entity.Property(e => e.SlideId).ValueGeneratedNever();
-
-            entity.HasOne(d => d.BackMedia).WithMany(p => p.LessonSlideFlashcards)
-                .HasForeignKey(d => d.BackMediaId)
-                .HasConstraintName("FK_LSFlashcard_BackMedia");
-
-            entity.HasOne(d => d.Slide).WithOne(p => p.LessonSlideFlashcard)
-                .HasForeignKey<LessonSlideFlashcard>(d => d.SlideId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_LSFlashcard_Slide");
-        });
-
-        modelBuilder.Entity<LessonSlideOption>(entity =>
-        {
-            entity.HasKey(e => e.OptionId).HasName("PK__LessonSl__92C7A1FFD44C7F44");
-
-            entity.ToTable("LessonSlide_Options");
-
-            entity.HasOne(d => d.OptionMedia).WithMany(p => p.LessonSlideOptions)
-                .HasForeignKey(d => d.OptionMediaId)
-                .HasConstraintName("FK_LSOptions_Media");
-
-            entity.HasOne(d => d.Slide).WithMany(p => p.LessonSlideOptions)
-                .HasForeignKey(d => d.SlideId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_LSOptions_Slide");
-        });
-
-        modelBuilder.Entity<LessonSlideShortText>(entity =>
-        {
-            entity.HasKey(e => e.AnswerId).HasName("PK__LessonSl__D482500485AA220B");
-
-            entity.ToTable("LessonSlide_ShortText");
-
-            entity.Property(e => e.CorrectText).HasMaxLength(400);
-
-            entity.HasOne(d => d.Slide).WithMany(p => p.LessonSlideShortTexts)
-                .HasForeignKey(d => d.SlideId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_LSShortText_Slide");
+                .HasConstraintName("FK_LessonContents_Lesson");
         });
 
         modelBuilder.Entity<Library>(entity =>
         {
+            entity.HasKey(e => e.LibraryId).HasName("PK__Librarie__A136475F279181EE");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Name).HasMaxLength(200);
 
@@ -551,6 +458,8 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12545CABC1");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Type)
@@ -563,25 +472,10 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Notifications_User");
         });
 
-        modelBuilder.Entity<NotificationChannel>(entity =>
-        {
-            entity.HasKey(e => e.ChannelId);
-
-            entity.Property(e => e.AddressOrToken).HasMaxLength(500);
-            entity.Property(e => e.Channel)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Enabled).HasDefaultValue(true);
-
-            entity.HasOne(d => d.User).WithMany(p => p.NotificationChannels)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_NChannels_User");
-        });
-
         modelBuilder.Entity<Payment>(entity =>
         {
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A381B967469");
+
             entity.Property(e => e.Amount).HasColumnType("decimal(12, 2)");
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.Provider)
@@ -600,6 +494,8 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Question>(entity =>
         {
+            entity.HasKey(e => e.QuestionId).HasName("PK__Question__0DC06FAC2BD08901");
+
             entity.Property(e => e.Points)
                 .HasDefaultValue(1m)
                 .HasColumnType("decimal(5, 2)");
@@ -619,7 +515,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionClozeBlank>(entity =>
         {
-            entity.HasKey(e => e.BlankId);
+            entity.HasKey(e => e.BlankId).HasName("PK__Question__F2BD63E72F6FE828");
 
             entity.Property(e => e.AcceptRegex).HasMaxLength(400);
             entity.Property(e => e.CorrectText).HasMaxLength(400);
@@ -632,7 +528,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionOption>(entity =>
         {
-            entity.HasKey(e => e.OptionId);
+            entity.HasKey(e => e.OptionId).HasName("PK__Question__92C7A1FF1F0E3AA3");
 
             entity.HasOne(d => d.OptionMedia).WithMany(p => p.QuestionOptions)
                 .HasForeignKey(d => d.OptionMediaId)
@@ -646,7 +542,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionRangeAnswer>(entity =>
         {
-            entity.HasKey(e => e.RangeId);
+            entity.HasKey(e => e.RangeId).HasName("PK__Question__6899CA1476E95AF3");
 
             entity.Property(e => e.MaxValue).HasColumnType("decimal(12, 4)");
             entity.Property(e => e.MinValue).HasColumnType("decimal(12, 4)");
@@ -660,6 +556,8 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Reminder>(entity =>
         {
+            entity.HasKey(e => e.ReminderId).HasName("PK__Reminder__01A8308767AC231A");
+
             entity.Property(e => e.RelatedType)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -675,15 +573,17 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A31F1AF5E");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AF580F42A");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F69325EF16").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6B20CBA11").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
         modelBuilder.Entity<SavedItem>(entity =>
         {
+            entity.HasKey(e => e.SavedItemId).HasName("PK__SavedIte__1CBC88C8A7C10271");
+
             entity.Property(e => e.AddedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.ContentType)
                 .HasMaxLength(20)
@@ -700,30 +600,13 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_SavedItems_Library");
         });
 
-        modelBuilder.Entity<Submission>(entity =>
-        {
-            entity.Property(e => e.MaxScore).HasColumnType("decimal(6, 2)");
-            entity.Property(e => e.Status)
-                .HasMaxLength(12)
-                .IsUnicode(false);
-            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.TotalScore).HasColumnType("decimal(6, 2)");
-        });
-
-        modelBuilder.Entity<SubmissionItem>(entity =>
-        {
-            entity.Property(e => e.MaxScore).HasColumnType("decimal(6, 2)");
-            entity.Property(e => e.RefType)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.Score).HasColumnType("decimal(6, 2)");
-        });
-
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasIndex(e => e.Name, "UQ_Tags_Name").IsUnique();
+            entity.HasKey(e => e.TagId).HasName("PK__Tags__657CF9AC2B4A5E9B");
 
-            entity.HasIndex(e => e.Slug, "UQ_Tags_Slug").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Tags__737584F6DBD258A7").IsUnique();
+
+            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6E19DC256").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(80);
             entity.Property(e => e.Slug).HasMaxLength(100);
@@ -731,10 +614,13 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Test>(entity =>
         {
+            entity.HasKey(e => e.TestId).HasName("PK__Tests__8CC33160B74A1206");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.GradingMode)
                 .HasMaxLength(10)
                 .IsUnicode(false);
+            entity.Property(e => e.MaxScore).HasColumnType("decimal(6, 2)");
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Visibility)
                 .HasMaxLength(20)
@@ -746,24 +632,9 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Tests_Owner");
         });
 
-        modelBuilder.Entity<TestAssignment>(entity =>
-        {
-            entity.HasKey(e => e.TestAssignId);
-
-            entity.HasOne(d => d.Assignment).WithMany(p => p.TestAssignments)
-                .HasForeignKey(d => d.AssignmentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TAssign_Assignment");
-
-            entity.HasOne(d => d.Test).WithMany(p => p.TestAssignments)
-                .HasForeignKey(d => d.TestId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TAssign_Test");
-        });
-
         modelBuilder.Entity<TestAttempt>(entity =>
         {
-            entity.HasKey(e => e.AttemptId);
+            entity.HasKey(e => e.AttemptId).HasName("PK__TestAtte__891A68E6843BDA5B");
 
             entity.Property(e => e.MaxScore).HasColumnType("decimal(6, 2)");
             entity.Property(e => e.Score).HasColumnType("decimal(6, 2)");
@@ -785,9 +656,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C46C79E9D");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C3C51ED13");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534D20DFD6C").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D105341339ACA8").IsUnique();
 
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -805,12 +676,13 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
-                .HasConstraintName("FK__Users__RoleId__3D5E1FD2");
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Users_Roles");
         });
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.UserId);
+            entity.HasKey(e => e.UserId).HasName("PK__UserProf__1788CC4C90412997");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.Bio).HasMaxLength(500);
@@ -828,7 +700,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<UserSetting>(entity =>
         {
-            entity.HasKey(e => e.UserId);
+            entity.HasKey(e => e.UserId).HasName("PK__UserSett__1788CC4CCDF71372");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.EmailOptIn).HasDefaultValue(true);

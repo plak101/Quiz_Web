@@ -59,13 +59,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        // Optional: remove width/height attributes so CSS fully controls size
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.course-content img').forEach(img => {
-                img.removeAttribute('width');
-                img.removeAttribute('height');
-            });
-        });
-    </script>
+    <script src="~/js/course/course-detail.js" asp-append-version="true"></script>
 }

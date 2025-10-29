@@ -8,6 +8,6 @@ namespace Quiz_Web.Services.IServices
         /// Nhận vào ViewModel từ Controller và ID của chủ sở hữu
         /// Trả về ID của Lesson mới được tạo
         /// </summary>
-        Task<int> CreateLessonAsync(LessonCreateViewModel viewModel, int ownerId);
+        //Task<int> CreateLessonAsync(LessonCreateViewModel viewModel, int ownerId);
     }
 }

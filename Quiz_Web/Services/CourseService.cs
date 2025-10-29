@@ -40,8 +40,8 @@ namespace Quiz_Web.Services
             {
                 return _context.Courses
                     .Include(c => c.Owner)
-                    .Include(c => c.CourseSections)
-                    .Include(c => c.CourseContents)
+                    //.Include(c => c.CourseSections)
+                    //.Include(c => c.CourseContents)
                     .FirstOrDefault(c => c.CourseId == id && c.IsPublished);
             }
             catch (Exception ex)
@@ -57,8 +57,6 @@ namespace Quiz_Web.Services
             {
                 return _context.Courses
                     .Include(c => c.Owner)
-                    .Include(c => c.CourseSections)
-                    .Include(c => c.CourseContents)
                     .FirstOrDefault(c => c.Slug == slug && c.IsPublished);
             }
             catch (Exception ex)

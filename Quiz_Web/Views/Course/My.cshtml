@@ -36,7 +36,7 @@
                     <th>Trạng thái</th>
                     <th>Giá</th>
                     <th>Tạo lúc</th>
-                    <th class="text-end w-100">Hành động</th>
+                    <th class="text-end text-nowrap" style="width:240px">Hành động</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,7 @@
                         </td>
                         <td>@c.Price.ToString("N0") @c.Currency</td>
                         <td>@c.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td class="text-end"><!-- filled by DataTables render --></td>
+                        <td class="text-end text-nowrap"><!-- filled by DataTables render --></td>
                     </tr>
                 }
                 </tbody>
@@ -78,45 +78,5 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.5/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.5/js/dataTables.bootstrap5.min.js"></script>
-    <script>
-        function submitDelete(id) {
-            if (!confirm('Bạn chắc muốn xóa khóa học này?')) return;
-            const f = document.getElementById('deleteForm');
-            f.action = `/courses/delete/${id}`;
-            f.submit();
-        }
-
-        $(function () {
-            $('#coursesTable').DataTable({
-                order: [[5, 'desc']], // sort by "Tạo lúc"
-                columnDefs: [
-                    { targets: [1], visible: false, searchable: false }, // chỉ ẩn Slug
-                    {
-                        targets: -1,
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-end',
-                        render: function (data, type, row) {
-                            const id = row[0];      // ID hiển thị
-                            const slug = row[1];    // Slug (ẩn)
-                            const viewUrl = `/courses/${slug}`;
-                            const editUrl = `/courses/edit/${id}`;
-
-                            return `
-                                <a href="${viewUrl}" class="btn btn-sm btn-info text-white btn-action">
-                                    <i class="fa-solid fa-eye me-1"></i>Xem
-                                </a>
-                                <a href="${editUrl}" class="btn btn-sm btn-warning text-dark btn-action">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i>Sửa
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger btn-action" onclick="submitDelete(${id})">
-                                    <i class="fa-solid fa-trash-can me-1"></i>Xóa
-                                </button>`;
-                        }
-                    }
-                ],
-                language: { url: 'https://cdn.datatables.net/plug-ins/2.1.5/i18n/vi.json' }
-            });
-        });
-    </script>
+    <script src="~/js/course/course-my.js" asp-append-version="true"></script>
 }
