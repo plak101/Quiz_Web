@@ -330,5 +330,250 @@ namespace Quiz_Web.Controllers
 
             return RedirectToAction(nameof(My));
         }
+
+        // GET: /courses/builder
+        [Authorize]
+        [Route("/courses/builder")]
+        [HttpGet]
+        public IActionResult Builder(int? id)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Challenge();
+
+            // Load categories for dropdown
+            ViewBag.Categories = _courseService.GetAllCategories();
+
+            if (id.HasValue)
+            {
+                // Edit mode
+                var model = _courseService.GetCourseBuilderData(id.Value, userId);
+                if (model == null) return NotFound();
+                ViewBag.CourseId = id.Value;
+                return View("Builder", model);
+            }
+
+            // Create mode
+            return View("Builder", new CourseBuilderViewModel());
+        }
+
+        // POST: /courses/builder/autosave
+        [Authorize]
+        [Route("/courses/builder/autosave")]
+        [HttpPost]
+        public IActionResult Autosave([FromBody] CourseAutosaveViewModel model)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var success = _courseService.AutosaveCourse(model.CourseId, model, userId);
+            
+            return Json(new CourseBuilderResponse
+            {
+                Success = success,
+                Message = success ? "Đã lưu tự động" : "Lỗi lưu tự động"
+            });
+        }
+
+        // POST: /courses/builder/save
+        [Authorize]
+        [Route("/courses/builder/save")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveBuilder(
+            [FromForm] string jsonData, 
+            IFormFile? coverFile,
+            [FromServices] HtmlSanitizer sanitizer)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Challenge();
+
+            try
+            {
+                var model = System.Text.Json.JsonSerializer.Deserialize<CourseBuilderViewModel>(
+                    jsonData, 
+                    new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true 
+                    }
+                );
+
+                if (model == null)
+                {
+                    TempData["Error"] = "Dữ liệu không hợp lệ";
+                    return RedirectToAction(nameof(Builder));
+                }
+
+                // Upload cover image
+                if (coverFile is { Length: > 0 })
+                {
+                    var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    var ext = Path.GetExtension(coverFile.FileName).ToLowerInvariant();
+                    if (!allowed.Contains(ext))
+                    {
+                        TempData["Error"] = "Định dạng ảnh không hợp lệ (jpg, jpeg, png, gif, webp).";
+                        return RedirectToAction(nameof(Builder));
+                    }
+
+                    var folder = $"uploads/courses/{DateTime.UtcNow:yyyy/MM}";
+                    var physical = Path.Combine(_env.WebRootPath, folder);
+                    Directory.CreateDirectory(physical);
+
+                    var fileName = $"{Guid.NewGuid():N}{ext}";
+                    var fullPath = Path.Combine(physical, fileName);
+
+                    await using (var stream = System.IO.File.Create(fullPath))
+                    {
+                        await coverFile.CopyToAsync(stream);
+                    }
+
+                    model.CoverUrl = "/" + Path.Combine(folder, fileName).Replace("\\", "/");
+                }
+
+                // Sanitize HTML content
+                if (!string.IsNullOrEmpty(model.Summary))
+                    model.Summary = sanitizer.Sanitize(model.Summary);
+
+                foreach (var chapter in model.Chapters)
+                {
+                    if (!string.IsNullOrEmpty(chapter.Description))
+                        chapter.Description = sanitizer.Sanitize(chapter.Description);
+
+                    foreach (var lesson in chapter.Lessons)
+                    {
+                        foreach (var content in lesson.Contents)
+                        {
+                            if (!string.IsNullOrEmpty(content.Body))
+                                content.Body = sanitizer.Sanitize(content.Body);
+                        }
+                    }
+                }
+
+                // Check slug uniqueness
+                if (!_courseService.IsSlugUnique(model.Slug))
+                {
+                    TempData["Error"] = "Slug này đã tồn tại. Vui lòng chọn slug khác.";
+                    ViewBag.Categories = _courseService.GetAllCategories();
+                    return View("Builder", model);
+                }
+
+                // Create course with full structure
+                var course = _courseService.CreateCourseWithStructure(model, userId);
+
+                if (course == null)
+                {
+                    TempData["Error"] = "Có lỗi xảy ra khi tạo khóa học";
+                    ViewBag.Categories = _courseService.GetAllCategories();
+                    return View("Builder", model);
+                }
+
+                TempData["Success"] = "Tạo khóa học thành công!";
+                return RedirectToAction("Detail", new { slug = course.Slug });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving course builder");
+                TempData["Error"] = "Có lỗi xảy ra: " + ex.Message;
+                return RedirectToAction(nameof(Builder));
+            }
+        }
+
+        // POST: /courses/builder/update/{id}
+        [Authorize]
+        [Route("/courses/builder/update/{id:int}")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateBuilder(
+            int id,
+            [FromForm] string jsonData,
+            IFormFile? coverFile,
+            [FromServices] HtmlSanitizer sanitizer)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Challenge();
+
+            try
+            {
+                var model = System.Text.Json.JsonSerializer.Deserialize<CourseBuilderViewModel>(
+                    jsonData,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }
+                );
+
+                if (model == null)
+                {
+                    TempData["Error"] = "Dữ liệu không hợp lệ";
+                    return RedirectToAction(nameof(Builder), new { id });
+                }
+
+                // Upload cover image
+                if (coverFile is { Length: > 0 })
+                {
+                    var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    var ext = Path.GetExtension(coverFile.FileName).ToLowerInvariant();
+                    if (!allowed.Contains(ext))
+                    {
+                        TempData["Error"] = "Định dạng ảnh không hợp lệ (jpg, jpeg, png, gif, webp).";
+                        return RedirectToAction(nameof(Builder), new { id });
+                    }
+
+                    var folder = $"uploads/courses/{DateTime.UtcNow:yyyy/MM}";
+                    var physical = Path.Combine(_env.WebRootPath, folder);
+                    Directory.CreateDirectory(physical);
+
+                    var fileName = $"{Guid.NewGuid():N}{ext}";
+                    var fullPath = Path.Combine(physical, fileName);
+
+                    await using (var stream = System.IO.File.Create(fullPath))
+                    {
+                        await coverFile.CopyToAsync(stream);
+                    }
+
+                    model.CoverUrl = "/" + Path.Combine(folder, fileName).Replace("\\", "/");
+                }
+
+                // Sanitize HTML content
+                if (!string.IsNullOrEmpty(model.Summary))
+                    model.Summary = sanitizer.Sanitize(model.Summary);
+
+                foreach (var chapter in model.Chapters)
+                {
+                    if (!string.IsNullOrEmpty(chapter.Description))
+                        chapter.Description = sanitizer.Sanitize(chapter.Description);
+
+                    foreach (var lesson in chapter.Lessons)
+                    {
+                        foreach (var content in lesson.Contents)
+                        {
+                            if (!string.IsNullOrEmpty(content.Body))
+                                content.Body = sanitizer.Sanitize(content.Body);
+                        }
+                    }
+                }
+
+                // Update course structure
+                var course = _courseService.UpdateCourseStructure(id, model, userId);
+
+                if (course == null)
+                {
+                    TempData["Error"] = "Không thể cập nhật khóa học.";
+                    return RedirectToAction(nameof(Builder), new { id });
+                }
+
+                TempData["Success"] = "Cập nhật khóa học thành công!";
+                return RedirectToAction("Detail", new { slug = course.Slug });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course builder");
+                TempData["Error"] = "Có lỗi xảy ra: " + ex.Message;
+                return RedirectToAction(nameof(Builder), new { id });
+            }
+        }
     }
 }
