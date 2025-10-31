@@ -230,5 +230,21 @@ namespace Quiz_Web.Services
                 return false;
             }
         }
+
+        public List<CourseCategory> GetAllCategories()
+        {
+            try
+            {
+                return _context.CourseCategories
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.Name)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving course categories");
+                return new List<CourseCategory>();
+            }
+        }
     }
 }

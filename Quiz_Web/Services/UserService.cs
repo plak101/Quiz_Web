@@ -152,18 +152,44 @@ namespace Quiz_Web.Services
 		{
 			try
 			{
-				var user = _context.Users.FirstOrDefault(u => u.PasswordResetToken == token);
+				var user = _context.Users.FirstOrDefault(u => u.PasswordResetToken == token
+				&& u.PasswordResetTokenExpiry.HasValue
+				&& u.PasswordResetTokenExpiry > DateTime.UtcNow);
 
-				if (user == null || user.PasswordResetToken == null || user.PasswordResetTokenExpiry <= DateTime.UtcNow)
-					return false;
+				if (user == null) return false;
 
 				user.PasswordHash = newPassword;
 				user.PasswordResetToken = null;
 				user.PasswordResetTokenExpiry = null;
-
 				_context.SaveChanges();
+
 				return true;
-			}catch(Exception ex)
+			}
+			catch (Exception ex)
+			{
+				return false;
+			}
+		}
+
+		public bool HasUserInterests(int userId)
+		{
+			try
+			{
+				return _context.UserInterests.Any(ui => ui.UserId == userId);
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
+		public bool HasUserProfile(int userId)
+		{
+			try
+			{
+				return _context.UserProfiles.Any(up => up.UserId == userId);
+			}
+			catch
 			{
 				return false;
 			}

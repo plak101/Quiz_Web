@@ -53,11 +53,22 @@ namespace Quiz_Web.Controllers
 				{
 					var claims = new List<Claim>();
 					claims.Add(new Claim(ClaimTypes.Name, user.FullName));
+					claims.Add(new Claim(ClaimTypes.Email, user.Email));
 					claims.Add(new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()));
 					claims.Add(new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty));
 
 					var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 					await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+					// Check if user needs onboarding (first-time login)
+					// Check both UserProfile and UserInterests
+					var hasProfile = _userService.HasUserProfile(user.UserId);
+					var hasInterests = _userService.HasUserInterests(user.UserId);
+					
+					if (!hasProfile || !hasInterests)
+					{
+						return Json(new { status = WebConstants.SUCCESS, redirectUrl = "/Onboarding" });
+					}
 
 					var redirect = (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) ? returnUrl : "/";
 					return Json(new { status = WebConstants.SUCCESS, redirectUrl = redirect });
@@ -202,6 +213,13 @@ namespace Quiz_Web.Controllers
 			{
 				return Task.FromResult(Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() }));
 			}
+		}
+
+		[Route("/logout")]
+		public async Task<IActionResult> Logout()
+		{
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			return RedirectToAction("Login", "Account");
 		}
 	}
 }

@@ -16,5 +16,6 @@ namespace Quiz_Web.Services.IServices
 		Course? GetOwnedCourse(int id, int ownerId);
 		Course? UpdateCourse(EditCourseViewModel model, int ownerId, string? sanitizedDescription);
         bool DeleteCourse(int id, int ownerId, string? webRootPath);
+		List<CourseCategory> GetAllCategories();
 	}
 }
