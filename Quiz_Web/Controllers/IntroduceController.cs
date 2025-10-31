@@ -12,11 +12,15 @@ namespace Quiz_Web.Controllers
             _logger = logger;
         }
 
-        [HttpGet]
-        [Route("/admin/Introduce")]
         public IActionResult Index()
         {
-            return View("~/Views/Introduce.cshtml");
+            // Nếu user đã đăng nhập, redirect đến Home/Index
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            
+            return View("~/Views/Introduce/Introduce.cshtml");
         }
     }
 }

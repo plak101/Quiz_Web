@@ -20,4 +20,6 @@ public partial class CourseCategory
     public DateTime CreatedAt { get; set; }
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
+
+    public virtual ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
 }

@@ -65,6 +65,8 @@ public partial class User
 
     public virtual ICollection<Test> Tests { get; set; } = new List<Test>();
 
+    public virtual ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
+
     public virtual UserProfile? UserProfile { get; set; }
 
     public virtual UserSetting? UserSetting { get; set; }

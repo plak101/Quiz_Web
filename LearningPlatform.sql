@@ -571,6 +571,20 @@ CREATE TABLE dbo.ErrorLogs (
 );
 GO
 
+CREATE TABLE dbo.UserInterests (
+    UserInterestId INT IDENTITY(1,1) PRIMARY KEY,
+    UserId         INT NOT NULL,
+    CategoryId     INT NOT NULL,
+    CreatedAt      DATETIME2(7) NOT NULL CONSTRAINT DF_UserInterests_CreatedAt DEFAULT SYSUTCDATETIME(),
+    
+    CONSTRAINT FK_UserInterests_User FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId),
+    CONSTRAINT FK_UserInterests_Category FOREIGN KEY (CategoryId) REFERENCES dbo.CourseCategories(CategoryId),
+    
+    -- Đảm bảo người dùng không chọn trùng lặp một chủ đề
+    CONSTRAINT UQ_UserInterests_User_Category UNIQUE (UserId, CategoryId)
+);
+GO
+
 /* =========================================================
    10) SEED DATA (tối thiểu để chạy thử)
    ========================================================= */

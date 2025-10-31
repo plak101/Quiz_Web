@@ -15,5 +15,15 @@ namespace Quiz_Web.Services.IServices
 		bool GeneratePasswordResetToken(string email, out string token);
 		bool ValidatePasswordResetToken(string token);
 		bool ResetPassword(string token, string newPassword);
+
+		// Onboarding
+		bool HasUserInterests(int userId);
+		bool HasUserProfile(int userId);
+
+		// Account Management
+		User? GetUserById(int userId);
+		bool UpdateEmail(int userId, string newEmail);
+		bool UpdatePassword(int userId, string newPasswordHash);
+		bool UpdateProfile(int userId, string fullName, string? phone);
 	}
 }

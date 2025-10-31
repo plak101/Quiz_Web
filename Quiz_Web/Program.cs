@@ -46,6 +46,9 @@ builder.Services.AddScoped<ICreateTestService, CreateTestService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
+// Register background service for course recommendations
+builder.Services.AddHostedService<CourseRecommendationService>();
+
 // Html sanitizer for CKEditor content
 builder.Services.AddSingleton(sp =>
 {
@@ -72,9 +75,16 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
+// Add explicit route for Onboarding
+app.MapControllerRoute(
+    name: "onboarding",
+    pattern: "Onboarding/{action=Index}/{id?}",
+    defaults: new { controller = "Onboarding" });
+
+// Route m?c ??nh tr? ??n Welcome action ?? x? lý logic
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Welcome}/{id?}")
     .WithStaticAssets();
 
 app.Run();
