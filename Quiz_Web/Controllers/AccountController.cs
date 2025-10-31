@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Authorization;
 using Quiz_Web.Helper;
 using Quiz_Web.Models.Entities;
 using Quiz_Web.Services.IServices;
@@ -220,6 +221,204 @@ namespace Quiz_Web.Controllers
 		{
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 			return RedirectToAction("Login", "Account");
+		}
+
+		[Authorize]
+		[Route("/account/settings")]
+		public IActionResult Settings()
+		{
+			var userId = GetCurrentUserId();
+			var user = _userService.GetUserById(userId);
+			if (user == null)
+			{
+				return RedirectToAction("Login");
+			}
+			return View(user);
+		}
+
+		[Authorize]
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<JsonResult> UpdateEmail(string newEmail)
+		{
+			try
+			{
+				var userId = GetCurrentUserId();
+				if (!Validation.IsValidEmail(newEmail))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Email không đúng định dạng" });
+				}
+
+				if (_userService.ExistsEmail(newEmail))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Email đã được sử dụng" });
+				}
+
+				if (_userService.UpdateEmail(userId, newEmail))
+				{
+					// Update Claims with new Email
+					var user = _userService.GetUserById(userId);
+					if (user != null)
+					{
+						var claims = new List<Claim>
+						{
+							new Claim(ClaimTypes.Name, user.FullName),
+							new Claim(ClaimTypes.Email, user.Email),
+							new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+							new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty)
+						};
+
+						var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+						await HttpContext.SignInAsync(
+							CookieAuthenticationDefaults.AuthenticationScheme, 
+							new ClaimsPrincipal(claimsIdentity)
+						);
+					}
+
+					return Json(new { status = WebConstants.SUCCESS, message = "Cập nhật email thành công", email = newEmail });
+				}
+				else
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Không thể cập nhật email" });
+				}
+			}
+			catch (Exception ex)
+			{
+				return Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() });
+			}
+		}
+
+		[Authorize]
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<JsonResult> UpdatePassword(string currentPassword, string newPassword, string confirmPassword)
+		{
+			try
+			{
+				var userId = GetCurrentUserId();
+				var user = _userService.GetUserById(userId);
+
+				if (user == null)
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Người dùng không tồn tại" });
+				}
+
+				// Verify current password
+				if (user.PasswordHash != HashHelper.ComputeHash(currentPassword))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Mật khẩu hiện tại không đúng" });
+				}
+
+				if (!Validation.IsValidPassword(newPassword))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt" });
+				}
+
+				if (newPassword != confirmPassword)
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Mật khẩu xác nhận không khớp" });
+				}
+
+				if (_userService.UpdatePassword(userId, HashHelper.ComputeHash(newPassword)))
+				{
+					return Json(new { status = WebConstants.SUCCESS, message = "Cập nhật mật khẩu thành công" });
+				}
+				else
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Không thể cập nhật mật khẩu" });
+				}
+			}
+			catch (Exception ex)
+			{
+				return Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() });
+			}
+		}
+
+		[Authorize]
+		[Route("/account/profile")]
+		public IActionResult Profile()
+		{
+			var userId = GetCurrentUserId();
+			var user = _userService.GetUserById(userId);
+			if (user == null)
+			{
+				return RedirectToAction("Login");
+			}
+			return View(user);
+		}
+
+		[Authorize]
+		[Route("/account/purchase-history")]
+		public IActionResult PurchaseHistory()
+		{
+			var userId = GetCurrentUserId();
+			var user = _userService.GetUserById(userId);
+			if (user == null)
+			{
+				return RedirectToAction("Login");
+			}
+			return View(user);
+		}
+
+		[Authorize]
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<JsonResult> UpdateProfile(string fullName, string? phone)
+		{
+			try
+			{
+				var userId = GetCurrentUserId();
+				
+				if (string.IsNullOrWhiteSpace(fullName))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Họ và tên không được để trống" });
+				}
+
+				if (!string.IsNullOrEmpty(phone) && !Validation.IsValidPhone(phone))
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Số điện thoại không đúng định dạng" });
+				}
+
+				if (_userService.UpdateProfile(userId, fullName, phone))
+				{
+                    var user = _userService.GetUserById(userId);
+                    if (user != null)
+                    {
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, user.FullName),
+                            new Claim(ClaimTypes.Email, user.Email),
+                            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                            new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty)
+                        };
+
+                        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(
+                            CookieAuthenticationDefaults.AuthenticationScheme,
+                            new ClaimsPrincipal(claimsIdentity)
+                        );
+                    }
+                    return Json(new { status = WebConstants.SUCCESS, message = "Cập nhật hồ sơ thành công" });
+				}
+				else
+				{
+					return Json(new { status = WebConstants.ERROR, message = "Không thể cập nhật hồ sơ" });
+				}
+			}
+			catch (Exception ex)
+			{
+				return Json(new { status = WebConstants.ERROR, message = "Lỗi hệ thống", error = ex.ToString() });
+			}
+		}
+
+		private int GetCurrentUserId()
+		{
+			var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+			if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+			{
+				return userId;
+			}
+			return 0;
 		}
 	}
 }

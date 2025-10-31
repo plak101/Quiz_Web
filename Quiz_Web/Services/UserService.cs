@@ -194,5 +194,62 @@ namespace Quiz_Web.Services
 				return false;
 			}
 		}
+		public User? GetUserById(int userId)
+		{
+			return _context.Users
+				.Include(u => u.Role)
+				.FirstOrDefault(u => u.UserId == userId);
+		}
+
+		public bool UpdateEmail(int userId, string newEmail)
+		{
+			try
+			{
+				var user = _context.Users.Find(userId);
+				if (user == null) return false;
+
+				user.Email = newEmail.ToLower().Trim();
+				_context.SaveChanges();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
+		public bool UpdatePassword(int userId, string newPasswordHash)
+		{
+			try
+			{
+				var user = _context.Users.Find(userId);
+				if (user == null) return false;
+
+				user.PasswordHash = newPasswordHash;
+				_context.SaveChanges();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		public bool UpdateProfile(int userId, string fullName, string? phone)
+		{
+			try
+			{
+				var user = _context.Users.Find(userId);
+				if (user == null) return false;
+
+				user.FullName = fullName.Trim();
+				user.Phone = phone?.Trim();
+				_context.SaveChanges();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
 	}
 }
