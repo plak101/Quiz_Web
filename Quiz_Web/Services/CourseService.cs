@@ -231,6 +231,8 @@ namespace Quiz_Web.Services
             }
         }
 
+        // ============= NEW METHODS FOR COURSE BUILDER =============
+
         public List<CourseCategory> GetAllCategories()
         {
             try
@@ -242,9 +244,314 @@ namespace Quiz_Web.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving course categories");
+                _logger.LogError(ex, "Error retrieving categories");
                 return new List<CourseCategory>();
             }
         }
-    }
+
+        public Course? CreateCourseWithStructure(CourseBuilderViewModel model, int ownerId)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                // Step 1: Create Course
+                var course = new Course
+                {
+                    OwnerId = ownerId,
+                    CategoryId = model.CategoryId,
+                    Title = model.Title,
+                    Slug = model.Slug,
+                    Summary = model.Summary,
+                    CoverUrl = model.CoverUrl,
+                    Price = model.Price ?? 0,
+                    IsPublished = model.IsPublished,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Courses.Add(course);
+                _context.SaveChanges();
+
+                // Step 2: Create Chapters, Lessons, and LessonContents
+                foreach (var chapterVM in model.Chapters)
+                {
+                    var chapter = new CourseChapter
+                    {
+                        CourseId = course.CourseId,
+                        Title = chapterVM.Title,
+                        Description = chapterVM.Description,
+                        OrderIndex = chapterVM.OrderIndex
+                    };
+
+                    _context.CourseChapters.Add(chapter);
+                    _context.SaveChanges();
+
+                    foreach (var lessonVM in chapterVM.Lessons)
+                    {
+                        var lesson = new Lesson
+                        {
+                            ChapterId = chapter.ChapterId,
+                            Title = lessonVM.Title,
+                            Description = lessonVM.Description,
+                            OrderIndex = lessonVM.OrderIndex,
+                            Visibility = lessonVM.Visibility,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Lessons.Add(lesson);
+                        _context.SaveChanges();
+
+                        foreach (var contentVM in lessonVM.Contents)
+                        {
+                            var content = new LessonContent
+                            {
+                                LessonId = lesson.LessonId,
+                                ContentType = contentVM.ContentType,
+                                RefId = contentVM.RefId,
+                                Title = contentVM.Title,
+                                Body = contentVM.Body,
+                                OrderIndex = contentVM.OrderIndex,
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            _context.LessonContents.Add(content);
+                        }
+                        _context.SaveChanges();
+                    }
+                }
+
+                transaction.Commit();
+                return course;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                _logger.LogError(ex, "Error creating course with structure");
+                return null;
+            }
+        }
+
+        public Course? UpdateCourseStructure(int courseId, CourseBuilderViewModel model, int ownerId)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var course = _context.Courses
+                    .Include(c => c.CourseChapters)
+                        .ThenInclude(ch => ch.Lessons)
+                            .ThenInclude(l => l.LessonContents)
+                    .FirstOrDefault(c => c.CourseId == courseId && c.OwnerId == ownerId);
+
+                if (course == null) return null;
+
+                // Update course info
+                course.CategoryId = model.CategoryId;
+                course.Title = model.Title;
+                course.Slug = model.Slug;
+                course.Summary = model.Summary;
+                course.CoverUrl = model.CoverUrl;
+                course.Price = model.Price ?? 0;
+                course.IsPublished = model.IsPublished;
+                course.UpdatedAt = DateTime.UtcNow;
+
+                // Remove old structure
+                foreach (var chapter in course.CourseChapters.ToList())
+                {
+                    foreach (var lesson in chapter.Lessons.ToList())
+                    {
+                        _context.LessonContents.RemoveRange(lesson.LessonContents);
+                        _context.Lessons.Remove(lesson);
+                    }
+                    _context.CourseChapters.Remove(chapter);
+                }
+                _context.SaveChanges();
+
+                // Add new structure
+                foreach (var chapterVM in model.Chapters)
+                {
+                    var chapter = new CourseChapter
+                    {
+                        CourseId = course.CourseId,
+                        Title = chapterVM.Title,
+                        Description = chapterVM.Description,
+                        OrderIndex = chapterVM.OrderIndex
+                    };
+
+                    _context.CourseChapters.Add(chapter);
+                    _context.SaveChanges();
+
+                    foreach (var lessonVM in chapterVM.Lessons)
+                    {
+                        var lesson = new Lesson
+                        {
+                            ChapterId = chapter.ChapterId,
+                            Title = lessonVM.Title,
+                            Description = lessonVM.Description,
+                            OrderIndex = lessonVM.OrderIndex,
+                            Visibility = lessonVM.Visibility,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Lessons.Add(lesson);
+                        _context.SaveChanges();
+
+                        foreach (var contentVM in lessonVM.Contents)
+                        {
+                            var content = new LessonContent
+                            {
+                                LessonId = lesson.LessonId,
+                                ContentType = contentVM.ContentType,
+                                RefId = contentVM.RefId,
+                                Title = contentVM.Title,
+                                Body = contentVM.Body,
+                                OrderIndex = contentVM.OrderIndex,
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            _context.LessonContents.Add(content);
+                        }
+                        _context.SaveChanges();
+                    }
+                }
+
+                transaction.Commit();
+                return course;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                _logger.LogError(ex, "Error updating course structure");
+                return null;
+            }
+        }
+
+        public Course? GetCourseWithFullStructure(int courseId, int ownerId)
+        {
+            try
+            {
+                return _context.Courses
+                    .Include(c => c.Category)
+                    .Include(c => c.CourseChapters.OrderBy(ch => ch.OrderIndex))
+                        .ThenInclude(ch => ch.Lessons.OrderBy(l => l.OrderIndex))
+                            .ThenInclude(l => l.LessonContents.OrderBy(lc => lc.OrderIndex))
+                    .FirstOrDefault(c => c.CourseId == courseId && c.OwnerId == ownerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving course with full structure");
+                return null;
+            }
+        }
+
+        public CourseBuilderViewModel? GetCourseBuilderData(int courseId, int ownerId)
+        {
+            try
+            {
+                var course = GetCourseWithFullStructure(courseId, ownerId);
+                if (course == null) return null;
+
+                var viewModel = new CourseBuilderViewModel
+                {
+                    Title = course.Title,
+                    Slug = course.Slug,
+                    Summary = course.Summary,
+                    CategoryId = course.CategoryId,
+                    CoverUrl = course.CoverUrl,
+                    Price = course.Price,
+                    IsPublished = course.IsPublished,
+                    Chapters = course.CourseChapters.Select(ch => new ChapterBuilderViewModel
+                    {
+                        ChapterId = ch.ChapterId,
+                        Title = ch.Title,
+                        Description = ch.Description,
+                        OrderIndex = ch.OrderIndex,
+                        Lessons = ch.Lessons.Select(l => new LessonBuilderViewModel
+                        {
+                            LessonId = l.LessonId,
+                            Title = l.Title,
+                            Description = l.Description,
+                            OrderIndex = l.OrderIndex,
+                            Visibility = l.Visibility,
+                            Contents = l.LessonContents.Select(lc => new LessonContentBuilderViewModel
+                            {
+                                ContentId = lc.ContentId,
+                                ContentType = lc.ContentType,
+                                RefId = lc.RefId,
+                                Title = lc.Title,
+                                Body = lc.Body,
+                                OrderIndex = lc.OrderIndex
+                            }).ToList()
+                        }).ToList()
+                    }).ToList()
+                };
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course builder data");
+                return null;
+            }
+        }
+
+        public bool AutosaveCourse(int? courseId, CourseAutosaveViewModel model, int ownerId)
+        {
+            try
+            {
+                if (courseId.HasValue)
+                {
+                    var course = _context.Courses.FirstOrDefault(c => c.CourseId == courseId && c.OwnerId == ownerId);
+                    if (course != null)
+                    {
+                        course.Title = model.Title;
+                        course.Slug = model.Slug;
+                        course.Summary = model.Summary;
+                        course.CategoryId = model.CategoryId;
+                        course.CoverUrl = model.CoverUrl;
+                        course.Price = model.Price ?? 0;
+                        course.UpdatedAt = DateTime.UtcNow;
+                        _context.SaveChanges();
+                        return true;
+                    }
+                }
+                else
+                {
+                    // Create new draft course
+                    var course = new Course
+                    {
+                        OwnerId = ownerId,
+                        CategoryId = model.CategoryId,
+                        Title = model.Title,
+                        Slug = model.Slug,
+                        Summary = model.Summary,
+                        CoverUrl = model.CoverUrl,
+                        Price = model.Price ?? 0,
+                        IsPublished = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Courses.Add(course);
+                    _context.SaveChanges();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error autosaving course");
+                return false;
+            }
+        }
+
+		public bool IsSlugUnique(string slug, int? excludeCourseId)
+		{
+            try
+            {
+                return !_context.Courses.Any(c => c.Slug == slug && (!excludeCourseId.HasValue || c.CourseId != excludeCourseId));
+            }catch(Exception ex)
+            {
+                _logger.LogError(ex, $"Error checking slug uniqueness: {slug}");
+                return false;
+			}
+		}
+	}
 }
