@@ -10,6 +10,8 @@
     <Folder Include="Models\EF\" />
     <Folder Include="Views\User\" />
     <Folder Include="wwwroot\asset\font\" />
+    <Folder Include="wwwroot\asset\image\NewFolder1\" />
+    <Folder Include="wwwroot\asset\image\NewFolder\" />
     <Folder Include="wwwroot\asset\js\" />
   </ItemGroup>
 
