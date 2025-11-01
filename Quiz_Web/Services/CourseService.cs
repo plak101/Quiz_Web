@@ -143,6 +143,20 @@ namespace Quiz_Web.Services
             }
         }
 
+        // New overload
+        public bool IsSlugUnique(string slug, int? excludeCourseId)
+        {
+            try
+            {
+                return !_context.Courses.Any(c => c.Slug == slug && (!excludeCourseId.HasValue || c.CourseId != excludeCourseId.Value));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error checking slug uniqueness (exclude {excludeCourseId}): {slug}");
+                return false;
+            }
+        }
+
         // Added
         public List<Course> GetCoursesByOwner(int ownerId)
         {
@@ -502,6 +516,13 @@ namespace Quiz_Web.Services
                     var course = _context.Courses.FirstOrDefault(c => c.CourseId == courseId && c.OwnerId == ownerId);
                     if (course != null)
                     {
+                        // Prevent unique constraint violation early
+                        var duplicate = _context.Courses.Any(c => c.Slug == model.Slug && c.CourseId != course.CourseId);
+                        if (duplicate)
+                        {
+                            return false;
+                        }
+
                         course.Title = model.Title;
                         course.Slug = model.Slug;
                         course.Summary = model.Summary;
@@ -515,6 +536,13 @@ namespace Quiz_Web.Services
                 }
                 else
                 {
+                    // Avoid insert when slug duplicates
+                    var duplicate = _context.Courses.Any(c => c.Slug == model.Slug);
+                    if (duplicate)
+                    {
+                        return false;
+                    }
+
                     // Create new draft course
                     var course = new Course
                     {
@@ -541,17 +569,5 @@ namespace Quiz_Web.Services
                 return false;
             }
         }
-
-		public bool IsSlugUnique(string slug, int? excludeCourseId)
-		{
-            try
-            {
-                return !_context.Courses.Any(c => c.Slug == slug && (!excludeCourseId.HasValue || c.CourseId != excludeCourseId));
-            }catch(Exception ex)
-            {
-                _logger.LogError(ex, $"Error checking slug uniqueness: {slug}");
-                return false;
-			}
-		}
-	}
+    }
 }

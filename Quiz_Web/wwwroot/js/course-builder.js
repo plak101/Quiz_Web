@@ -19,6 +19,36 @@ let lessonCounter = 0;
 let contentCounter = 0;
 let autosaveTimer = null;
 let ckEditorInstances = {};
+let lastSlugCheck = { value: '', available: true, loading: false };
+let slugDebounceTimer = null;
+let lastSlugNotice = { value: '', at: 0 };
+
+// Helper: notify by toastr (fallback to alert) and jump to Slug input (dedup)
+function notifyAndFocusSlug(message, slugValue) {
+    const slug = slugValue ?? (document.getElementById('Slug')?.value || '');
+    const now = Date.now();
+    if (lastSlugNotice.value === slug && now - lastSlugNotice.at < 2500) {
+        // avoid spamming the same message repeatedly
+        return;
+    }
+    lastSlugNotice = { value: slug, at: now };
+
+    const msg = message || 'Slug này đã tồn tại, vui lòng chọn slug khác.';
+    if (window.toastr && typeof toastr.error === 'function') {
+        try { toastr.clear(); } catch {}
+        toastr.error(msg, 'Thông báo');
+    } else {
+        try { alert(msg); } catch { /* no-op */ }
+    }
+    const slugInput = document.getElementById('Slug');
+    if (slugInput) {
+        slugInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            slugInput.focus({ preventScroll: true });
+            if (typeof slugInput.select === 'function') slugInput.select();
+        }, 200);
+    }
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -35,11 +65,66 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize slug generation
     const titleInput = document.getElementById('Title');
+    const slugInput = document.getElementById('Slug');
     if (titleInput) {
-        titleInput.addEventListener('input', generateSlug);
+        titleInput.addEventListener('input', () => {
+            generateSlug();
+            // clear error while typing; re-validate with debounce
+            hideFieldError('Slug');
+            lastSlugCheck = { value: '', available: undefined, loading: false };
+        });
+    }
+    if (slugInput) {
+        const debouncedCheck = () => {
+            const slug = slugInput.value.trim();
+            if (!slug) { hideFieldError('Slug'); return; }
+            clearTimeout(slugDebounceTimer);
+            hideFieldError('Slug'); // clear old red text as user edits
+            lastSlugCheck.loading = true;
+            slugDebounceTimer = setTimeout(() => {
+                checkSlugUnique(slug).then(avail => {
+                    if (!avail) {
+                        showFieldError('Slug', 'Slug này đã tồn tại');
+                        notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', slug);
+                    } else {
+                        // valid -> clear any previous toast
+                        if (window.toastr && typeof toastr.clear === 'function') toastr.clear();
+                    }
+                }).catch(() => { /* no-op */ });
+            }, 300);
+        };
+        slugInput.addEventListener('input', debouncedCheck);
+        slugInput.addEventListener('blur', debouncedCheck);
     }
 });
+// Helper: get courseId from query when editing
+function getCurrentCourseId() {
+    const qs = new URLSearchParams(window.location.search);
+    const id = qs.get('id');
+    return id ? parseInt(id) : null;
+}
 
+// API call: check slug uniqueness (no toastr here; callers decide UI)
+async function checkSlugUnique(slug) {
+    const courseId = getCurrentCourseId();
+    lastSlugCheck.loading = true;
+    try {
+        const url = `/courses/check-slug?slug=${encodeURIComponent(slug)}${courseId ? `&excludeId=${courseId}` : ''}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+        const data = await res.json();
+        lastSlugCheck = { value: slug, available: !!data.available, loading: false };
+        if (data.available) {
+            hideFieldError('Slug');
+            if (window.toastr && typeof toastr.clear === 'function') toastr.clear();
+        } else {
+            showFieldError('Slug', 'Slug này đã tồn tại');
+        }
+        return !!data.available;
+    } catch (e) {
+        lastSlugCheck = { value: slug, available: true, loading: false };
+        return true; // Không chặn trong trường hợp lỗi mạng tạm thời
+    }
+}
 // ============================================
 // CKEDITOR INITIALIZATION
 // ============================================
@@ -127,14 +212,25 @@ function setupEventListeners() {
 // ============================================
 // STEP NAVIGATION
 // ============================================
-function nextStep() {
+async function nextStep() {
     // Save first so validation reads the latest DOM-derived state (especially for step 2)
     saveStepData();
 
     if (!validateCurrentStep()) {
         return;
     }
-    
+    // Extra: step 1 must check slug uniqueness server-side
+    if (currentStep === 1) {
+        const slug = document.getElementById('Slug')?.value.trim();
+        if (slug) {
+            // Only re-check if slug changed or no previous result
+            if (lastSlugCheck.value !== slug || lastSlugCheck.loading || lastSlugCheck.available !== true) {
+                const available = await checkSlugUnique(slug);
+                if (!available) { notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', slug); return; }
+            }
+        }
+    }
+
     if (currentStep < 4) {
         currentStep++;
         updateStepDisplay();
@@ -195,7 +291,6 @@ function updateStepDisplay() {
 // ============================================
 function validateCurrentStep() {
     let isValid = true;
-    const errors = [];
     
     // Clear previous errors
     document.querySelectorAll('.field-error').forEach(el => {
@@ -250,6 +345,14 @@ function showFieldError(fieldName, message) {
     if (errorSpan) {
         errorSpan.textContent = message;
         errorSpan.classList.add('show');
+    }
+}
+
+function hideFieldError(fieldName) {
+    const errorSpan = document.querySelector(`.field-error[data-field="${fieldName}"]`);
+    if (errorSpan) {
+        errorSpan.textContent = '';
+        errorSpan.classList.remove('show');
     }
 }
 
@@ -348,7 +451,7 @@ function generateSlug() {
         'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
         'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
         'đ': 'd',
-        'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
+        'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ả': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
         'È': 'E', 'É': 'E', 'Ẹ': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'ệ': 'E', 'Ể': 'E', 'Ễ': 'E',
         'Ì': 'I', 'Í': 'I', 'Ị': 'I', 'Ỉ': 'I', 'Ĩ': 'I',
         'Ò': 'O', 'Ó': 'O', 'Ọ': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ộ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ợ': 'O', 'Ở': 'O', 'Ỡ': 'O',
@@ -372,6 +475,7 @@ function generateSlug() {
         .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
     
+    //const slugInput = document.getElementById('Slug');
     slugInput.value = slug;
 }
 
@@ -831,16 +935,6 @@ function saveCourse(publish) {
     // Update publish status
     courseData.isPublished = publish;
     
-    // Collect all CKEditor data
-    for (const key in ckEditorInstances) {
-        if (key.startsWith('contentBody_')) {
-            // Save content body
-            const editor = ckEditorInstances[key];
-            // Find and update the content in courseData
-            // This is handled by the content management functions
-        }
-    }
-    
     // Prepare form data
     const form = document.getElementById('courseBuilderForm');
     const jsonDataInput = document.getElementById('jsonDataInput');
@@ -870,9 +964,14 @@ function startAutosave() {
     }, 10000);
 }
 
-function performAutosave() {
+async function performAutosave() {
     saveStepData();
-    
+
+    // Skip autosave when slug is invalid or not confirmed available for current value
+    const slug = courseData.slug?.trim();
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) return;
+    if (lastSlugCheck.value !== slug || lastSlugCheck.available !== true || lastSlugCheck.loading) return;
+
     const autosaveData = {
         courseId: new URLSearchParams(window.location.search).get('id'),
         title: courseData.title,
@@ -883,24 +982,40 @@ function performAutosave() {
         price: courseData.price,
         isPublished: courseData.isPublished
     };
-    
-    fetch('/courses/builder/autosave', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-        },
-        body: JSON.stringify(autosaveData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+
+    try {
+        const res = await fetch('/courses/builder/autosave', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify(autosaveData),
+            credentials: 'same-origin'
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch { /* no json body */ }
+
+        // If API signals duplicate slug, show UI error and mark cache
+        if (res.status === 409 && (data?.code === 'DuplicateSlug' || data?.message)) {
+            showFieldError('Slug', 'Slug này đã tồn tại');
+            lastSlugCheck = { value: autosaveData.slug, available: false, loading: false };
+            notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', autosaveData.slug);
+            return;
+        }
+
+        if (!res.ok || data?.success === false) {
+            console.warn('Autosave failed', data);
+            return;
+        }
+
+        if (data?.success) {
             showAutosaveStatus();
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Autosave error:', error);
-    });
+    }
 }
 
 function showAutosaveStatus() {
