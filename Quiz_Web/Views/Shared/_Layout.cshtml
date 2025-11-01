@@ -12,10 +12,11 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Quiz_Web.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CourseStyle.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/cart-dropdown.css" asp-append-version="true"/>
 
     @await RenderSectionAsync("Styles", required:false)
 </head>
-<body>
+<body data-user-authenticated="@(User.Identity?.IsAuthenticated == true ? "true" : "false")">
     <header>
         <nav class="navbar navbar-expand-lg navbar-light bg-white">
             <div class="container-fluid">
@@ -86,12 +87,8 @@
                             </a>
                         </li>
 
-                        <!-- Giỏ hàng Icon -->
-                        <li class="nav-item">
-                            <a class="nav-link px-2" href="#" title="Giỏ hàng">
-                                <i class="bi bi-cart3"></i>
-                            </a>
-                        </li>
+                        <!-- Cart Dropdown -->
+                        @await Html.PartialAsync("_CartDropdown")
 
                         <!-- Notification Dropdown -->
                         @if (User.Identity?.IsAuthenticated == true)
@@ -271,6 +268,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/cart-dropdown.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     @await Html.PartialAsync("_Toastr")
 </body>
