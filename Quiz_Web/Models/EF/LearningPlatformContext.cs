@@ -21,6 +21,8 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
+    public virtual DbSet<CartItem> CartItems { get; set; }
+
     public virtual DbSet<Certificate> Certificates { get; set; }
 
     public virtual DbSet<ContentShare> ContentShares { get; set; }
@@ -74,6 +76,8 @@ public partial class LearningPlatformContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<SavedItem> SavedItems { get; set; }
+
+    public virtual DbSet<ShoppingCart> ShoppingCarts { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
@@ -130,6 +134,25 @@ public partial class LearningPlatformContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.AuditLogs)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_AuditLogs_User");
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.CartItemId).HasName("PK__CartItem__488B0B0A300F98BA");
+
+            entity.HasIndex(e => new { e.CartId, e.CourseId }, "UQ_CartItems_Cart_Course").IsUnique();
+
+            entity.Property(e => e.AddedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.CartId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CartItems_Cart");
+
+            entity.HasOne(d => d.Course).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CartItems_Course");
         });
 
         modelBuilder.Entity<Certificate>(entity =>
@@ -597,6 +620,20 @@ public partial class LearningPlatformContext : DbContext
                 .HasForeignKey(d => d.LibraryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_SavedItems_Library");
+        });
+
+        modelBuilder.Entity<ShoppingCart>(entity =>
+        {
+            entity.HasKey(e => e.CartId).HasName("PK__Shopping__51BCD7B7518F94E1");
+
+            entity.HasIndex(e => e.UserId, "UQ_ShoppingCarts_UserId").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.User).WithOne(p => p.ShoppingCart)
+                .HasForeignKey<ShoppingCart>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ShoppingCarts_User");
         });
 
         modelBuilder.Entity<Tag>(entity =>

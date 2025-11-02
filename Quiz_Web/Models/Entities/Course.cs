@@ -31,6 +31,8 @@ public partial class Course
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+
     public virtual CourseCategory? Category { get; set; }
 
     public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
