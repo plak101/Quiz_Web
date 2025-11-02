@@ -12,7 +12,8 @@ namespace Quiz_Web.Services.IServices
 		List<Course> SearchCourses(string keyword);
 		Course? CreateCourse(CreateCourseViewModel model, int ownerId);
 		bool IsSlugUnique(string slug);
-		bool IsSlugUnique(string slug, int? excludeCourseId);// Overloaded method kiem tra slug loai tru khoa hoc co id truyen vao
+        // New overload: allow excluding a course when checking uniqueness (for edit/builder)
+        bool IsSlugUnique(string slug, int? excludeCourseId);
 		List<Course> GetCoursesByOwner(int ownerId);
 		Course? GetOwnedCourse(int id, int ownerId);
 		Course? UpdateCourse(EditCourseViewModel model, int ownerId, string? sanitizedDescription);

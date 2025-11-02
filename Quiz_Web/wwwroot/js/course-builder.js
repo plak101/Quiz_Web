@@ -19,27 +19,112 @@ let lessonCounter = 0;
 let contentCounter = 0;
 let autosaveTimer = null;
 let ckEditorInstances = {};
+let lastSlugCheck = { value: '', available: true, loading: false };
+let slugDebounceTimer = null;
+let lastSlugNotice = { value: '', at: 0 };
+
+// Helper: notify by toastr (fallback to alert) and jump to Slug input (dedup)
+function notifyAndFocusSlug(message, slugValue) {
+    const slug = slugValue ?? (document.getElementById('Slug')?.value || '');
+    const now = Date.now();
+    if (lastSlugNotice.value === slug && now - lastSlugNotice.at < 2500) {
+        // avoid spamming the same message repeatedly
+        return;
+    }
+    lastSlugNotice = { value: slug, at: now };
+
+    const msg = message || 'Slug này đã tồn tại, vui lòng chọn slug khác.';
+    if (window.toastr && typeof toastr.error === 'function') {
+        try { toastr.clear(); } catch { }
+        toastr.error(msg, 'Thông báo');
+    } else {
+        try { alert(msg); } catch { /* no-op */ }
+    }
+    const slugInput = document.getElementById('Slug');
+    if (slugInput) {
+        slugInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            slugInput.focus({ preventScroll: true });
+            if (typeof slugInput.select === 'function') slugInput.select();
+        }, 200);
+    }
+}
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeCKEditor();
     setupEventListeners();
-    
+
     // Load existing data if editing
     if (typeof window.existingCourseData !== 'undefined') {
         loadExistingData(window.existingCourseData);
     }
-    
+
     // Start autosave
     startAutosave();
-    
+
     // Initialize slug generation
     const titleInput = document.getElementById('Title');
+    const slugInput = document.getElementById('Slug');
     if (titleInput) {
-        titleInput.addEventListener('input', generateSlug);
+        titleInput.addEventListener('input', () => {
+            generateSlug();
+            // clear error while typing; re-validate with debounce
+            hideFieldError('Slug');
+            lastSlugCheck = { value: '', available: undefined, loading: false };
+        });
+    }
+    if (slugInput) {
+        const debouncedCheck = () => {
+            const slug = slugInput.value.trim();
+            if (!slug) { hideFieldError('Slug'); return; }
+            clearTimeout(slugDebounceTimer);
+            hideFieldError('Slug'); // clear old red text as user edits
+            lastSlugCheck.loading = true;
+            slugDebounceTimer = setTimeout(() => {
+                checkSlugUnique(slug).then(avail => {
+                    if (!avail) {
+                        showFieldError('Slug', 'Slug này đã tồn tại');
+                        notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', slug);
+                    } else {
+                        // valid -> clear any previous toast
+                        if (window.toastr && typeof toastr.clear === 'function') toastr.clear();
+                    }
+                }).catch(() => { /* no-op */ });
+            }, 300);
+        };
+        slugInput.addEventListener('input', debouncedCheck);
+        slugInput.addEventListener('blur', debouncedCheck);
     }
 });
+// Helper: get courseId from query when editing
+function getCurrentCourseId() {
+    const qs = new URLSearchParams(window.location.search);
+    const id = qs.get('id');
+    return id ? parseInt(id) : null;
+}
 
+// API call: check slug uniqueness (no toastr here; callers decide UI)
+async function checkSlugUnique(slug) {
+    const courseId = getCurrentCourseId();
+    lastSlugCheck.loading = true;
+    try {
+        const url = `/courses/check-slug?slug=${encodeURIComponent(slug)}${courseId ? `&excludeId=${courseId}` : ''}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+        const data = await res.json();
+        lastSlugCheck = { value: slug, available: !!data.available, loading: false };
+        if (data.available) {
+            hideFieldError('Slug');
+            if (window.toastr && typeof toastr.clear === 'function') toastr.clear();
+        } else {
+            showFieldError('Slug', 'Slug này đã tồn tại');
+        }
+        return !!data.available;
+    } catch (e) {
+        lastSlugCheck = { value: slug, available: true, loading: false };
+        return true; // Không chặn trong trường hợp lỗi mạng tạm thời
+    }
+}
 // ============================================
 // CKEDITOR INITIALIZATION
 // ============================================
@@ -116,7 +201,7 @@ function setupEventListeners() {
     if (coverFileInput) {
         coverFileInput.addEventListener('change', handleFileUpload);
     }
-    
+
     // Remove image button
     const removeImageBtn = document.querySelector('.remove-image');
     if (removeImageBtn) {
@@ -127,23 +212,34 @@ function setupEventListeners() {
 // ============================================
 // STEP NAVIGATION
 // ============================================
-function nextStep() {
+async function nextStep() {
     // Save first so validation reads the latest DOM-derived state (especially for step 2)
     saveStepData();
 
     if (!validateCurrentStep()) {
         return;
     }
-    
+    // Extra: step 1 must check slug uniqueness server-side
+    if (currentStep === 1) {
+        const slug = document.getElementById('Slug')?.value.trim();
+        if (slug) {
+            // Only re-check if slug changed or no previous result
+            if (lastSlugCheck.value !== slug || lastSlugCheck.loading || lastSlugCheck.available !== true) {
+                const available = await checkSlugUnique(slug);
+                if (!available) { notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', slug); return; }
+            }
+        }
+    }
+
     if (currentStep < 4) {
         currentStep++;
         updateStepDisplay();
-        
+
         // Special handling for step 3 - populate lesson selector
         if (currentStep === 3) {
             populateLessonSelector();
         }
-        
+
         // Special handling for step 4 - show preview
         if (currentStep === 4) {
             renderPreview();
@@ -163,29 +259,29 @@ function updateStepDisplay() {
     const progressFill = document.querySelector('.progress-fill');
     const progressPercentage = ((currentStep - 1) / 3) * 100;
     progressFill.style.width = `${progressPercentage}%`;
-    
+
     // Update step indicators
     document.querySelectorAll('.step').forEach((step, index) => {
         const stepNum = index + 1;
         step.classList.remove('active', 'completed');
-        
+
         if (stepNum === currentStep) {
             step.classList.add('active');
         } else if (stepNum < currentStep) {
             step.classList.add('completed');
         }
     });
-    
+
     // Update step content
     document.querySelectorAll('.step-content').forEach(content => {
         content.classList.remove('active');
     });
-    
+
     const activeContent = document.querySelector(`.step-content[data-step="${currentStep}"]`);
     if (activeContent) {
         activeContent.classList.add('active');
     }
-    
+
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -195,24 +291,23 @@ function updateStepDisplay() {
 // ============================================
 function validateCurrentStep() {
     let isValid = true;
-    const errors = [];
-    
+
     // Clear previous errors
     document.querySelectorAll('.field-error').forEach(el => {
         el.classList.remove('show');
         el.textContent = '';
     });
-    
+
     if (currentStep === 1) {
         // Validate course info
         const title = document.getElementById('Title').value.trim();
         const slug = document.getElementById('Slug').value.trim();
-        
+
         if (!title) {
             showFieldError('Title', 'Tiêu đề khóa học là bắt buộc');
             isValid = false;
         }
-        
+
         if (!slug) {
             showFieldError('Slug', 'Slug là bắt buộc');
             isValid = false;
@@ -221,11 +316,11 @@ function validateCurrentStep() {
             isValid = false;
         }
     }
-    
+
     if (currentStep === 2) {
         // Validate chapters and lessons
         if (courseData.chapters.length === 0) {
-            alert('Vui lòng thêm ít nhất một chương');
+            toastr.error('Vui lòng thêm ít nhất một chương');
             isValid = false;
         } else {
             let hasLesson = false;
@@ -241,7 +336,7 @@ function validateCurrentStep() {
             }
         }
     }
-    
+
     return isValid;
 }
 
@@ -250,6 +345,15 @@ function showFieldError(fieldName, message) {
     if (errorSpan) {
         errorSpan.textContent = message;
         errorSpan.classList.add('show');
+        toastr.error(message);
+    }
+}
+
+function hideFieldError(fieldName) {
+    const errorSpan = document.querySelector(`.field-error[data-field="${fieldName}"]`);
+    if (errorSpan) {
+        errorSpan.textContent = '';
+        errorSpan.classList.remove('show');
     }
 }
 
@@ -261,29 +365,29 @@ function saveStepData() {
         // Save course info
         courseData.title = document.getElementById('Title').value.trim();
         courseData.slug = document.getElementById('Slug').value.trim();
-        
+
         const summaryEditor = ckEditorInstances['Summary'];
         courseData.summary = summaryEditor ? summaryEditor.getData() : '';
-        
+
         const categorySelect = document.getElementById('CategoryId');
         courseData.categoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
-        
+
         courseData.coverUrl = document.getElementById('CoverUrl').value;
         courseData.price = parseFloat(document.getElementById('Price').value) || 0;
-        courseData.isPublished = document.getElementById('IsPublished').checked;
+        courseData.isPublished = false;
     }
-    
+
     if (currentStep === 2) {
         // Save chapters and lessons from DOM
         courseData.chapters = [];
-        
+
         document.querySelectorAll('.chapter-item').forEach((chapterEl, chapterIndex) => {
             const chapterId = chapterEl.dataset.chapterId;
             const chapterTitle = chapterEl.querySelector('.chapter-title-input').value.trim();
-            
+
             const chapterDescEditor = ckEditorInstances[`chapterDesc_${chapterId}`];
             const chapterDesc = chapterDescEditor ? chapterDescEditor.getData() : '';
-            
+
             const chapter = {
                 chapterId: null,
                 title: chapterTitle,
@@ -291,11 +395,11 @@ function saveStepData() {
                 orderIndex: chapterIndex,
                 lessons: []
             };
-            
+
             chapterEl.querySelectorAll('.lesson-item').forEach((lessonEl, lessonIndex) => {
                 const lessonTitle = lessonEl.querySelector('.lesson-title-input').value.trim();
                 const lessonVisibility = lessonEl.querySelector('.lesson-visibility').value;
-                
+
                 const lesson = {
                     lessonId: null,
                     title: lessonTitle,
@@ -304,16 +408,16 @@ function saveStepData() {
                     visibility: lessonVisibility,
                     contents: []
                 };
-                
+
                 // Find existing lesson contents if any
                 const existingLesson = findLessonInData(lessonEl.dataset.lessonId);
                 if (existingLesson && existingLesson.contents) {
                     lesson.contents = existingLesson.contents;
                 }
-                
+
                 chapter.lessons.push(lesson);
             });
-            
+
             courseData.chapters.push(chapter);
         });
     }
@@ -336,19 +440,19 @@ function findLessonInData(lessonId) {
 function generateSlug() {
     const titleInput = document.getElementById('Title');
     const slugInput = document.getElementById('Slug');
-    
+
     if (!titleInput || !slugInput) return;
-    
+
     // Vietnamese to ASCII mapping
     const vietnameseMap = {
         'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a', 'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
         'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
         'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
         'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o', 'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-        'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
+        'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừng': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
         'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
         'đ': 'd',
-        'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
+        'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ả': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
         'È': 'E', 'É': 'E', 'Ẹ': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'ệ': 'E', 'Ể': 'E', 'Ễ': 'E',
         'Ì': 'I', 'Í': 'I', 'Ị': 'I', 'Ỉ': 'I', 'Ĩ': 'I',
         'Ò': 'O', 'Ó': 'O', 'Ọ': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ộ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ợ': 'O', 'Ở': 'O', 'Ỡ': 'O',
@@ -356,14 +460,14 @@ function generateSlug() {
         'Ỳ': 'Y', 'Ý': 'Y', 'Ỵ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y',
         'Đ': 'D'
     };
-    
+
     let slug = titleInput.value;
-    
+
     // Replace Vietnamese characters
     for (let char in vietnameseMap) {
         slug = slug.replace(new RegExp(char, 'g'), vietnameseMap[char]);
     }
-    
+
     // Convert to slug format
     slug = slug
         .toLowerCase()
@@ -371,7 +475,8 @@ function generateSlug() {
         .replace(/\s+/g, '-') // Replace spaces with hyphens
         .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-    
+
+    //const slugInput = document.getElementById('Slug');
     slugInput.value = slug;
 }
 
@@ -381,16 +486,16 @@ function generateSlug() {
 function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const preview = document.getElementById('imagePreview');
         const img = preview.querySelector('img');
-        
+
         img.src = e.target.result;
         preview.style.display = 'block';
     };
-    
+
     reader.readAsDataURL(file);
 }
 
@@ -398,7 +503,7 @@ function removeImage() {
     const preview = document.getElementById('imagePreview');
     const fileInput = document.getElementById('CoverFile');
     const coverUrlInput = document.getElementById('CoverUrl');
-    
+
     preview.style.display = 'none';
     fileInput.value = '';
     coverUrlInput.value = '';
@@ -410,7 +515,7 @@ function removeImage() {
 function addChapter() {
     chapterCounter++;
     const chapterId = `chapter_${chapterCounter}`;
-    
+
     const chapterHTML = `
         <div class="chapter-item" data-chapter-id="${chapterId}">
             <div class="chapter-header">
@@ -445,23 +550,23 @@ function addChapter() {
             </div>
         </div>
     `;
-    
+
     const container = document.getElementById('chaptersContainer');
     container.insertAdjacentHTML('beforeend', chapterHTML);
-    
+
     // Initialize CKEditor for chapter description
     setTimeout(() => {
         initializeChapterDescriptionEditor(chapterId);
     }, 100);
-    
+
     // Add collapse/expand functionality
     const chapterItem = container.lastElementChild;
     const chapterHeader = chapterItem.querySelector('.chapter-header');
-    chapterHeader.addEventListener('click', function(e) {
+    chapterHeader.addEventListener('click', function (e) {
         if (e.target.closest('.chapter-actions')) return;
         chapterItem.classList.toggle('collapsed');
     });
-    
+
     // Initialize Sortable for chapters
     initializeChaptersSortable();
 }
@@ -476,7 +581,7 @@ function removeChapter(chapterId) {
                 ckEditorInstances[editorId].destroy();
                 delete ckEditorInstances[editorId];
             }
-            
+
             chapterItem.remove();
         }
     }
@@ -501,7 +606,7 @@ function initializeChaptersSortable() {
 function addLesson(chapterId) {
     lessonCounter++;
     const lessonId = `lesson_${lessonCounter}`;
-    
+
     const lessonHTML = `
         <div class="lesson-item" data-lesson-id="${lessonId}">
             <i class="fas fa-grip-vertical lesson-drag-handle"></i>
@@ -512,7 +617,7 @@ function addLesson(chapterId) {
                        value="Bài học ${lessonCounter}" 
                        required>
             </div>
-            <select class="lesson-visibility form-control">
+            <select class="lesson-visibility form-select">
                 <option value="Course">Course</option>
                 <option value="Public">Public</option>
                 <option value="Private">Private</option>
@@ -522,11 +627,11 @@ function addLesson(chapterId) {
             </button>
         </div>
     `;
-    
+
     const lessonsContainer = document.querySelector(`.lessons-container[data-chapter-id="${chapterId}"]`);
     if (lessonsContainer) {
         lessonsContainer.insertAdjacentHTML('beforeend', lessonHTML);
-        
+
         // Initialize Sortable for lessons
         initializeLessonsSortable(lessonsContainer);
     }
@@ -558,10 +663,10 @@ function initializeLessonsSortable(container) {
 // ============================================
 function populateLessonSelector() {
     saveStepData(); // Make sure we have latest data
-    
+
     const selector = document.getElementById('lessonSelector');
     selector.innerHTML = '<option value="">-- Chọn bài học --</option>';
-    
+
     courseData.chapters.forEach((chapter, chapterIndex) => {
         chapter.lessons.forEach((lesson, lessonIndex) => {
             const lessonKey = `${chapterIndex}_${lessonIndex}`;
@@ -576,23 +681,23 @@ function populateLessonSelector() {
 function loadLessonContents() {
     const selector = document.getElementById('lessonSelector');
     const selectedKey = selector.value;
-    
+
     const contentsContainer = document.getElementById('contentsContainer');
     const contentsList = document.getElementById('contentsList');
-    
+
     if (!selectedKey) {
         contentsContainer.style.display = 'none';
         return;
     }
-    
+
     contentsContainer.style.display = 'block';
-    
+
     const [chapterIndex, lessonIndex] = selectedKey.split('_').map(Number);
     const lesson = courseData.chapters[chapterIndex].lessons[lessonIndex];
-    
+
     // Store current lesson for adding contents
     window.currentLesson = { chapterIndex, lessonIndex };
-    
+
     // Render existing contents
     contentsList.innerHTML = '';
     if (lesson.contents && lesson.contents.length > 0) {
@@ -608,28 +713,29 @@ function addContent() {
         alert('Vui lòng chọn bài học');
         return;
     }
-    
+
     contentCounter++;
     const contentId = `content_${contentCounter}`;
-    
+
     const content = {
         contentId: null,
         contentType: 'Theory',
         refId: null,
         title: `Nội dung ${contentCounter}`,
         body: '',
+        videoUrl: '',
         orderIndex: courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents.length
     };
-    
+
     courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents.push(content);
-    
+
     const contentsList = document.getElementById('contentsList');
     renderContentItem(content, content.orderIndex);
 }
 
 function renderContentItem(content, index) {
     const contentId = `content_${Date.now()}_${index}`;
-    
+
     const contentHTML = `
         <div class="content-item" data-content-index="${index}">
             <div class="content-header">
@@ -650,7 +756,7 @@ function renderContentItem(content, index) {
                 <div class="content-form">
                     <div class="form-group">
                         <label>Loại nội dung:</label>
-                        <select class="form-control content-type-select" onchange="updateContentType(${index}, this.value)">
+                        <select class="form-select content-type-select" onchange="updateContentType(${index}, this.value)">
                             <option value="Theory" ${content.contentType === 'Theory' ? 'selected' : ''}>Lý thuyết</option>
                             <option value="Video" ${content.contentType === 'Video' ? 'selected' : ''}>Video</option>
                             <option value="FlashcardSet" ${content.contentType === 'FlashcardSet' ? 'selected' : ''}>Flashcard</option>
@@ -661,20 +767,17 @@ function renderContentItem(content, index) {
                         <label>Tiêu đề:</label>
                         <input type="text" class="form-control content-title-input" value="${content.title || ''}" onchange="updateContentTitle(${index}, this.value)">
                     </div>
-                    ${content.contentType === 'Theory' ? `
-                        <div class="form-group">
-                            <label>Nội dung:</label>
-                            <textarea id="contentBody_${contentId}" class="form-control" rows="10">${content.body || ''}</textarea>
-                        </div>
-                    ` : ''}
+                    <div class="content-type-fields" data-content-index="${index}">
+                        ${renderContentTypeFields(content, contentId, index)}
+                    </div>
                 </div>
             </div>
         </div>
     `;
-    
+
     const contentsList = document.getElementById('contentsList');
     contentsList.insertAdjacentHTML('beforeend', contentHTML);
-    
+
     // Initialize CKEditor for theory content
     if (content.contentType === 'Theory') {
         setTimeout(() => {
@@ -683,12 +786,58 @@ function renderContentItem(content, index) {
     }
 }
 
+function renderContentTypeFields(content, contentId, index) {
+    if (content.contentType === 'Theory') {
+        return `
+            <div class="form-group">
+                <label>Nội dung:</label>
+                <textarea id="contentBody_${contentId}" class="form-control" rows="10">${content.body || ''}</textarea>
+            </div>
+        `;
+    } else if (content.contentType === 'Video') {
+        return `
+            <div class="form-group">
+                <label>Video URL:</label>
+                <input type="text" class="form-control video-url-input" value="${content.videoUrl || ''}"
+                        placeholder="Nhập URL video (YouTube, Vimeo, hoặc URL trực tiếp)"
+                        onchange="updateContentVideoUrl(${index}, this.value)">
+            </div>
+            <div class="form-group">
+                <label>Hoặc tải video lên:</label>
+                <input type="file" class="form-control" accept="video/*"
+                    onchange="handleVideoUpload(${index}, this)">
+                ${content.videoUrl ? `
+                    <div class="video-preview mt-3">
+                        <video controls style="max-width:100%; max-height:300px;">
+                            <source src="${content.videoUrl}" type="video/mp4">
+                            Trình duyệt không hỗ trợ.
+                        </video>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (content.contentType === 'FlashcardSet') {
+        return `
+            <div class="form-group">
+                <p class="text-muted">Chức năng Flashcard đang được phát triển...</p>
+            </div>
+        `;
+    } else if (content.contentType === 'Test') {
+        return `
+            <div class="form-group">
+                <p class="text-muted">Chức năng Test đang được phát triển...</p>
+            </div>
+        `;
+    }
+    return '';
+}
+
 function toggleContentBody(index) {
     const contentItem = document.querySelector(`.content-item[data-content-index="${index}"]`);
     if (contentItem) {
         const body = contentItem.querySelector('.content-body');
         const icon = contentItem.querySelector('.content-header button i');
-        
+
         if (body.style.display === 'none') {
             body.style.display = 'block';
             icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
@@ -702,8 +851,28 @@ function toggleContentBody(index) {
 function updateContentType(index, type) {
     const currentLesson = window.currentLesson;
     if (currentLesson) {
-        courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].contentType = type;
-        loadLessonContents(); // Reload to show appropriate fields
+        const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index];
+        content.contentType = type;
+        
+        // Cập nhật badge
+        const contentItem = document.querySelector(`.content-item[data-content-index="${index}"]`);
+        if (contentItem) {
+            const badge = contentItem.querySelector('.content-type-badge');
+            badge.className = `content-type-badge ${type.toLowerCase()}`;
+            badge.textContent = getContentTypeLabel(type);
+            
+            // Cập nhật nội dung fields
+            const fieldsContainer = contentItem.querySelector('.content-type-fields');
+            const contentId = `content_${Date.now()}_${index}`;
+            fieldsContainer.innerHTML = renderContentTypeFields(content, contentId, index);
+            
+            // Initialize CKEditor nếu chuyển sang Theory
+            if (type === 'Theory') {
+                setTimeout(() => {
+                    initializeContentBodyEditor(contentId);
+                }, 100);
+            }
+        }
     }
 }
 
@@ -712,6 +881,76 @@ function updateContentTitle(index, title) {
     if (currentLesson) {
         courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].title = title;
     }
+}
+
+// Ham xu ly khi tai video
+function updateContentVideoUrl(index, url) {
+    const currentLesson = window.currentLesson;
+    if (currentLesson) {
+        courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].videoUrl = url;
+    }
+}
+
+function handleVideoUpload(index, input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Kiểm tra loại file 
+    if (!file.type.startsWith('video/')) {
+        toastr.error('Vui lòng chọn file video hợp lệ');
+        input.value = '';
+        return;
+    }
+
+    // Kiểm tra kích thước file (100mb)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+        toastr.error('Kích thước video không được vượt quá 100MB');
+        input.value = '';
+        return;
+    }
+    
+    // Hiển thị loading
+    toastr.info('Đang tải video lên...', 'Thông báo', { timeOut: 0, extendedTimeOut: 0 });
+
+    // Tạo FormData để upload
+    const formData = new FormData();
+    formData.append('video', file);
+
+    // Upload video
+    fetch('/courses/upload-video', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        toastr.clear();
+        if (data.success && data.videoUrl) {
+            toastr.success('Tải video lên thành công!');
+            
+            // Lưu URL video vào courseData
+            const currentLesson = window.currentLesson;
+            if (currentLesson) {
+                courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].videoUrl = data.videoUrl;
+            }
+
+            // Reload để hiển thị video preview
+            loadLessonContents();
+        } else {
+            toastr.error(data.message || 'Có lỗi xảy ra khi tải video lên');
+            input.value = '';
+        }
+    })
+    .catch(error => {
+        toastr.clear();
+        console.error('Error uploading video:', error);
+        toastr.error('Có lỗi xảy ra khi tải video lên');
+        input.value = '';
+    });
 }
 
 function removeContent(index) {
@@ -739,19 +978,19 @@ function getContentTypeLabel(type) {
 // ============================================
 function renderPreview() {
     saveStepData();
-    
+
     const previewContainer = document.getElementById('previewContainer');
-    
+
     let totalLessons = 0;
     let totalContents = 0;
-    
+
     courseData.chapters.forEach(chapter => {
         totalLessons += chapter.lessons.length;
         chapter.lessons.forEach(lesson => {
             totalContents += lesson.contents ? lesson.contents.length : 0;
         });
     });
-    
+
     let chaptersHTML = '';
     courseData.chapters.forEach(chapter => {
         let lessonsHTML = '<div class="preview-lessons">';
@@ -763,7 +1002,7 @@ function renderPreview() {
             `;
         });
         lessonsHTML += '</div>';
-        
+
         chaptersHTML += `
             <div class="preview-chapter">
                 <div class="preview-chapter-title">
@@ -773,7 +1012,7 @@ function renderPreview() {
             </div>
         `;
     });
-    
+
     previewContainer.innerHTML = `
         <div class="preview-section">
             <h3>Thông tin khóa học</h3>
@@ -827,33 +1066,23 @@ function renderPreview() {
 // ============================================
 function saveCourse(publish) {
     saveStepData();
-    
+
     // Update publish status
     courseData.isPublished = publish;
-    
-    // Collect all CKEditor data
-    for (const key in ckEditorInstances) {
-        if (key.startsWith('contentBody_')) {
-            // Save content body
-            const editor = ckEditorInstances[key];
-            // Find and update the content in courseData
-            // This is handled by the content management functions
-        }
-    }
-    
+
     // Prepare form data
     const form = document.getElementById('courseBuilderForm');
     const jsonDataInput = document.getElementById('jsonDataInput');
     jsonDataInput.value = JSON.stringify(courseData);
-    
+
     // Set form action based on whether it's create or update
     const courseId = new URLSearchParams(window.location.search).get('id');
     if (courseId) {
-        form.action = `/courses/builder/update/${courseId}`;
+        form.action = `/courses/builder/update/${courseId}`; // Sửa lại template string
     } else {
         form.action = '/courses/builder/save';
     }
-    
+
     // Submit the form
     form.submit();
 }
@@ -870,9 +1099,14 @@ function startAutosave() {
     }, 10000);
 }
 
-function performAutosave() {
+async function performAutosave() {
     saveStepData();
-    
+
+    // Skip autosave when slug is invalid or not confirmed available for current value
+    const slug = courseData.slug?.trim();
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) return;
+    if (lastSlugCheck.value !== slug || lastSlugCheck.available !== true || lastSlugCheck.loading) return;
+
     const autosaveData = {
         courseId: new URLSearchParams(window.location.search).get('id'),
         title: courseData.title,
@@ -883,30 +1117,46 @@ function performAutosave() {
         price: courseData.price,
         isPublished: courseData.isPublished
     };
-    
-    fetch('/courses/builder/autosave', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-        },
-        body: JSON.stringify(autosaveData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+
+    try {
+        const res = await fetch('/courses/builder/autosave', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify(autosaveData),
+            credentials: 'same-origin'
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch { /* no json body */ }
+
+        // If API signals duplicate slug, show UI error and mark cache
+        if (res.status === 409 && (data?.code === 'DuplicateSlug' || data?.message)) {
+            showFieldError('Slug', 'Slug này đã tồn tại');
+            lastSlugCheck = { value: autosaveData.slug, available: false, loading: false };
+            notifyAndFocusSlug('Slug này đã tồn tại, vui lòng chọn slug khác.', autosaveData.slug);
+            return;
+        }
+
+        if (!res.ok || data?.success === false) {
+            console.warn('Autosave failed', data);
+            return;
+        }
+
+        if (data?.success) {
             showAutosaveStatus();
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Autosave error:', error);
-    });
+    }
 }
 
 function showAutosaveStatus() {
     const status = document.querySelector('.autosave-status');
     status.style.display = 'flex';
-    
+
     setTimeout(() => {
         status.style.display = 'none';
     }, 3000);
@@ -917,34 +1167,34 @@ function showAutosaveStatus() {
 // ============================================
 function loadExistingData(data) {
     courseData = data;
-    
+
     // Load step 1 data
     document.getElementById('Title').value = data.title || '';
     document.getElementById('Slug').value = data.slug || '';
-    
+
     const categorySelect = document.getElementById('CategoryId');
     if (data.categoryId && categorySelect) {
         categorySelect.value = data.categoryId;
     }
-    
+
     document.getElementById('Price').value = data.price || 0;
-    document.getElementById('IsPublished').checked = data.isPublished || false;
+    //document.getElementById('IsPublished').checked = data.isPublished || false;
     document.getElementById('CoverUrl').value = data.coverUrl || '';
-    
+
     if (data.coverUrl) {
         const preview = document.getElementById('imagePreview');
         const img = preview.querySelector('img');
         img.src = data.coverUrl;
         preview.style.display = 'block';
     }
-    
+
     // Load CKEditor data after initialization
     setTimeout(() => {
         if (ckEditorInstances['Summary'] && data.summary) {
             ckEditorInstances['Summary'].setData(data.summary);
         }
     }, 500);
-    
+
     // Load chapters and lessons
     if (data.chapters && data.chapters.length > 0) {
         data.chapters.forEach(chapter => {
@@ -952,9 +1202,9 @@ function loadExistingData(data) {
             const chapterItems = document.querySelectorAll('.chapter-item');
             const lastChapterItem = chapterItems[chapterItems.length - 1];
             const chapterId = lastChapterItem.dataset.chapterId;
-            
+
             lastChapterItem.querySelector('.chapter-title-input').value = chapter.title;
-            
+
             // Load chapter description
             setTimeout(() => {
                 const chapterDescEditor = ckEditorInstances[`chapterDesc_${chapterId}`];
@@ -962,14 +1212,14 @@ function loadExistingData(data) {
                     chapterDescEditor.setData(chapter.description);
                 }
             }, 500);
-            
+
             // Load lessons
             if (chapter.lessons && chapter.lessons.length > 0) {
                 chapter.lessons.forEach(lesson => {
                     addLesson(chapterId);
                     const lessonItems = lastChapterItem.querySelectorAll('.lesson-item');
                     const lastLessonItem = lessonItems[lessonItems.length - 1];
-                    
+
                     lastLessonItem.querySelector('.lesson-title-input').value = lesson.title;
                     lastLessonItem.querySelector('.lesson-visibility').value = lesson.visibility;
                 });
