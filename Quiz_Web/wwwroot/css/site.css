@@ -29,7 +29,7 @@ body {
     background-color: #fff;
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 1030;
 }
 
 .navbar-brand {
@@ -193,6 +193,8 @@ body {
     min-width: 240px;
     padding: 0.5rem 0;
     animation: fadeIn 0.2s ease;
+    z-index: 1050;
+    position: absolute;
 }
 
 @keyframes fadeIn {
@@ -522,6 +524,10 @@ a:hover {
 /* ==================== USER DROPDOWN MENU - UDEMY STYLE ==================== */
 
 /* User Dropdown Container */
+.user-dropdown {
+    position: relative;
+}
+
 .user-dropdown-menu {
     width: 300px;
     border: 1px solid #d1d7dc;
@@ -532,6 +538,10 @@ a:hover {
     animation: fadeInDropdown 0.2s ease;
     max-height: 80vh;
     overflow-y: auto;
+    z-index: 1050;
+    position: absolute;
+    right: 0;
+    top: 100%;
 }
 
 @keyframes fadeInDropdown {
@@ -737,6 +747,8 @@ a:hover {
     animation: fadeInDropdown 0.2s ease;
     max-height: 500px;
     overflow-y: auto;
+    z-index: 1050;
+    position: absolute;
 }
 
 /* Explore Menu Items */

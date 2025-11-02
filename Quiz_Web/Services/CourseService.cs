@@ -72,7 +72,8 @@ namespace Quiz_Web.Services
             {
                 return _context.Courses
                     .Include(c => c.Owner)
-                    .Where(c => c.IsPublished)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished && c.Category != null && c.Category.Slug == category)
                     .OrderByDescending(c => c.CreatedAt)
                     .ToList();
             }
@@ -567,6 +568,104 @@ namespace Quiz_Web.Services
             {
                 _logger.LogError(ex, "Error autosaving course");
                 return false;
+            }
+        }
+
+        public List<Course> GetRecommendedCourses(int userId, int count = 6)
+        {
+            try
+            {
+                // Get user's interests (categories they're interested in)
+                var userInterests = _context.UserInterests
+                    .Where(ui => ui.UserId == userId)
+                    .Select(ui => ui.CategoryId)
+                    .ToList();
+
+                // If user has interests, prioritize courses in those categories
+                if (userInterests.Any())
+                {
+                    var recommendedCourses = _context.Courses
+                        .Include(c => c.Owner)
+                        .Include(c => c.Category)
+                        .Where(c => c.IsPublished && 
+                                   c.CategoryId.HasValue && 
+                                   userInterests.Contains(c.CategoryId.Value))
+                        .OrderByDescending(c => c.AverageRating)
+                        .ThenByDescending(c => c.TotalReviews)
+                        .ThenByDescending(c => c.CreatedAt)
+                        .Take(count)
+                        .ToList();
+
+                    // If not enough courses from user interests, add popular courses
+                    if (recommendedCourses.Count < count)
+                    {
+                        var remaining = count - recommendedCourses.Count;
+                        var popularCourses = _context.Courses
+                            .Include(c => c.Owner)
+                            .Include(c => c.Category)
+                            .Where(c => c.IsPublished && 
+                                       !recommendedCourses.Select(rc => rc.CourseId).Contains(c.CourseId))
+                            .OrderByDescending(c => c.AverageRating)
+                            .ThenByDescending(c => c.TotalReviews)
+                            .Take(remaining)
+                            .ToList();
+
+                        recommendedCourses.AddRange(popularCourses);
+                    }
+
+                    return recommendedCourses;
+                }
+
+                // If no user interests, return popular courses
+                return _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished)
+                    .OrderByDescending(c => c.AverageRating)
+                    .ThenByDescending(c => c.TotalReviews)
+                    .ThenByDescending(c => c.CreatedAt)
+                    .Take(count)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting recommended courses for user {UserId}", userId);
+                // Fallback: return popular courses
+                return _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(count)
+                    .ToList();
+            }
+        }
+
+        public List<Course> GetTopRatedCourses(int count = 6)
+        {
+            try
+            {
+                return _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished && c.TotalReviews > 0) // Only courses with reviews
+                    .OrderByDescending(c => c.AverageRating)
+                    .ThenByDescending(c => c.TotalReviews)
+                    .ThenByDescending(c => c.CreatedAt)
+                    .Take(count)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting top rated courses");
+                // Fallback: return recent published courses
+                return _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(count)
+                    .ToList();
             }
         }
     }
