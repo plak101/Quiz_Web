@@ -3,7 +3,7 @@
    Model: Course → Chapter → Lesson → LessonContents
    Tests: Public window (OpenAt, CloseAt), scoring
    ========================================================= */
-
+   
 ------------------------------------------------------------
 -- 0) CREATE DATABASE & BASIC SETTINGS
 ------------------------------------------------------------
