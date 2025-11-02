@@ -45,6 +45,7 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICreateTestService, CreateTestService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 // Register background service for course recommendations
 builder.Services.AddHostedService<CourseRecommendationService>();

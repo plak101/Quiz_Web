@@ -61,6 +61,8 @@ public partial class User
 
     public virtual Role Role { get; set; } = null!;
 
+    public virtual ShoppingCart? ShoppingCart { get; set; }
+
     public virtual ICollection<TestAttempt> TestAttempts { get; set; } = new List<TestAttempt>();
 
     public virtual ICollection<Test> Tests { get; set; } = new List<Test>();

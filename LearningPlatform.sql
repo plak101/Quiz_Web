@@ -585,6 +585,32 @@ CREATE TABLE dbo.UserInterests (
 );
 GO
 
+CREATE TABLE dbo.ShoppingCarts (
+    CartId    INT IDENTITY(1,1) PRIMARY KEY,
+    UserId    INT NOT NULL,
+    CreatedAt DATETIME2(7) NOT NULL CONSTRAINT DF_ShoppingCarts_CreatedAt DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2(7) NULL,
+    
+    CONSTRAINT FK_ShoppingCarts_User FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId),
+    -- Đảm bảo mỗi người dùng chỉ có 1 giỏ hàng
+    CONSTRAINT UQ_ShoppingCarts_UserId UNIQUE (UserId) 
+);
+GO
+
+CREATE TABLE dbo.CartItems (
+    CartItemId INT IDENTITY(1,1) PRIMARY KEY,
+    CartId     INT NOT NULL,
+    CourseId   INT NOT NULL,
+    AddedAt    DATETIME2(7) NOT NULL CONSTRAINT DF_CartItems_AddedAt DEFAULT SYSUTCDATETIME(),
+    
+    CONSTRAINT FK_CartItems_Cart FOREIGN KEY (CartId) REFERENCES dbo.ShoppingCarts(CartId),
+    CONSTRAINT FK_CartItems_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId),
+    
+    -- Đảm bảo không thêm trùng 1 khóa học vào giỏ
+    CONSTRAINT UQ_CartItems_Cart_Course UNIQUE (CartId, CourseId)
+);
+GO
+
 /* =========================================================
    10) SEED DATA (tối thiểu để chạy thử)
    ========================================================= */
