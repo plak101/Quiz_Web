@@ -25,5 +25,9 @@ namespace Quiz_Web.Services.IServices
 		Course? GetCourseWithFullStructure(int courseId, int ownerId);
 		CourseBuilderViewModel? GetCourseBuilderData(int courseId, int ownerId);
 		bool AutosaveCourse(int? courseId, CourseAutosaveViewModel model, int ownerId);
+		
+		// Home page recommendations
+		List<Course> GetRecommendedCourses(int userId, int count = 6);
+		List<Course> GetTopRatedCourses(int count = 6);
 	}
 }
