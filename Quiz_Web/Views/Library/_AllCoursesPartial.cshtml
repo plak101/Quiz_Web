@@ -1,0 +1,77 @@
+@model List<Quiz_Web.Models.Entities.Course>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No Courses Yet</h4>
+        <p class="text-muted">You haven't purchased any courses. Start learning today!</p>
+        <a href="/courses" class="btn btn-primary mt-3">
+            <i class="fas fa-search me-2"></i>Browse Courses
+        </a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var course in Model)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm course-card">
+                    <img src="@(string.IsNullOrEmpty(course.CoverUrl) ? "/images/default-course.jpg" : course.CoverUrl)" 
+                         class="card-img-top" 
+                         alt="@course.Title"
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@course.Title</h5>
+                        <p class="card-text text-muted small flex-grow-1">
+                            @(string.IsNullOrEmpty(course.Summary) ? "No description available" : 
+                              (course.Summary.Length > 100 ? course.Summary.Substring(0, 100) + "..." : course.Summary))
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>@course.Owner.FullName
+                            </small>
+                            <a href="/course/@course.Slug" class="btn btn-sm btn-primary">
+                                <i class="fas fa-play me-1"></i>Continue
+                            </a>
+                        </div>
+                    </div>
+                    @if (course.IsPublished)
+                    {
+                        <div class="card-footer bg-success text-white small">
+                            <i class="fas fa-check-circle me-1"></i>Published
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .course-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .card-img-top {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .course-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .course-card .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+</style>

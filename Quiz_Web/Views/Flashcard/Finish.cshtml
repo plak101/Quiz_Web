@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Hoàn thành!";
+    Layout = "~/Views/Shared/_LayoutFlashcards.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/flashcards/common.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/flashcards/finish.css" asp-append-version="true" />
+}
+
+<div class="flashcard-container finish-container">
+    <div class="finish-content text-center">
+        <div class="finish-icon display-1 mb-4">🎉</div>
+        <h1 class="finish-title display-3 fw-bold text-white mb-3">Làm Tốt Lắm!</h1>
+        <p class="finish-message fs-5 text-white mb-5 lh-lg">
+            Bạn đã hoàn thành tất cả các flashcards trong bộ này.<br>
+            Hãy tiếp tục học tập để nâng cao kiến thức của bạn!
+        </p>
+        
+        <div class="finish-actions d-flex flex-column gap-3 mx-auto" style="max-width: 400px;">
+            <a href="/flashcards/study/@ViewBag.SetId" 
+               class="btn btn-warning btn-lg rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Bắt đầu lại</span>
+            </a>
+            
+            <a href="/flashcards" 
+               class="btn btn-success btn-lg rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-book"></i>
+                <span>Xem thêm các flashcard khác</span>
+            </a>
+            
+            <a href="@Url.Action("Index", "Home")" 
+               class="btn btn-primary btn-lg rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-house-door"></i>
+                <span>Trang chủ</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Decorative confetti effect -->
+    <div class="confetti-container" id="confettiContainer"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/flashcards/finish.js" asp-append-version="true"></script>
+}
