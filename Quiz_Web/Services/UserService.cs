@@ -18,7 +18,7 @@ namespace Quiz_Web.Services
 			_logger = logger;
 		}
 
-		public User Login(string username, string password)
+		public User? Login(string username, string password)
 		{
 			try
 			{
