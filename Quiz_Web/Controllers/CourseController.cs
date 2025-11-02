@@ -367,6 +367,12 @@ namespace Quiz_Web.Controllers
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
                 return Unauthorized();
 
+            // Proactively return 409 if slug duplicates (excluding current course when editing)
+            if (!_courseService.IsSlugUnique(model.Slug, model.CourseId))
+            {
+                return StatusCode(409, new { success = false, code = "DuplicateSlug", message = "Slug này đã tồn tại." });
+            }
+
             var success = _courseService.AutosaveCourse(model.CourseId, model, userId);
             
             return Json(new CourseBuilderResponse
@@ -574,6 +580,19 @@ namespace Quiz_Web.Controllers
                 TempData["Error"] = "Có lỗi xảy ra: " + ex.Message;
                 return RedirectToAction(nameof(Builder), new { id });
             }
+        }
+
+        // NEW: API kiểm tra slug có khả dụng không (dùng cho Builder step 1)
+        [Authorize]
+        [HttpGet]
+        [Route("/courses/check-slug")]
+        public IActionResult CheckSlug([FromQuery] string slug, [FromQuery] int? excludeId)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                return Json(new { available = false, message = "Slug không hợp lệ" });
+
+            var available = _courseService.IsSlugUnique(slug, excludeId);
+            return Json(new { available });
         }
     }
 }

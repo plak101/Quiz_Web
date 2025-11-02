@@ -475,11 +475,11 @@ label.required::after {
 
 .step-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 2px solid var(--border-color);
+    margin-top: 2rem
+/*    padding-top: 2rem;*/
+/*    border-top: 2px solid var(--border-color);*/
 }
 
 /* ============================================
