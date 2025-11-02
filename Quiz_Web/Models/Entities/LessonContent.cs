@@ -17,6 +17,8 @@ public partial class LessonContent
 
     public string? Body { get; set; }
 
+    public string? VideoUrl { get; set; }
+
     public int OrderIndex { get; set; }
 
     public DateTime CreatedAt { get; set; }

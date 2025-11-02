@@ -22,7 +22,7 @@ $(function () {
           const id = row[0];
           const slug = row[1];
           const viewUrl = `/courses/${slug}`;
-          const editUrl = `/courses/builder/${id}`;
+          const editUrl = `/courses/builder?id=${id}`;
           return `
             <a href="${viewUrl}" class="btn btn-sm btn-info text-white btn-action me-1">
                 <i class="fa-solid fa-eye"></i>

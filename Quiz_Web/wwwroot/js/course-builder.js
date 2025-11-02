@@ -378,6 +378,17 @@ function saveStepData() {
     }
 
     if (currentStep === 2) {
+        // ✅ LƯU LẠI TẤT CẢ CONTENTS TRƯỚC KHI XÓA
+        const oldContentsMap = new Map();
+        courseData.chapters.forEach((chapter, chIdx) => {
+            chapter.lessons.forEach((lesson, lIdx) => {
+                const key = `${chIdx}_${lIdx}`;
+                if (lesson.contents && lesson.contents.length > 0) {
+                    oldContentsMap.set(key, lesson.contents);
+                }
+            });
+        });
+
         // Save chapters and lessons from DOM
         courseData.chapters = [];
 
@@ -409,10 +420,10 @@ function saveStepData() {
                     contents: []
                 };
 
-                // Find existing lesson contents if any
-                const existingLesson = findLessonInData(lessonEl.dataset.lessonId);
-                if (existingLesson && existingLesson.contents) {
-                    lesson.contents = existingLesson.contents;
+                // ✅ KHÔI PHỤC CONTENTS TỪ MAP
+                const key = `${chapterIndex}_${lessonIndex}`;
+                if (oldContentsMap.has(key)) {
+                    lesson.contents = oldContentsMap.get(key);
                 }
 
                 chapter.lessons.push(lesson);
@@ -420,6 +431,41 @@ function saveStepData() {
 
             courseData.chapters.push(chapter);
         });
+    }
+
+    // ✅ THÊM LOGIC CHO STEP 3: LƯU NỘI DUNG TỪ CKEDITOR
+    if (currentStep === 3) {
+        const currentLesson = window.currentLesson;
+        if (currentLesson) {
+            const lesson = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex];
+
+            // Lưu contents từ DOM
+            lesson.contents.forEach((content, index) => {
+                // Lưu tiêu đề
+                const titleInput = document.querySelector(`.content-item[data-content-index="${index}"] .content-title-input`);
+                if (titleInput) {
+                    content.title = titleInput.value.trim();
+                }
+
+                // Lưu loại nội dung
+                const typeSelect = document.querySelector(`.content-item[data-content-index="${index}"] .content-type-select`);
+                if (typeSelect) {
+                    content.contentType = typeSelect.value;
+                }
+
+                // Lưu nội dung lý thuyết từ CKEditor
+                if (content.contentType === 'Theory') {
+                    const contentId = `contentBody_content_${Date.now()}_${index}`;
+                    // Tìm CKEditor instance theo pattern
+                    for (const [key, editor] of Object.entries(ckEditorInstances)) {
+                        if (key.includes(`contentBody_`) && key.includes(`_${index}`)) {
+                            content.body = editor.getData();
+                            break;
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -734,7 +780,11 @@ function addContent() {
 }
 
 function renderContentItem(content, index) {
-    const contentId = `content_${Date.now()}_${index}`;
+    // ✅ TẠO ID CỐ ĐỊNH DỰA TRÊN VỊ TRÍ TRONG LESSON
+    const currentLesson = window.currentLesson;
+    const contentId = currentLesson
+        ? `content_${currentLesson.chapterIndex}_${currentLesson.lessonIndex}_${index}`
+        : `content_${Date.now()}_${index}`;
 
     const contentHTML = `
         <div class="content-item" data-content-index="${index}">
@@ -797,15 +847,12 @@ function renderContentTypeFields(content, contentId, index) {
     } else if (content.contentType === 'Video') {
         return `
             <div class="form-group">
-                <label>Video URL:</label>
-                <input type="text" class="form-control video-url-input" value="${content.videoUrl || ''}"
-                        placeholder="Nhập URL video (YouTube, Vimeo, hoặc URL trực tiếp)"
-                        onchange="updateContentVideoUrl(${index}, this.value)">
-            </div>
-            <div class="form-group">
-                <label>Hoặc tải video lên:</label>
+                <label>Tải video lên từ máy tính:</label>
                 <input type="file" class="form-control" accept="video/*"
                     onchange="handleVideoUpload(${index}, this)">
+                <small class="form-text text-muted">
+                    Kích thước tối đa: 100MB. Định dạng hỗ trợ: MP4, WebM, OGG, MOV, AVI, MKV
+                </small>
                 ${content.videoUrl ? `
                     <div class="video-preview mt-3">
                         <video controls style="max-width:100%; max-height:300px;">
@@ -853,19 +900,19 @@ function updateContentType(index, type) {
     if (currentLesson) {
         const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index];
         content.contentType = type;
-        
+
         // Cập nhật badge
         const contentItem = document.querySelector(`.content-item[data-content-index="${index}"]`);
         if (contentItem) {
             const badge = contentItem.querySelector('.content-type-badge');
             badge.className = `content-type-badge ${type.toLowerCase()}`;
             badge.textContent = getContentTypeLabel(type);
-            
+
             // Cập nhật nội dung fields
             const fieldsContainer = contentItem.querySelector('.content-type-fields');
             const contentId = `content_${Date.now()}_${index}`;
             fieldsContainer.innerHTML = renderContentTypeFields(content, contentId, index);
-            
+
             // Initialize CKEditor nếu chuyển sang Theory
             if (type === 'Theory') {
                 setTimeout(() => {
@@ -884,13 +931,6 @@ function updateContentTitle(index, title) {
 }
 
 // Ham xu ly khi tai video
-function updateContentVideoUrl(index, url) {
-    const currentLesson = window.currentLesson;
-    if (currentLesson) {
-        courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].videoUrl = url;
-    }
-}
-
 function handleVideoUpload(index, input) {
     const file = input.files[0];
     if (!file) return;
@@ -902,55 +942,128 @@ function handleVideoUpload(index, input) {
         return;
     }
 
-    // Kiểm tra kích thước file (100mb)
-    const maxSize = 100 * 1024 * 1024;
+    // Kiểm tra kích thước file (100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
     if (file.size > maxSize) {
         toastr.error('Kích thước video không được vượt quá 100MB');
         input.value = '';
         return;
     }
-    
-    // Hiển thị loading
-    toastr.info('Đang tải video lên...', 'Thông báo', { timeOut: 0, extendedTimeOut: 0 });
 
     // Tạo FormData để upload
     const formData = new FormData();
     formData.append('video', file);
 
-    // Upload video
-    fetch('/courses/upload-video', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        toastr.clear();
-        if (data.success && data.videoUrl) {
-            toastr.success('Tải video lên thành công!');
-            
-            // Lưu URL video vào courseData
-            const currentLesson = window.currentLesson;
-            if (currentLesson) {
-                courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].videoUrl = data.videoUrl;
-            }
+    // Upload video với XMLHttpRequest để track progress
+    const xhr = new XMLHttpRequest();
 
-            // Reload để hiển thị video preview
-            loadLessonContents();
+    // ✅ TẠO 1 TOAST DUY NHẤT VÀ LƯU REFERENCE
+    let progressToast = null;
+    let lastUpdateTime = 0;
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            const now = Date.now();
+
+            // ✅ CHỈ CẬP NHẬT MỖI 100MS ĐỂ TRÁNH SPAM
+            if (now - lastUpdateTime < 100) return;
+            lastUpdateTime = now;
+
+            // ✅ NẾU CHƯA CÓ TOAST, TẠO MỚI
+            if (!progressToast) {
+                progressToast = toastr.info(`Đang tải video lên... ${percentComplete}%`, 'Thông báo', {
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    closeButton: false,
+                    tapToDismiss: false,
+                    progressBar: true
+                });
+            } else {
+                // ✅ CẬP NHẬT NỘI DUNG TOAST HIỆN TẠI
+                const messageElement = progressToast.find('.toast-message');
+                if (messageElement.length) {
+                    messageElement.text(`Đang tải video lên... ${percentComplete}%`);
+                }
+                // Cập nhật progress bar nếu có
+                const progressBar = progressToast.find('.toast-progress');
+                if (progressBar.length) {
+                    progressBar.css('width', `${100 - percentComplete}%`);
+                }
+            }
+        }
+    });
+
+    // Handle completion
+    xhr.addEventListener('load', () => {
+        // ✅ XÓA TOAST PROGRESS
+        if (progressToast) {
+            toastr.clear(progressToast);
+            progressToast = null;
+        }
+
+        if (xhr.status === 200) {
+            try {
+                const data = JSON.parse(xhr.responseText);
+
+                if (data.success && data.videoUrl) {
+                    toastr.success('Tải video lên thành công!');
+
+                    // Lưu URL video vào courseData
+                    const currentLesson = window.currentLesson;
+                    if (currentLesson) {
+                        courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[index].videoUrl = data.videoUrl;
+                    }
+
+                    // Reload để hiển thị video preview
+                    loadLessonContents();
+                } else {
+                    toastr.error(data.message || 'Có lỗi xảy ra khi tải video lên');
+                    input.value = '';
+                }
+            } catch (error) {
+                console.error('Error parsing response:', error);
+                toastr.error('Có lỗi xảy ra khi xử lý phản hồi từ server');
+                input.value = '';
+            }
         } else {
-            toastr.error(data.message || 'Có lỗi xảy ra khi tải video lên');
+            toastr.error(`Lỗi server: ${xhr.status} - ${xhr.statusText}`);
             input.value = '';
         }
-    })
-    .catch(error => {
-        toastr.clear();
-        console.error('Error uploading video:', error);
+    });
+
+    // Handle errors
+    xhr.addEventListener('error', () => {
+        if (progressToast) {
+            toastr.clear(progressToast);
+            progressToast = null;
+        }
+        console.error('Upload error');
         toastr.error('Có lỗi xảy ra khi tải video lên');
         input.value = '';
     });
+
+    // Handle abort
+    xhr.addEventListener('abort', () => {
+        if (progressToast) {
+            toastr.clear(progressToast);
+            progressToast = null;
+        }
+        toastr.warning('Upload bị hủy');
+        input.value = '';
+    });
+
+    // Open connection and send
+    xhr.open('POST', '/courses/upload-video');
+
+    // Add anti-forgery token
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    if (token) {
+        xhr.setRequestHeader('RequestVerificationToken', token);
+    }
+
+    xhr.send(formData);
 }
 
 function removeContent(index) {

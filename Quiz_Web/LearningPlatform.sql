@@ -383,6 +383,7 @@ CREATE TABLE dbo.LessonContents (
     RefId       INT            NULL,
     Title       NVARCHAR(200)  NULL,
     Body        NVARCHAR(MAX)  NULL,
+	VideoUrl	NVARCHAR(500)	NULL,
     OrderIndex  INT            NOT NULL CONSTRAINT DF_LessonContents_Order DEFAULT (0),
     CreatedAt   DATETIME2(7)   NOT NULL CONSTRAINT DF_LessonContents_CreatedAt DEFAULT SYSUTCDATETIME(),
     CONSTRAINT CK_LessonContents_Type CHECK (ContentType IN ('Video','Theory','FlashcardSet','Test')),
