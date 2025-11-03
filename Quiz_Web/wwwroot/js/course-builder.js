@@ -744,11 +744,34 @@ function loadLessonContents() {
     // Store current lesson for adding contents
     window.currentLesson = { chapterIndex, lessonIndex };
 
+    // ✅ LƯU TRẠNG THÁI MỞ/ĐÓNG CỦA CÁC CONTENT ITEMS TRƯỚC KHI RELOAD
+    const openStates = new Map();
+    document.querySelectorAll('.content-item').forEach((item) => {
+        const index = item.dataset.contentIndex;
+        const body = item.querySelector('.content-body');
+        openStates.set(index, body && body.style.display !== 'none');
+    });
+
     // Render existing contents
     contentsList.innerHTML = '';
     if (lesson.contents && lesson.contents.length > 0) {
         lesson.contents.forEach((content, index) => {
             renderContentItem(content, index);
+            
+            // ✅ KHÔI PHỤC TRẠNG THÁI MỞ/ĐÓNG
+            if (openStates.get(String(index))) {
+                setTimeout(() => {
+                    const contentItem = document.querySelector(`.content-item[data-content-index="${index}"]`);
+                    if (contentItem) {
+                        const body = contentItem.querySelector('.content-body');
+                        const icon = contentItem.querySelector('.content-header button i');
+                        if (body && icon) {
+                            body.style.display = 'block';
+                            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                        }
+                    }
+                }, 50);
+            }
         });
     }
 }
@@ -864,16 +887,132 @@ function renderContentTypeFields(content, contentId, index) {
             </div>
         `;
     } else if (content.contentType === 'FlashcardSet') {
+        // Initialize flashcards array if not exists
+        if (!content.flashcards) {
+            content.flashcards = [];
+        }
+        
+        let flashcardsHTML = '';
+        content.flashcards.forEach((card, cardIndex) => {
+            flashcardsHTML += `
+                <div class="flashcard-item" data-card-index="${cardIndex}" style="background: #f9fafb; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong>Thẻ ${cardIndex + 1}</strong>
+                        <button type="button" class="icon-btn danger" onclick="removeFlashcard(${index}, ${cardIndex})" title="Xóa thẻ">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>Mặt trước:</label>
+                        <textarea class="form-control flashcard-front" rows="2" onchange="updateFlashcard(${index}, ${cardIndex}, 'front', this.value)">${card.frontText || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Mặt sau:</label>
+                        <textarea class="form-control flashcard-back" rows="2" onchange="updateFlashcard(${index}, ${cardIndex}, 'back', this.value)">${card.backText || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Gợi ý (tùy chọn):</label>
+                        <input type="text" class="form-control flashcard-hint" value="${card.hint || ''}" onchange="updateFlashcard(${index}, ${cardIndex}, 'hint', this.value)">
+                    </div>
+                </div>
+            `;
+        });
+        
         return `
             <div class="form-group">
-                <p class="text-muted">Chức năng Flashcard đang được phát triển...</p>
+                <label>Thông tin Flashcard Set:</label>
+                <input type="text" class="form-control flashcard-set-title" placeholder="Tiêu đề bộ flashcard" value="${content.flashcardSetTitle || ''}" onchange="updateFlashcardSetTitle(${index}, this.value)" style="margin-bottom: 1rem;">
+                <textarea class="form-control flashcard-set-desc" rows="2" placeholder="Mô tả ngắn về bộ flashcard" onchange="updateFlashcardSetDesc(${index}, this.value)">${content.flashcardSetDesc || ''}</textarea>
             </div>
+            <div class="flashcards-container" id="flashcardsContainer_${index}">
+                ${flashcardsHTML}
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="addFlashcard(${index})" style="width: 100%;">
+                <i class="fas fa-plus"></i> Thêm thẻ flashcard
+            </button>
         `;
     } else if (content.contentType === 'Test') {
+        // Initialize questions array if not exists
+        if (!content.questions) {
+            content.questions = [];
+        }
+        
+        let questionsHTML = '';
+        content.questions.forEach((question, qIndex) => {
+            let optionsHTML = '';
+            if (question.options) {
+                question.options.forEach((option, oIndex) => {
+                    optionsHTML += `
+                        <div class="option-item" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                            <input type="checkbox" ${option.isCorrect ? 'checked' : ''} onchange="updateQuestionOption(${index}, ${qIndex}, ${oIndex}, 'isCorrect', this.checked)" style="width: 20px; height: 20px;">
+                            <input type="text" class="form-control" value="${option.optionText || ''}" onchange="updateQuestionOption(${index}, ${qIndex}, ${oIndex}, 'text', this.value)" placeholder="Nội dung đáp án">
+                            <button type="button" class="icon-btn danger" onclick="removeQuestionOption(${index}, ${qIndex}, ${oIndex})" title="Xóa đáp án">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+            
+            questionsHTML += `
+                <div class="test-question-item" data-question-index="${qIndex}" style="background: #f9fafb; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <strong style="font-size: 1.1rem;">Câu hỏi ${qIndex + 1}</strong>
+                        <button type="button" class="icon-btn danger" onclick="removeTestQuestion(${index}, ${qIndex})" title="Xóa câu hỏi">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>Loại câu hỏi:</label>
+                        <select class="form-control" onchange="updateQuestionType(${index}, ${qIndex}, this.value)">
+                            <option value="MCQ_Single" ${question.type === 'MCQ_Single' ? 'selected' : ''}>Trắc nghiệm (1 đáp án)</option>
+                            <option value="MCQ_Multi" ${question.type === 'MCQ_Multi' ? 'selected' : ''}>Trắc nghiệm (nhiều đáp án)</option>
+                            <option value="TrueFalse" ${question.type === 'TrueFalse' ? 'selected' : ''}>Đúng/Sai</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Câu hỏi:</label>
+                        <textarea class="form-control" rows="3" onchange="updateQuestionText(${index}, ${qIndex}, this.value)">${question.stemText || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Điểm:</label>
+                        <input type="number" class="form-control" value="${question.points || 1}" min="0.5" step="0.5" onchange="updateQuestionPoints(${index}, ${qIndex}, this.value)" style="max-width: 120px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Các đáp án: <small class="text-muted">(Chọn checkbox cho đáp án đúng)</small></label>
+                        <div class="options-container" id="optionsContainer_${index}_${qIndex}">
+                            ${optionsHTML}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestionOption(${index}, ${qIndex})" style="margin-top: 0.5rem;">
+                            <i class="fas fa-plus"></i> Thêm đáp án
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
         return `
             <div class="form-group">
-                <p class="text-muted">Chức năng Test đang được phát triển...</p>
+                <label>Thông tin bài test:</label>
+                <input type="text" class="form-control test-title" placeholder="Tiêu đề bài test" value="${content.testTitle || ''}" onchange="updateTestTitle(${index}, this.value)" style="margin-bottom: 1rem;">
+                <textarea class="form-control test-desc" rows="2" placeholder="Mô tả về bài test" onchange="updateTestDesc(${index}, this.value)">${content.testDesc || ''}</textarea>
             </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label>Thời gian (phút):</label>
+                    <input type="number" class="form-control test-time" value="${content.timeLimitMinutes || 30}" min="1" onchange="updateTestTime(${index}, this.value)">
+                </div>
+                <div>
+                    <label>Số lần làm tối đa:</label>
+                    <input type="number" class="form-control test-attempts" value="${content.maxAttempts || 3}" min="1" onchange="updateTestAttempts(${index}, this.value)">
+                </div>
+            </div>
+            <div class="test-questions-container" id="testQuestionsContainer_${index}">
+                ${questionsHTML}
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="addTestQuestion(${index})" style="width: 100%;">
+                <i class="fas fa-plus"></i> Thêm câu hỏi
+            </button>
         `;
     }
     return '';
@@ -1087,6 +1226,338 @@ function getContentTypeLabel(type) {
 }
 
 // ============================================
+// FLASHCARD FUNCTIONS
+// ============================================
+
+function addFlashcard(contentIndex) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    
+    if (!content.flashcards) {
+        content.flashcards = [];
+    }
+    
+    const cardIndex = content.flashcards.length;
+    content.flashcards.push({
+        frontText: '',
+        backText: '',
+        hint: '',
+        orderIndex: cardIndex
+    });
+    
+    // ✅ CHỈ THÊM FLASHCARD MỚI VÀO DOM THAY VÌ RELOAD TOÀN BỘ
+    const flashcardsContainer = document.getElementById(`flashcardsContainer_${contentIndex}`);
+    if (flashcardsContainer) {
+        const newCardHTML = `
+            <div class="flashcard-item" data-card-index="${cardIndex}" style="background: #f9fafb; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border: 2px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong>Thẻ ${cardIndex + 1}</strong>
+                    <button type="button" class="icon-btn danger" onclick="removeFlashcard(${contentIndex}, ${cardIndex})" title="Xóa thẻ">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Mặt trước:</label>
+                    <textarea class="form-control flashcard-front" rows="2" onchange="updateFlashcard(${contentIndex}, ${cardIndex}, 'front', this.value)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Mặt sau:</label>
+                    <textarea class="form-control flashcard-back" rows="2" onchange="updateFlashcard(${contentIndex}, ${cardIndex}, 'back', this.value)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Gợi ý (tùy chọn):</label>
+                    <input type="text" class="form-control flashcard-hint" onchange="updateFlashcard(${contentIndex}, ${cardIndex}, 'hint', this.value)">
+                </div>
+            </div>
+        `;
+        flashcardsContainer.insertAdjacentHTML('beforeend', newCardHTML);
+    }
+}
+
+function removeFlashcard(contentIndex, cardIndex) {
+    if (!confirm('Bạn có chắc muốn xóa thẻ này?')) return;
+    
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.flashcards.splice(cardIndex, 1);
+    
+    // Reload để cập nhật UI
+    loadLessonContents();
+}
+
+function updateFlashcard(contentIndex, cardIndex, field, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    
+    if (field === 'front') {
+        content.flashcards[cardIndex].frontText = value;
+    } else if (field === 'back') {
+        content.flashcards[cardIndex].backText = value;
+    } else if (field === 'hint') {
+        content.flashcards[cardIndex].hint = value;
+    }
+}
+
+function updateFlashcardSetTitle(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.flashcardSetTitle = value;
+}
+
+function updateFlashcardSetDesc(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.flashcardSetDesc = value;
+}
+
+// ============================================
+// TEST FUNCTIONS
+// ============================================
+
+function addTestQuestion(contentIndex) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    
+    if (!content.questions) {
+        content.questions = [];
+    }
+    
+    const qIndex = content.questions.length;
+    content.questions.push({
+        type: 'MCQ_Single',
+        stemText: '',
+        points: 1,
+        orderIndex: qIndex,
+        options: [
+            { optionText: '', isCorrect: false, orderIndex: 0 },
+            { optionText: '', isCorrect: false, orderIndex: 1 }
+        ]
+    });
+    
+    // ✅ CHỈ THÊM QUESTION MỚI VÀO DOM THAY VÌ RELOAD TOÀN BỘ
+    const questionsContainer = document.getElementById(`testQuestionsContainer_${contentIndex}`);
+    if (questionsContainer) {
+        const question = content.questions[qIndex];
+        let optionsHTML = '';
+        question.options.forEach((option, oIndex) => {
+            optionsHTML += `
+                <div class="option-item" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                    <input type="checkbox" ${option.isCorrect ? 'checked' : ''} onchange="updateQuestionOption(${contentIndex}, ${qIndex}, ${oIndex}, 'isCorrect', this.checked)" style="width: 20px; height: 20px;">
+                    <input type="text" class="form-control" value="${option.optionText || ''}" onchange="updateQuestionOption(${contentIndex}, ${qIndex}, ${oIndex}, 'text', this.value)" placeholder="Nội dung đáp án">
+                    <button type="button" class="icon-btn danger" onclick="removeQuestionOption(${contentIndex}, ${qIndex}, ${oIndex})" title="Xóa đáp án">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        });
+        
+        const newQuestionHTML = `
+            <div class="test-question-item" data-question-index="${qIndex}" style="background: #f9fafb; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; border: 2px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <strong style="font-size: 1.1rem;">Câu hỏi ${qIndex + 1}</strong>
+                    <button type="button" class="icon-btn danger" onclick="removeTestQuestion(${contentIndex}, ${qIndex})" title="Xóa câu hỏi">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Loại câu hỏi:</label>
+                    <select class="form-control" onchange="updateQuestionType(${contentIndex}, ${qIndex}, this.value)">
+                        <option value="MCQ_Single" ${question.type === 'MCQ_Single' ? 'selected' : ''}>Trắc nghiệm (1 đáp án)</option>
+                        <option value="MCQ_Multi" ${question.type === 'MCQ_Multi' ? 'selected' : ''}>Trắc nghiệm (nhiều đáp án)</option>
+                        <option value="TrueFalse" ${question.type === 'TrueFalse' ? 'selected' : ''}>Đúng/Sai</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Câu hỏi:</label>
+                    <textarea class="form-control" rows="3" onchange="updateQuestionText(${contentIndex}, ${qIndex}, this.value)">${question.stemText || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Điểm:</label>
+                    <input type="number" class="form-control" value="${question.points || 1}" min="0.5" step="0.5" onchange="updateQuestionPoints(${contentIndex}, ${qIndex}, this.value)" style="max-width: 120px;">
+                </div>
+                <div class="form-group">
+                    <label>Các đáp án: <small class="text-muted">(Chọn checkbox cho đáp án đúng)</small></label>
+                    <div class="options-container" id="optionsContainer_${contentIndex}_${qIndex}">
+                        ${optionsHTML}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestionOption(${contentIndex}, ${qIndex})" style="margin-top: 0.5rem;">
+                            <i class="fas fa-plus"></i> Thêm đáp án
+                        </button>
+                </div>
+            </div>
+        `;
+        questionsContainer.insertAdjacentHTML('beforeend', newQuestionHTML);
+    }
+}
+
+function removeTestQuestion(contentIndex, questionIndex) {
+    if (!confirm('Bạn có chắc muốn xóa câu hỏi này?')) return;
+    
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.questions.splice(questionIndex, 1);
+    
+    // Reload để cập nhật UI
+    loadLessonContents();
+}
+
+function updateQuestionType(contentIndex, questionIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.questions[questionIndex].type = value;
+    
+    // ✅ CHỈ CẬP NHẬT LOẠI CÂU HỎI MÀ KHÔNG RELOAD (vì chỉ thay đổi behavior của checkboxes)
+    // Không cần reload UI
+}
+
+function updateQuestionText(contentIndex, questionIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.questions[questionIndex].stemText = value;
+}
+
+function updateQuestionPoints(contentIndex, questionIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.questions[questionIndex].points = parseFloat(value) || 1;
+}
+
+function addQuestionOption(contentIndex, questionIndex) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    const question = content.questions[questionIndex];
+    
+    if (!question.options) {
+        question.options = [];
+    }
+    
+    const oIndex = question.options.length;
+    question.options.push({
+        optionText: '',
+        isCorrect: false,
+        orderIndex: oIndex
+    });
+    
+    // ✅ CHỈ THÊM OPTION MỚI VÀO DOM THAY VÌ RELOAD TOÀN BỘ
+    const optionsContainer = document.getElementById(`optionsContainer_${contentIndex}_${questionIndex}`);
+    if (optionsContainer) {
+        const newOptionHTML = `
+            <div class="option-item" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+                <input type="checkbox" onchange="updateQuestionOption(${contentIndex}, ${questionIndex}, ${oIndex}, 'isCorrect', this.checked)" style="width: 20px; height: 20px;">
+                <input type="text" class="form-control" onchange="updateQuestionOption(${contentIndex}, ${questionIndex}, ${oIndex}, 'text', this.value)" placeholder="Nội dung đáp án">
+                <button type="button" class="icon-btn danger" onclick="removeQuestionOption(${contentIndex}, ${questionIndex}, ${oIndex})" title="Xóa đáp án">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        optionsContainer.insertAdjacentHTML('beforeend', newOptionHTML);
+    }
+}
+
+function removeQuestionOption(contentIndex, questionIndex, optionIndex) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    const question = content.questions[questionIndex];
+    
+    // Đảm bảo ít nhất 2 đáp án
+    if (question.options.length <= 2) {
+        toastr.warning('Câu hỏi phải có ít nhất 2 đáp án');
+        return;
+    }
+    
+    question.options.splice(optionIndex, 1);
+    
+    // Reload để cập nhật UI
+    loadLessonContents();
+}
+
+function updateQuestionOption(contentIndex, questionIndex, optionIndex, field, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    const option = content.questions[questionIndex].options[optionIndex];
+    
+    if (field === 'text') {
+        option.optionText = value;
+    } else if (field === 'isCorrect') {
+        // Nếu là MCQ_Single, bỏ chọn các đáp án khác
+        const question = content.questions[questionIndex];
+        if (question.type === 'MCQ_Single' && value === true) {
+            question.options.forEach((opt, idx) => {
+                opt.isCorrect = idx === optionIndex;
+            });
+            // ✅ CẬP NHẬT LẠI CHECKBOXES TRÊN UI
+            const optionsContainer = document.getElementById(`optionsContainer_${contentIndex}_${questionIndex}`);
+            if (optionsContainer) {
+                const checkboxes = optionsContainer.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach((cb, idx) => {
+                    cb.checked = idx === optionIndex;
+                });
+            }
+        } else {
+            option.isCorrect = value;
+        }
+    }
+}
+
+function updateTestTitle(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.testTitle = value;
+}
+
+function updateTestDesc(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.testDesc = value;
+}
+
+function updateTestTime(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.timeLimitMinutes = parseInt(value) || 30;
+}
+
+function updateTestAttempts(contentIndex, value) {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+    
+    const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
+    content.maxAttempts = parseInt(value) || 3;
+}
+
+// ============================================
 // PREVIEW
 // ============================================
 function renderPreview() {
@@ -1191,7 +1662,7 @@ function saveCourse(publish) {
     // Set form action based on whether it's create or update
     const courseId = new URLSearchParams(window.location.search).get('id');
     if (courseId) {
-        form.action = `/courses/builder/update/${courseId}`; // Sửa lại template string
+        form.action = `/courses/builder/update/${courseId}`;
     } else {
         form.action = '/courses/builder/save';
     }
@@ -1291,7 +1762,6 @@ function loadExistingData(data) {
     }
 
     document.getElementById('Price').value = data.price || 0;
-    //document.getElementById('IsPublished').checked = data.isPublished || false;
     document.getElementById('CoverUrl').value = data.coverUrl || '';
 
     if (data.coverUrl) {

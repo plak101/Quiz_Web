@@ -94,6 +94,51 @@ namespace Quiz_Web.Models.ViewModels
 		public string? VideoUrl { get; set; } // For Video content type
 
 		public int OrderIndex { get; set; }
+		
+		// For FlashcardSet content type
+		public string? FlashcardSetTitle { get; set; }
+		public string? FlashcardSetDesc { get; set; }
+		public List<FlashcardBuilderViewModel>? Flashcards { get; set; }
+		
+		// For Test content type
+		public string? TestTitle { get; set; }
+		public string? TestDesc { get; set; }
+		public int? TimeLimitMinutes { get; set; }
+		public int? MaxAttempts { get; set; }
+		public List<TestQuestionBuilderViewModel>? Questions { get; set; }
+	}
+
+	/// <summary>
+	/// ViewModel cho Flashcard trong Course Builder
+	/// </summary>
+	public class FlashcardBuilderViewModel
+	{
+		public string FrontText { get; set; } = null!;
+		public string BackText { get; set; } = null!;
+		public string? Hint { get; set; }
+		public int OrderIndex { get; set; }
+	}
+
+	/// <summary>
+	/// ViewModel cho Test Question trong Course Builder
+	/// </summary>
+	public class TestQuestionBuilderViewModel
+	{
+		public string Type { get; set; } = "MCQ_Single"; // MCQ_Single/MCQ_Multi/TrueFalse
+		public string StemText { get; set; } = null!;
+		public decimal Points { get; set; } = 1;
+		public int OrderIndex { get; set; }
+		public List<TestQuestionOptionBuilderViewModel>? Options { get; set; }
+	}
+
+	/// <summary>
+	/// ViewModel cho Question Option trong Course Builder
+	/// </summary>
+	public class TestQuestionOptionBuilderViewModel
+	{
+		public string OptionText { get; set; } = null!;
+		public bool IsCorrect { get; set; }
+		public int OrderIndex { get; set; }
 	}
 
 	/// <summary>
