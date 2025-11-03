@@ -317,14 +317,108 @@ namespace Quiz_Web.Services
 
 						foreach (var contentVM in lessonVM.Contents)
 						{
+							int? refId = null;
+
+							// Step 3: Create FlashcardSet or Test if needed
+							if (contentVM.ContentType == "FlashcardSet" && contentVM.Flashcards != null && contentVM.Flashcards.Any())
+							{
+								var flashcardSet = new FlashcardSet
+								{
+									OwnerId = ownerId,
+									Title = contentVM.FlashcardSetTitle ?? contentVM.Title ?? "Untitled Flashcard Set",
+									Description = contentVM.FlashcardSetDesc,
+									Visibility = "Course", // Course-only visibility
+									CreatedAt = DateTime.UtcNow,
+									IsDeleted = false
+								};
+
+								_context.FlashcardSets.Add(flashcardSet);
+								_context.SaveChanges();
+
+								// Add flashcards
+								foreach (var flashcardVM in contentVM.Flashcards)
+								{
+									var flashcard = new Flashcard
+									{
+										SetId = flashcardSet.SetId,
+										FrontText = flashcardVM.FrontText,
+										BackText = flashcardVM.BackText,
+										Hint = flashcardVM.Hint,
+										OrderIndex = flashcardVM.OrderIndex,
+										CreatedAt = DateTime.UtcNow
+									};
+
+									_context.Flashcards.Add(flashcard);
+								}
+								_context.SaveChanges();
+
+								refId = flashcardSet.SetId;
+							}
+							else if (contentVM.ContentType == "Test" && contentVM.Questions != null && contentVM.Questions.Any())
+							{
+								var test = new Test
+								{
+									OwnerId = ownerId,
+									Title = contentVM.TestTitle ?? contentVM.Title ?? "Untitled Test",
+									Description = contentVM.TestDesc,
+									Visibility = "Course", // Course-only visibility
+									TimeLimitSec = (contentVM.TimeLimitMinutes ?? 30) * 60,
+									MaxAttempts = contentVM.MaxAttempts ?? 3,
+									ShuffleQuestions = false,
+									ShuffleOptions = false,
+									GradingMode = "Auto",
+									CreatedAt = DateTime.UtcNow,
+									IsDeleted = false
+								};
+
+								_context.Tests.Add(test);
+								_context.SaveChanges();
+
+								// Add questions
+								foreach (var questionVM in contentVM.Questions)
+								{
+									var question = new Question
+									{
+										TestId = test.TestId,
+										Type = questionVM.Type,
+										StemText = questionVM.StemText,
+										Points = questionVM.Points,
+										OrderIndex = questionVM.OrderIndex
+									};
+
+									_context.Questions.Add(question);
+									_context.SaveChanges();
+
+									// Add options
+									if (questionVM.Options != null)
+									{
+										foreach (var optionVM in questionVM.Options)
+										{
+											var option = new QuestionOption
+											{
+												QuestionId = question.QuestionId,
+												OptionText = optionVM.OptionText,
+												IsCorrect = optionVM.IsCorrect,
+												OrderIndex = optionVM.OrderIndex
+											};
+
+											_context.QuestionOptions.Add(option);
+										}
+										_context.SaveChanges();
+									}
+								}
+
+								refId = test.TestId;
+							}
+
 							var content = new LessonContent
 							{
 								LessonId = lesson.LessonId,
 								ContentType = contentVM.ContentType,
-								RefId = contentVM.RefId,
+								RefId = refId,
 								Title = contentVM.Title,
 								Body = contentVM.Body,
-								VideoUrl = contentVM.VideoUrl, // ADD THIS LINE
+								VideoUrl = contentVM.VideoUrl,
 								OrderIndex = contentVM.OrderIndex,
 								CreatedAt = DateTime.UtcNow
 							};
@@ -369,15 +463,53 @@ namespace Quiz_Web.Services
 				course.IsPublished = model.IsPublished;
 				course.UpdatedAt = DateTime.UtcNow;
 
-				// Remove old structure
+				// Collect RefIds of FlashcardSets and Tests to delete
+				var flashcardSetIdsToDelete = new List<int>();
+				var testIdsToDelete = new List<int>();
+
 				foreach (var chapter in course.CourseChapters.ToList())
 				{
 					foreach (var lesson in chapter.Lessons.ToList())
 					{
+						foreach (var content in lesson.LessonContents.ToList())
+						{
+							if (content.ContentType == "FlashcardSet" && content.RefId.HasValue)
+							{
+								flashcardSetIdsToDelete.Add(content.RefId.Value);
+							}
+							else if (content.ContentType == "Test" && content.RefId.HasValue)
+							{
+								testIdsToDelete.Add(content.RefId.Value);
+							}
+						}
 						_context.LessonContents.RemoveRange(lesson.LessonContents);
 						_context.Lessons.Remove(lesson);
 					}
 					_context.CourseChapters.Remove(chapter);
+				}
+				_context.SaveChanges();
+
+				// Delete old FlashcardSets and Tests
+				if (flashcardSetIdsToDelete.Any())
+				{
+					var flashcardSets = _context.FlashcardSets
+						.Where(fs => flashcardSetIdsToDelete.Contains(fs.SetId) && fs.Visibility == "Course")
+						.ToList();
+					foreach (var set in flashcardSets)
+					{
+						set.IsDeleted = true; // Soft delete
+					}
+				}
+
+				if (testIdsToDelete.Any())
+				{
+					var tests = _context.Tests
+						.Where(t => testIdsToDelete.Contains(t.TestId) && t.Visibility == "Course")
+						.ToList();
+					foreach (var test in tests)
+					{
+						test.IsDeleted = true; // Soft delete
+					}
 				}
 				_context.SaveChanges();
 
@@ -412,11 +544,105 @@ namespace Quiz_Web.Services
 
 						foreach (var contentVM in lessonVM.Contents)
 						{
+							int? refId = null;
+
+							// Create FlashcardSet or Test if needed
+							if (contentVM.ContentType == "FlashcardSet" && contentVM.Flashcards != null && contentVM.Flashcards.Any())
+							{
+								var flashcardSet = new FlashcardSet
+								{
+									OwnerId = ownerId,
+									Title = contentVM.FlashcardSetTitle ?? contentVM.Title ?? "Untitled Flashcard Set",
+									Description = contentVM.FlashcardSetDesc,
+									Visibility = "Course",
+									CreatedAt = DateTime.UtcNow,
+									IsDeleted = false
+								};
+
+								_context.FlashcardSets.Add(flashcardSet);
+								_context.SaveChanges();
+
+								// Add flashcards
+								foreach (var flashcardVM in contentVM.Flashcards)
+								{
+									var flashcard = new Flashcard
+									{
+										SetId = flashcardSet.SetId,
+										FrontText = flashcardVM.FrontText,
+										BackText = flashcardVM.BackText,
+										Hint = flashcardVM.Hint,
+										OrderIndex = flashcardVM.OrderIndex,
+										CreatedAt = DateTime.UtcNow
+									};
+
+									_context.Flashcards.Add(flashcard);
+								}
+								_context.SaveChanges();
+
+								refId = flashcardSet.SetId;
+							}
+							else if (contentVM.ContentType == "Test" && contentVM.Questions != null && contentVM.Questions.Any())
+							{
+								var test = new Test
+								{
+									OwnerId = ownerId,
+									Title = contentVM.TestTitle ?? contentVM.Title ?? "Untitled Test",
+									Description = contentVM.TestDesc,
+									Visibility = "Course",
+									TimeLimitSec = (contentVM.TimeLimitMinutes ?? 30) * 60,
+									MaxAttempts = contentVM.MaxAttempts ?? 3,
+									ShuffleQuestions = false,
+									ShuffleOptions = false,
+									GradingMode = "Auto",
+									CreatedAt = DateTime.UtcNow,
+									IsDeleted = false
+								};
+
+								_context.Tests.Add(test);
+								_context.SaveChanges();
+
+								// Add questions
+								foreach (var questionVM in contentVM.Questions)
+								{
+									var question = new Question
+									{
+										TestId = test.TestId,
+										Type = questionVM.Type,
+										StemText = questionVM.StemText,
+										Points = questionVM.Points,
+										OrderIndex = questionVM.OrderIndex
+									};
+
+									_context.Questions.Add(question);
+									_context.SaveChanges();
+
+									// Add options
+									if (questionVM.Options != null)
+									{
+										foreach (var optionVM in questionVM.Options)
+										{
+											var option = new QuestionOption
+											{
+												QuestionId = question.QuestionId,
+												OptionText = optionVM.OptionText,
+												IsCorrect = optionVM.IsCorrect,
+												OrderIndex = optionVM.OrderIndex
+											};
+
+											_context.QuestionOptions.Add(option);
+										}
+										_context.SaveChanges();
+									}
+								}
+
+								refId = test.TestId;
+							}
+
 							var content = new LessonContent
 							{
 								LessonId = lesson.LessonId,
 								ContentType = contentVM.ContentType,
-								RefId = contentVM.RefId,
+								RefId = refId,
 								Title = contentVM.Title,
 								Body = contentVM.Body,
 								VideoUrl = contentVM.VideoUrl, // ADD THIS LINE
