@@ -288,9 +288,12 @@ namespace Quiz_Web.Controllers
 			if (string.IsNullOrWhiteSpace(slug))
 				return RedirectToAction(nameof(Index));
 
-			var course = _courseService.GetCourseBySlug(slug);
+			var course = _courseService.GetCourseBySlugWithFullDetails(slug);
 			if (course == null)
+			{
+				_logger.LogWarning($"Course not found with slug: {slug}");
 				return RedirectToAction(nameof(Index));
+			}
 
 			var isOwner = false;
 			var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

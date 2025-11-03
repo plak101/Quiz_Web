@@ -66,6 +66,28 @@ namespace Quiz_Web.Services
 			}
 		}
 
+		public Course? GetCourseBySlugWithFullDetails(string slug)
+		{
+			try
+			{
+				return _context.Courses
+					.Include(c => c.Owner)
+					.Include(c => c.Category)
+					.Include(c => c.CourseChapters.OrderBy(ch => ch.OrderIndex))
+						.ThenInclude(ch => ch.Lessons.OrderBy(l => l.OrderIndex))
+							.ThenInclude(l => l.LessonContents.OrderBy(lc => lc.OrderIndex))
+					.Include(c => c.CoursePurchases)
+					.Include(c => c.CourseReviews.OrderByDescending(r => r.CreatedAt))
+						.ThenInclude(r => r.User)
+					.FirstOrDefault(c => c.Slug == slug && c.IsPublished);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"GetCourseBySlugWithFullDetails error for slug: {slug}");
+				return null;
+			}
+		}
+
 		public List<Course> GetCoursesByCategory(string category)
 		{
 			try
