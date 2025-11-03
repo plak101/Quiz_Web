@@ -8,6 +8,7 @@ namespace Quiz_Web.Services.IServices
 		List<Course> GetAllPublishedCourses();
 		Course? GetCourseById(int id);
 		Course? GetCourseBySlug(string slug);
+		Course? GetCourseBySlugWithFullDetails(string slug); // New method
 		List<Course> GetCoursesByCategory(string category);
 		List<Course> SearchCourses(string keyword);
 		Course? CreateCourse(CreateCourseViewModel model, int ownerId);
