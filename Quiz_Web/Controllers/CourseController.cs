@@ -27,26 +27,30 @@ namespace Quiz_Web.Controllers
 		// GET: /courses
 		[Route("/courses")]
 		[HttpGet]
-		public IActionResult Index(string? search, string? category, int page = 1, int pageSize = 12)
+		public IActionResult Index(
+			string? search, 
+			int page = 1, 
+			int pageSize = 12,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null)
 		{
-			_logger.LogInformation($"Courses Index - Search: {search}, Category: {category}, Page: {page}");
+			_logger.LogInformation($"Courses Index - Search: {search}, Page: {page}, MinRating: {minRating}, MaxRating: {maxRating}, IsFree: {isFree}, SortBy: {sortBy}");
 
-			List<Quiz_Web.Models.Entities.Course> courses;
+			var courses = _courseService.GetFilteredAndSortedCourses(
+				searchKeyword: search,
+				categorySlug: null,
+				minRating: minRating,
+				maxRating: maxRating,
+				isFree: isFree,
+				sortBy: sortBy);
 
-			if (!string.IsNullOrWhiteSpace(search))
-			{
-				courses = _courseService.SearchCourses(search);
-				ViewBag.SearchKeyword = search;
-			}
-			else if (!string.IsNullOrWhiteSpace(category))
-			{
-				courses = _courseService.GetCoursesByCategory(category);
-				ViewBag.Category = category;
-			}
-			else
-			{
-				courses = _courseService.GetAllPublishedCourses();
-			}
+			ViewBag.SearchKeyword = search;
+			ViewBag.MinRating = minRating;
+			ViewBag.MaxRating = maxRating;
+			ViewBag.IsFree = isFree;
+			ViewBag.SortBy = sortBy;
 
 			var totalCount = courses.Count;
 			var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -63,24 +67,42 @@ namespace Quiz_Web.Controllers
 		// GET: /courses/search?q=keyword
 		[Route("/courses/search")]
 		[HttpGet]
-		public IActionResult Search(string q, int page = 1, int pageSize = 12)
+		public IActionResult Search(
+			string q, 
+			int page = 1, 
+			int pageSize = 12,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null)
 		{
 			_logger.LogInformation($"Course Search - Query: {q}");
 			if (string.IsNullOrWhiteSpace(q))
 				return RedirectToAction(nameof(Index));
 
-			var courses = _courseService.SearchCourses(q);
+			var courses = _courseService.GetFilteredAndSortedCourses(
+				searchKeyword: q,
+				categorySlug: null,
+				minRating: minRating,
+				maxRating: maxRating,
+				isFree: isFree,
+				sortBy: sortBy);
+
+			ViewBag.SearchKeyword = q;
+			ViewBag.MinRating = minRating;
+			ViewBag.MaxRating = maxRating;
+			ViewBag.IsFree = isFree;
+			ViewBag.SortBy = sortBy;
 
 			var totalCount = courses.Count;
 			var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 			var pagedCourses = courses.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-			ViewBag.SearchKeyword = q;
 			ViewBag.TotalCount = totalCount;
 			ViewBag.TotalPages = totalPages;
 			ViewBag.CurrentPage = page;
 			ViewBag.PageSize = pageSize;
-			ViewBag.Category = null;
+			ViewBag.CategorySlug = null;
 
 			return View("Index", pagedCourses);
 		}
@@ -264,19 +286,51 @@ namespace Quiz_Web.Controllers
 		// GET: /courses/category/{category}
 		[Route("/courses/category/{category}")]
 		[HttpGet]
-		public IActionResult Category(string category)
+		public IActionResult Category(
+			string category,
+			int page = 1,
+			int pageSize = 3,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null)
 		{
-			_logger.LogInformation($"Course Category - Category: {category}");
+			_logger.LogInformation($"Course Category - Category: {category}, Page: {page}");
 
 			if (string.IsNullOrWhiteSpace(category))
 			{
 				return RedirectToAction(nameof(Index));
 			}
 
-			var courses = _courseService.GetCoursesByCategory(category);
-			ViewBag.Category = category;
+			var courses = _courseService.GetFilteredAndSortedCourses(
+				searchKeyword: null,
+				categorySlug: category,
+				minRating: minRating,
+				maxRating: maxRating,
+				isFree: isFree,
+				sortBy: sortBy);
 
-			return View("Index", courses);
+			// Get category name for display
+			var categoryEntity = _courseService.GetAllCategories()
+				.FirstOrDefault(c => c.Slug == category);
+
+			ViewBag.CategorySlug = category;
+			ViewBag.CategoryName = categoryEntity?.Name;
+			ViewBag.MinRating = minRating;
+			ViewBag.MaxRating = maxRating;
+			ViewBag.IsFree = isFree;
+			ViewBag.SortBy = sortBy;
+
+			var totalCount = courses.Count;
+			var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+			var pagedCourses = courses.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+			ViewBag.CurrentPage = page;
+			ViewBag.TotalPages = totalPages;
+			ViewBag.PageSize = pageSize;
+			ViewBag.TotalCount = totalCount;
+
+			return View("Index", pagedCourses);
 		}
 
 		// GET: /courses/{slug}

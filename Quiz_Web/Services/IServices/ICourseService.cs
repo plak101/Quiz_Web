@@ -8,9 +8,19 @@ namespace Quiz_Web.Services.IServices
 		List<Course> GetAllPublishedCourses();
 		Course? GetCourseById(int id);
 		Course? GetCourseBySlug(string slug);
-		Course? GetCourseBySlugWithFullDetails(string slug); // New method
+		Course? GetCourseBySlugWithFullDetails(string slug);
 		List<Course> GetCoursesByCategory(string category);
 		List<Course> SearchCourses(string keyword);
+		
+		// New method for filtering and sorting
+		List<Course> GetFilteredAndSortedCourses(
+			string? searchKeyword = null,
+			string? categorySlug = null,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null);
+		
 		Course? CreateCourse(CreateCourseViewModel model, int ownerId);
 		bool IsSlugUnique(string slug);
         // New overload: allow excluding a course when checking uniqueness (for edit/builder)
