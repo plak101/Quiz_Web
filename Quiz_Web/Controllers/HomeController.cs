@@ -40,7 +40,7 @@ namespace Quiz_Web.Controllers
             }
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             // Nếu người dùng chưa đăng nhập, redirect về Introduce
             if (User.Identity?.IsAuthenticated != true)
@@ -48,7 +48,66 @@ namespace Quiz_Web.Controllers
                 return RedirectToAction("Index", "Introduce");
             }
             
-            return View();
+            // Lấy danh sách categories cho navigation
+            var categories = await _context.CourseCategories
+                .OrderBy(c => c.DisplayOrder)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
+            
+            // Lấy recommended courses dựa trên user interests
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var recommendedCourses = new List<Quiz_Web.Models.Entities.Course>();
+            
+            if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int userIdInt))
+            {
+                // Lấy user interests
+                var userInterests = await _context.UserInterests
+                    .Where(ui => ui.UserId == userIdInt)
+                    .Select(ui => ui.CategoryId)
+                    .ToListAsync();
+                
+                if (userInterests.Any())
+                {
+                    // Lấy courses từ các categories user quan tâm
+                    recommendedCourses = await _context.Courses
+                        .Include(c => c.Owner)
+                        .Include(c => c.Category)
+                        .Where(c => c.IsPublished 
+                                 && c.CategoryId.HasValue 
+                                 && userInterests.Contains(c.CategoryId.Value))
+                        .OrderByDescending(c => c.AverageRating)
+                        .ThenByDescending(c => c.TotalReviews)
+                        .Take(10)
+                        .ToListAsync();
+                }
+            }
+            
+            // Nếu không có recommended courses, lấy random courses
+            if (!recommendedCourses.Any())
+            {
+                recommendedCourses = await _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(10)
+                    .ToListAsync();
+            }
+            
+            // Lấy top rated courses
+            var topRatedCourses = await _context.Courses
+                .Include(c => c.Owner)
+                .Include(c => c.Category)
+                .Where(c => c.IsPublished && c.AverageRating > 0)
+                .OrderByDescending(c => c.AverageRating)
+                .ThenByDescending(c => c.TotalReviews)
+                .Take(5)
+                .ToListAsync();
+            
+            ViewBag.RecommendedCourses = recommendedCourses;
+            ViewBag.TopRatedCourses = topRatedCourses;
+            
+            return View(categories);
         }
 
         public IActionResult Privacy()
