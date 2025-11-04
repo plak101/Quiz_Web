@@ -10,13 +10,15 @@
 <!-- Category Navigation Section -->
 <section class="category-navigation">
     <div class="category-nav-wrapper">
-        @foreach (var category in Model)
+        
+           @foreach (var category in Model)
         {
             <a href="@Url.Action("Category", "Course", new { category = category.Slug })" 
                class="category-nav-item">
                 @category.Name
             </a>
         }
+        
     </div>
 </section>
 
