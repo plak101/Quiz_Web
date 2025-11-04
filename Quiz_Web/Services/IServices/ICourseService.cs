@@ -8,11 +8,13 @@ namespace Quiz_Web.Services.IServices
 		List<Course> GetAllPublishedCourses();
 		Course? GetCourseById(int id);
 		Course? GetCourseBySlug(string slug);
+		Course? GetCourseBySlugWithFullDetails(string slug); // New method
 		List<Course> GetCoursesByCategory(string category);
 		List<Course> SearchCourses(string keyword);
 		Course? CreateCourse(CreateCourseViewModel model, int ownerId);
 		bool IsSlugUnique(string slug);
-		bool IsSlugUnique(string slug, int? excludeCourseId);// Overloaded method kiem tra slug loai tru khoa hoc co id truyen vao
+        // New overload: allow excluding a course when checking uniqueness (for edit/builder)
+        bool IsSlugUnique(string slug, int? excludeCourseId);
 		List<Course> GetCoursesByOwner(int ownerId);
 		Course? GetOwnedCourse(int id, int ownerId);
 		Course? UpdateCourse(EditCourseViewModel model, int ownerId, string? sanitizedDescription);
@@ -25,5 +27,9 @@ namespace Quiz_Web.Services.IServices
 		Course? GetCourseWithFullStructure(int courseId, int ownerId);
 		CourseBuilderViewModel? GetCourseBuilderData(int courseId, int ownerId);
 		bool AutosaveCourse(int? courseId, CourseAutosaveViewModel model, int ownerId);
+		
+		// Home page recommendations
+		List<Course> GetRecommendedCourses(int userId, int count = 6);
+		List<Course> GetTopRatedCourses(int count = 6);
 	}
 }

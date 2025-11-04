@@ -1,5 +1,5 @@
-function submitDelete(id) {
-  if (!confirm('B?n ch?c mu?n x�a kh�a h?c n�y?')) return;
+﻿function submitDelete(id) {
+  if (!confirm('Bạn chắc muốn xóa khóa học này?')) return;
   const f = document.getElementById('deleteForm');
   f.action = `/courses/delete/${id}`;
   f.submit();
@@ -12,7 +12,7 @@ $(function () {
     columnDefs: [
       { targets: [1], visible: false, searchable: false },
       { targets: 0, width: 60 }, // ID col
-      { targets: 6, width: 240, className: 'text-end text-nowrap' }, // action col width
+      { targets: 6,  className: 'text-end text-nowrap' }, // action col width
       {
         targets: -1,
         orderable: false,
@@ -22,7 +22,7 @@ $(function () {
           const id = row[0];
           const slug = row[1];
           const viewUrl = `/courses/${slug}`;
-          const editUrl = `/courses/edit/${id}`;
+          const editUrl = `/courses/builder?id=${id}`;
           return `
             <a href="${viewUrl}" class="btn btn-sm btn-info text-white btn-action me-1">
                 <i class="fa-solid fa-eye"></i>

@@ -4,6 +4,7 @@ using Quiz_Web.Models.EF;
 using Quiz_Web.Services;
 using Quiz_Web.Services.IServices;
 using Ganss.Xss;
+using Quiz_Web.Models.MoMoPayment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,12 +37,19 @@ builder.Services.AddDbContext<LearningPlatformContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")),
     ServiceLifetime.Scoped);
 
+// Configure MoMo settings
+builder.Services.Configure<MoMoSettings>(builder.Configuration.GetSection("MoMoSettings"));
+
+// Register HttpClient for MoMoPaymentService
+builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILibraryService, LibraryService>();
 builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<ICreateTestService, CreateTestService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -82,7 +90,7 @@ app.MapControllerRoute(
     pattern: "Onboarding/{action=Index}/{id?}",
     defaults: new { controller = "Onboarding" });
 
-// Route m?c ??nh tr? ??n Welcome action ?? x? lý logic
+// Route m?c ??nh tr? ??n Welcome action ?? x? l? logic
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Welcome}/{id?}")
