@@ -287,6 +287,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .lesson-info i {
@@ -298,21 +299,46 @@
     color: #1c1d1f;
 }
 
-.preview-btn {
-    color: #5624d0;
+/* ? CONTENT TYPE BADGES */
+.content-type-badges {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.content-type-badges .badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 0;
-    text-decoration: none;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
-.preview-btn:hover {
-    text-decoration: underline;
+.content-type-badges .badge i {
+    font-size: 0.875rem;
+    color: inherit;
 }
 
-.lesson-description {
-    color: #6a6f73;
-    font-size: 0.9rem;
-    margin: 0.5rem 0 0 2rem;
+.content-type-badges .badge.bg-primary {
+    background-color: #0d6efd !important;
+    color: white;
+}
+
+.content-type-badges .badge.bg-info {
+    background-color: #0dcaf0 !important;
+    color: #000;
+}
+
+.content-type-badges .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000;
+}
+
+.content-type-badges .badge.bg-success {
+    background-color: #198754 !important;
+    color: white;
 }
 
 /* ==================== INSTRUCTOR CARD ==================== */
