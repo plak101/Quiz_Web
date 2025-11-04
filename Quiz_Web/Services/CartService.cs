@@ -130,9 +130,9 @@ namespace Quiz_Web.Services
                     return false;
                 }
 
-                // Check if user already purchased
+                // Check if user already purchased (completed only)
                 var alreadyPurchased = await _context.CoursePurchases
-                    .AnyAsync(cp => cp.BuyerId == userId && cp.CourseId == courseId);
+                    .AnyAsync(cp => cp.BuyerId == userId && cp.CourseId == courseId && cp.Status == "completed");
 
                 if (alreadyPurchased)
                 {

@@ -54,6 +54,7 @@ builder.Services.AddScoped<ICreateTestService, CreateTestService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 
 // Register background service for course recommendations
 builder.Services.AddHostedService<CourseRecommendationService>();
@@ -89,6 +90,18 @@ app.MapControllerRoute(
     name: "onboarding",
     pattern: "Onboarding/{action=Index}/{id?}",
     defaults: new { controller = "Onboarding" });
+
+// Add route for checkout
+app.MapControllerRoute(
+    name: "checkout",
+    pattern: "checkout",
+    defaults: new { controller = "Home", action = "Checkout" });
+
+// Add route for Checkout controller
+app.MapControllerRoute(
+    name: "checkoutController",
+    pattern: "Checkout/{action=Index}/{id?}",
+    defaults: new { controller = "Checkout" });
 
 // Route m?c ??nh tr? ??n Welcome action ?? x? l? logic
 app.MapControllerRoute(
