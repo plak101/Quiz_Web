@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="Models\EF\" />
+
     <Folder Include="Models\Payment\" />
     <Folder Include="Views\User\" />
     <Folder Include="wwwroot\asset\font\" />
@@ -28,6 +29,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
 </Project>

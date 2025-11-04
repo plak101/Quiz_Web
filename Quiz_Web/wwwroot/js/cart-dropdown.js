@@ -1,4 +1,4 @@
-// Cart Dropdown JavaScript
+﻿// Cart Dropdown JavaScript
 (function() {
     'use strict';
 
@@ -13,7 +13,7 @@
                 const isAuthenticated = document.body.dataset.userAuthenticated === 'true';
                 if (!isAuthenticated) {
                     e.preventDefault();
-                    window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    window.location.href = '/login' + encodeURIComponent(window.location.pathname);
                     return;
                 }
 
@@ -48,12 +48,12 @@
                 if (data.success) {
                     renderCartItems(data.items, data.total);
                 } else {
-                    showError('Kh�ng th? t?i gi? h�ng');
+                    showError('không thể thêm vào gỏi hàng');
                 }
             })
             .catch(error => {
                 console.error('Error loading cart:', error);
-                showError('?� x?y ra l?i khi t?i gi? h�ng');
+                showError('Đã xảy ra lỗi khi tới gỏi hàng');
             });
     }
 
@@ -69,7 +69,7 @@
             cartContent.innerHTML = `
                 <div class="cart-empty text-center py-5 px-3">
                     <i class="bi bi-cart-x text-muted" style="font-size: 48px;"></i>
-                    <p class="text-muted mt-3 mb-2">Gi? h�ng c?a b?n ?ang tr?ng.</p>
+                    <p class="text-muted mt-3 mb-2">Gi? hàng c?a b?n ?ang tr?ng.</p>
                     <a href="/courses" class="text-decoration-none text-primary">
                         Ti?p t?c mua s?m <i class="bi bi-arrow-right"></i>
                     </a>
@@ -96,7 +96,7 @@
                         <div class="cart-item-footer">
                             <span class="cart-item-price">${price}</span>
                             <button class="cart-item-remove" onclick="removeFromCart(${item.courseId})">
-                                X�a
+                                Xóa
                             </button>
                         </div>
                     </div>
@@ -170,7 +170,7 @@
 
     // Global function to remove item from cart
     window.removeFromCart = function(courseId) {
-        if (!confirm('B?n c� ch?c mu?n x�a kh�a h?c n�y kh?i gi? h�ng?')) {
+        if (!confirm('Bạn có chắc muốn xóa khỏi giỏ hàng')) {
             return;
         }
 
@@ -188,17 +188,17 @@
                 updateCartBadge();
                 
                 // Show success message
-                showToast('success', data.message || '?� x�a kh?i gi? h�ng');
+                showToast('success', data.message || 'Đã xóa khỏi giỏ hàng');
                 
                 // Dispatch custom event
                 document.dispatchEvent(new CustomEvent('cartUpdated'));
             } else {
-                showToast('error', data.message || 'Kh�ng th? x�a kh?i gi? h�ng');
+                showToast('error', data.message || 'Không thể xóa khỏi giỏ hàng');
             }
         })
         .catch(error => {
             console.error('Error removing from cart:', error);
-            showToast('error', '?� x?y ra l?i');
+            showToast('error', 'Đã xảy ra lổi');
         });
     };
 
@@ -214,17 +214,17 @@
         .then(data => {
             if (data.success) {
                 updateCartBadge();
-                showToast('success', data.message || '?� th�m v�o gi? h�ng');
+                showToast('success', data.message || 'Đã thêm vào giỏ hàng');
                 
                 // Dispatch custom event
                 document.dispatchEvent(new CustomEvent('cartUpdated'));
             } else {
-                showToast('error', data.message || 'Kh�ng th? th�m v�o gi? h�ng');
+                showToast('error', data.message || 'Không thể thêm vào giỏ hàng');
             }
         })
         .catch(error => {
             console.error('Error adding to cart:', error);
-            showToast('error', '?� x?y ra l?i');
+            showToast('error', 'Đã xảy ra lổi');
         });
     };
 
