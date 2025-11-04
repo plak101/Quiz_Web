@@ -362,7 +362,8 @@ namespace Quiz_Web.Services
             {
                 var publicFlashcardSets = await _context.FlashcardSets
                     .Include(fs => fs.Owner)
-                    .Where(fs => fs.Visibility == "public" && !fs.IsDeleted)
+                    .Include(fs => fs.Flashcards)
+                    .Where(fs => fs.Visibility.ToLower() == "public" && !fs.IsDeleted)
                     .OrderByDescending(fs => fs.CreatedAt)
                     .ToListAsync();
 

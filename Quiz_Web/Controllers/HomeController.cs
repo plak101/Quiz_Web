@@ -16,17 +16,20 @@ namespace Quiz_Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly ICourseService _courseService;
         private readonly ICartService _cartService;
+        private readonly IFlashcardService _flashcardService;
         private readonly LearningPlatformContext _context;
 
         public HomeController(
             ILogger<HomeController> logger, 
             ICourseService courseService,
             ICartService cartService,
+            IFlashcardService flashcardService,
             LearningPlatformContext context)
         {
             _logger = logger;
             _courseService = courseService;
             _cartService = cartService;
+            _flashcardService = flashcardService;
             _context = context;
         }
 
@@ -110,8 +113,12 @@ namespace Quiz_Web.Controllers
                 .Take(5)
                 .ToListAsync();
             
+            // Lấy public flashcard sets
+            var publicFlashcardSets = await _flashcardService.GetPublicFlashcardSetsAsync();
+            
             ViewBag.RecommendedCourses = recommendedCourses;
             ViewBag.TopRatedCourses = topRatedCourses;
+            ViewBag.PublicFlashcardSets = publicFlashcardSets.Take(10).ToList();
             
             return View(categories);
         }

@@ -5,6 +5,7 @@
     var fullName = User.Identity?.Name ?? "Người dùng";
     var recommendedCourses = ViewBag.RecommendedCourses as List<Quiz_Web.Models.Entities.Course> ?? new List<Quiz_Web.Models.Entities.Course>();
     var topRatedCourses = ViewBag.TopRatedCourses as List<Quiz_Web.Models.Entities.Course> ?? new List<Quiz_Web.Models.Entities.Course>();
+    var publicFlashcardSets = ViewBag.PublicFlashcardSets as List<Quiz_Web.Models.Entities.FlashcardSet> ?? new List<Quiz_Web.Models.Entities.FlashcardSet>();
 }
 
 <!-- Category Navigation Section -->
@@ -136,6 +137,73 @@
                 </div>
                 
                 <button class="carousel-nav-btn next-btn" type="button" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Public Flashcard Sets Section -->
+@if (publicFlashcardSets.Any())
+{
+    <section class="flashcard-sets-section py-5">
+        <div class="container-fluid">
+            <div class="mb-4">
+                <h2 class="fw-bold mb-2">Bộ flashcard nên học</h2>
+                <p class="text-muted">Học từ vựng và kiến thức một cách hiệu quả</p>
+            </div>
+            
+            <div class="flashcards-carousel-wrapper position-relative">
+                <button class="flashcard-carousel-nav-btn flashcard-prev-btn" type="button" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                
+                <div class="flashcards-slider">
+                    @foreach (var flashcardSet in publicFlashcardSets)
+                    {
+                        <div class="flashcard-card-wrapper">
+                            <a href="@Url.Action("Detail", "Flashcard", new { id = flashcardSet.SetId })" class="flashcard-card">
+                                <div class="flashcard-image">
+                                    @if (!string.IsNullOrEmpty(flashcardSet.CoverUrl))
+                                    {
+                                        <img src="@flashcardSet.CoverUrl" alt="@flashcardSet.Title" />
+                                    }
+                                    else
+                                    {
+                                        <div class="flashcard-image-placeholder">
+                                            <i class="bi bi-card-text"></i>
+                                        </div>
+                                    }
+                                    <div class="flashcard-count-badge">
+                                        <i class="bi bi-layers"></i>
+                                        @flashcardSet.Flashcards.Count() thẻ
+                                    </div>
+                                </div>
+                                <div class="flashcard-info">
+                                    <h3 class="flashcard-title">@flashcardSet.Title</h3>
+                                    @if (!string.IsNullOrEmpty(flashcardSet.Description))
+                                    {
+                                        <p class="flashcard-description">@flashcardSet.Description</p>
+                                    }
+                                    <div class="flashcard-author">
+                                        <i class="bi bi-person-circle"></i>
+                                        <span>@flashcardSet.Owner.FullName</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(flashcardSet.Language))
+                                    {
+                                        <div class="flashcard-language">
+                                            <i class="bi bi-globe"></i>
+                                            <span>@flashcardSet.Language</span>
+                                        </div>
+                                    }
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+                
+                <button class="flashcard-carousel-nav-btn flashcard-next-btn" type="button" aria-label="Next">
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
@@ -500,6 +568,194 @@
         .next-btn {
             right: 0;
         }
+
+        /* Flashcard Sets Section */
+        .flashcard-sets-section {
+            background-color: #ffffff;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            padding-left: calc(50vw - 50%);
+            padding-right: calc(50vw - 50%);
+        }
+        
+        .flashcard-sets-section .container-fluid {
+            max-width: 1340px;
+            margin: 0 auto;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+        
+        .flashcard-sets-section h2 {
+            font-size: 32px;
+            color: #1c1d1f;
+        }
+        
+        .flashcards-carousel-wrapper {
+            position: relative;
+            padding: 0 50px;
+        }
+        
+        .flashcards-slider {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 10px 0;
+        }
+        
+        .flashcards-slider::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .flashcard-card-wrapper {
+            flex: 0 0 auto;
+            width: 300px;
+        }
+        
+        .flashcard-card {
+            display: block;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            height: 100%;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .flashcard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-color: #5624d0;
+        }
+        
+        .flashcard-image {
+            width: 100%;
+            height: 160px;
+            overflow: hidden;
+            background: #f0f0f0;
+            position: relative;
+        }
+        
+        .flashcard-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .flashcard-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #5624d0 0%, #a435f0 100%);
+            color: white;
+            font-size: 48px;
+        }
+        
+        .flashcard-count-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .flashcard-info {
+            padding: 16px;
+        }
+        
+        .flashcard-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1c1d1f;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 48px;
+        }
+        
+        .flashcard-description {
+            font-size: 13px;
+            color: #6a6f73;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .flashcard-author {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #6a6f73;
+            margin-bottom: 6px;
+        }
+        
+        .flashcard-author i {
+            font-size: 16px;
+        }
+        
+        .flashcard-language {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #5624d0;
+            font-weight: 600;
+        }
+        
+        .flashcard-carousel-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #d1d7dc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        
+        .flashcard-carousel-nav-btn:hover {
+            background: #f7f9fa;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+        
+        .flashcard-carousel-nav-btn i {
+            font-size: 24px;
+            color: #1c1d1f;
+        }
+        
+        .flashcard-prev-btn {
+            left: 0;
+        }
+        
+        .flashcard-next-btn {
+            right: 0;
+        }
         
         /* Responsive adjustments */
         @@media (max-width: 992px) {
@@ -517,11 +773,13 @@
                 min-height: 400px;
             }
             
-            .recommended-courses-section h2 {
+            .recommended-courses-section h2,
+            .flashcard-sets-section h2 {
                 font-size: 28px;
             }
             
-            .courses-carousel-wrapper {
+            .courses-carousel-wrapper,
+            .flashcards-carousel-wrapper {
                 padding: 0 40px;
             }
         }
@@ -549,24 +807,29 @@
                 max-width: 100%;
             }
             
-            .recommended-courses-section h2 {
+            .recommended-courses-section h2,
+            .flashcard-sets-section h2 {
                 font-size: 24px;
             }
             
-            .courses-carousel-wrapper {
+            .courses-carousel-wrapper,
+            .flashcards-carousel-wrapper {
                 padding: 0 30px;
             }
             
-            .course-card-wrapper {
+            .course-card-wrapper,
+            .flashcard-card-wrapper {
                 width: 260px;
             }
             
-            .carousel-nav-btn {
+            .carousel-nav-btn,
+            .flashcard-carousel-nav-btn {
                 width: 40px;
                 height: 40px;
             }
             
-            .carousel-nav-btn i {
+            .carousel-nav-btn i,
+            .flashcard-carousel-nav-btn i {
                 font-size: 20px;
             }
         }
@@ -579,43 +842,80 @@
     <script src="~/js/Introduce.js" asp-append-version="true"></script>
     <script src="~/js/home/category-nav.js" asp-append-version="true"></script>
     <script>
-        // Carousel navigation
+        // Carousel navigation for courses
         document.addEventListener('DOMContentLoaded', function() {
             const slider = document.querySelector('.courses-slider');
             const prevBtn = document.querySelector('.prev-btn');
             const nextBtn = document.querySelector('.next-btn');
             
-            if (!slider || !prevBtn || !nextBtn) return;
-            
-            const scrollAmount = 320; // card width (300) + gap (20)
-            
-            prevBtn.addEventListener('click', function() {
-                slider.scrollBy({
-                    left: -scrollAmount,
-                    behavior: 'smooth'
-                });
-            });
-            
-            nextBtn.addEventListener('click', function() {
-                slider.scrollBy({
-                    left: scrollAmount,
-                    behavior: 'smooth'
-                });
-            });
-            
-            // Update button states based on scroll position
-            function updateButtonStates() {
-                const isAtStart = slider.scrollLeft <= 0;
-                const isAtEnd = slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 1;
+            if (slider && prevBtn && nextBtn) {
+                const scrollAmount = 320; // card width (300) + gap (20)
                 
-                prevBtn.style.opacity = isAtStart ? '0.5' : '1';
-                prevBtn.style.cursor = isAtStart ? 'default' : 'pointer';
-                nextBtn.style.opacity = isAtEnd ? '0.5' : '1';
-                nextBtn.style.cursor = isAtEnd ? 'default' : 'pointer';
+                prevBtn.addEventListener('click', function() {
+                    slider.scrollBy({
+                        left: -scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                nextBtn.addEventListener('click', function() {
+                    slider.scrollBy({
+                        left: scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                // Update button states based on scroll position
+                function updateButtonStates() {
+                    const isAtStart = slider.scrollLeft <= 0;
+                    const isAtEnd = slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 1;
+                    
+                    prevBtn.style.opacity = isAtStart ? '0.5' : '1';
+                    prevBtn.style.cursor = isAtStart ? 'default' : 'pointer';
+                    nextBtn.style.opacity = isAtEnd ? '0.5' : '1';
+                    nextBtn.style.cursor = isAtEnd ? 'default' : 'pointer';
+                }
+                
+                slider.addEventListener('scroll', updateButtonStates);
+                updateButtonStates();
             }
+
+            // Carousel navigation for flashcards
+            const flashcardSlider = document.querySelector('.flashcards-slider');
+            const flashcardPrevBtn = document.querySelector('.flashcard-prev-btn');
+            const flashcardNextBtn = document.querySelector('.flashcard-next-btn');
             
-            slider.addEventListener('scroll', updateButtonStates);
-            updateButtonStates();
+            if (flashcardSlider && flashcardPrevBtn && flashcardNextBtn) {
+                const scrollAmount = 320; // card width (300) + gap (20)
+                
+                flashcardPrevBtn.addEventListener('click', function() {
+                    flashcardSlider.scrollBy({
+                        left: -scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                flashcardNextBtn.addEventListener('click', function() {
+                    flashcardSlider.scrollBy({
+                        left: scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+                
+                // Update button states based on scroll position
+                function updateFlashcardButtonStates() {
+                    const isAtStart = flashcardSlider.scrollLeft <= 0;
+                    const isAtEnd = flashcardSlider.scrollLeft >= flashcardSlider.scrollWidth - flashcardSlider.clientWidth - 1;
+                    
+                    flashcardPrevBtn.style.opacity = isAtStart ? '0.5' : '1';
+                    flashcardPrevBtn.style.cursor = isAtStart ? 'default' : 'pointer';
+                    flashcardNextBtn.style.opacity = isAtEnd ? '0.5' : '1';
+                    flashcardNextBtn.style.cursor = isAtEnd ? 'default' : 'pointer';
+                }
+                
+                flashcardSlider.addEventListener('scroll', updateFlashcardButtonStates);
+                updateFlashcardButtonStates();
+            }
         });
     </script>
 }
