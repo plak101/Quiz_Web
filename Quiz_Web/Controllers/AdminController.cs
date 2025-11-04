@@ -597,7 +597,7 @@ namespace Quiz_Web.Controllers
 		// CLASS MANAGEMENT
 		//public async Task<IActionResult> Classes()
 		//{
-		//	var classes = await _context.Classes.Include(c => c.Teacher).ToListAsync();
+		//	var classes = await _context.Class.Include(c => c.Teacher).ToListAsync();
 		//	return View(classes);
 		//}
 

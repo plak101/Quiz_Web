@@ -1,10 +1,13 @@
 ﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models;
 using Quiz_Web.Models.EF;
+using Quiz_Web.Models.ViewModels;
 using Quiz_Web.Services;
 using Quiz_Web.Services.IServices;
+using System.Security.Claims;
 
 namespace Quiz_Web.Controllers
 {
@@ -12,15 +15,18 @@ namespace Quiz_Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ICourseService _courseService;
+        private readonly ICartService _cartService;
         private readonly LearningPlatformContext _context;
 
         public HomeController(
             ILogger<HomeController> logger, 
             ICourseService courseService,
+            ICartService cartService,
             LearningPlatformContext context)
         {
             _logger = logger;
             _courseService = courseService;
+            _cartService = cartService;
             _context = context;
         }
 
@@ -113,6 +119,55 @@ namespace Quiz_Web.Controllers
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        [Authorize]
+        [Route("/checkout")]
+        public async Task<IActionResult> Checkout()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var cartItems = await _cartService.GetCartItemsAsync(userId);
+                
+                if (!cartItems.Any())
+                {
+                    TempData["Message"] = "Giỏ hàng của bạn đang trống";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var viewModel = new CheckoutViewModel
+                {
+                    CartItems = cartItems.Select(ci => new CartItemViewModel
+                    {
+                        CourseId = ci.CourseId,
+                        Title = ci.Course.Title,
+                        CoverUrl = ci.Course.CoverUrl,
+                        Price = ci.Course.Price,
+                        InstructorName = ci.Course.Owner.FullName,
+                        AddedAt = ci.AddedAt
+                    }).ToList(),
+                    Total = cartItems.Sum(ci => ci.Course.Price)
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading checkout page");
+                TempData["Error"] = "Có lỗi xảy ra khi tải trang thanh toán";
+                return RedirectToAction("Index");
+            }
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+            return userId;
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

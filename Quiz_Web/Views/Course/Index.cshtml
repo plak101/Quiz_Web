@@ -274,9 +274,16 @@
                                                 </p>
                                             }
 
-                                            <span class="btn btn-outline-primary mt-auto w-100" style="white-space: nowrap;">
-                                                Xem chi tiết
-                                            </span>
+                                            <div class="d-flex gap-2 mt-auto">
+                                                <span class="btn btn-outline-primary flex-fill" style="white-space: nowrap;">
+                                                    Xem chi tiết
+                                                </span>
+                                                <button class="btn btn-primary" 
+                                                        onclick="event.preventDefault(); event.stopPropagation(); addToCart(@course.CourseId);"
+                                                        title="Thêm vào giỏ hàng">
+                                                    <i class="fas fa-cart-plus"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
@@ -465,6 +472,79 @@
                 });
             }
         });
+        
+        // Update cart badge function
+        function updateCartBadge() {
+            fetch('/api/cart/count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badge = document.querySelector('.cart-badge');
+                        const cartLink = document.getElementById('cartDropdownToggle');
+                        
+                        if (data.count > 0) {
+                            if (badge) {
+                                badge.textContent = data.count;
+                            } else if (cartLink) {
+                                const newBadge = document.createElement('span');
+                                newBadge.className = 'cart-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-purple';
+                                newBadge.textContent = data.count;
+                                cartLink.appendChild(newBadge);
+                            }
+                        } else {
+                            if (badge) {
+                                badge.remove();
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating cart badge:', error));
+        }
+        
+        // Add to cart function
+        async function addToCart(courseId) {
+            try {
+                const response = await fetch(`/api/cart/add/${courseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update cart count and dropdown
+                    updateCartBadge();
+                    document.dispatchEvent(new CustomEvent('cartUpdated'));
+                    
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Đã thêm vào giỏ hàng!');
+                    } else {
+                        alert('Đã thêm vào giỏ hàng!');
+                    }
+                } else {
+                    if (result.message && result.message.includes('đăng nhập')) {
+                        window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'Không thể thêm vào giỏ hàng');
+                        } else {
+                            alert(result.message || 'Không thể thêm vào giỏ hàng');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Đã xảy ra lỗi');
+                } else {
+                    alert('Đã xảy ra lỗi');
+                }
+            }
+        }
     </script>
 }
 

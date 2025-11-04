@@ -35,7 +35,7 @@ namespace Quiz_Web.Services
                 var amountLong = (long)Math.Round(amount, 0, MidpointRounding.AwayFromZero);
                 var amountStr = amountLong.ToString(CultureInfo.InvariantCulture);
 
-                // Thứ tự tham số theo alphabet (a-z)
+                // Thứ tự tham số theo alphabet (a-z) - KHÔNG ENCODE
                 var rawData = $"accessKey={_settings.AccessKey}" +
                              $"&amount={amountStr}" +
                              $"&extraData={extraData}" +
@@ -51,15 +51,22 @@ namespace Quiz_Web.Services
 
                 _logger.LogInformation($"Raw data for signature: {rawData}");
                 _logger.LogInformation($"Generated signature: {signature}");
+                
+                // Validate required fields
+                if (string.IsNullOrEmpty(orderId) || amountLong <= 0)
+                {
+                    _logger.LogError("Invalid orderId or amount: {OrderId}, {Amount}", orderId, amountLong);
+                    return new MoMoPaymentResponse { resultCode = -1, message = "Invalid request data" };
+                }
 
                 var request = new MoMoPaymentRequest
                 {
                     partnerCode = _settings.PartnerCode,
-                    accessKey = _settings.AccessKey, // include in body
+                    accessKey = _settings.AccessKey,
                     requestId = requestId,
                     amount = amountLong,
                     orderId = orderId,
-                    orderInfo = orderInfo,
+                    orderInfo = orderInfo, // Không encode trong body
                     redirectUrl = _settings.RedirectUrl,
                     ipnUrl = _settings.IpnUrl,
                     extraData = extraData,
@@ -130,6 +137,29 @@ namespace Quiz_Web.Services
             using var hmac = new HMACSHA256(keyBytes);
             var hashBytes = hmac.ComputeHash(messageBytes);
             return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        }
+
+        public async Task<bool> ProcessPaymentCallbackAsync(MoMoIpnRequest ipnRequest)
+        {
+            try
+            {
+                // Validate signature first
+                if (!ValidateSignature(ipnRequest))
+                {
+                    _logger.LogWarning("Invalid signature in MoMo callback");
+                    return false;
+                }
+
+                // Log successful callback
+                _logger.LogInformation($"MoMo callback processed successfully for order: {ipnRequest.orderId}, result: {ipnRequest.resultCode}");
+                
+                return ipnRequest.resultCode == 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing MoMo payment callback");
+                return false;
+            }
         }
     }
 }
