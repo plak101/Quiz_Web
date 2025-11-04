@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Quiz_Web.Models.Entities;
 using Quiz_Web.Models.ViewModels;
 using Quiz_Web.Services.IServices;
+using System.Text.Json;
 
 namespace Quiz_Web.Controllers
 {
@@ -147,6 +148,42 @@ namespace Quiz_Web.Controllers
             {
                 TempData["Error"] = "Có lỗi xảy ra khi tạo bộ flashcard";
                 return View(model);
+            }
+
+            // Parse and save flashcards if FlashcardsJson is provided
+            if (!string.IsNullOrWhiteSpace(model.FlashcardsJson))
+            {
+                try
+                {
+                    var flashcardsData = JsonSerializer.Deserialize<List<FlashcardDataViewModel>>(
+                        model.FlashcardsJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (flashcardsData != null && flashcardsData.Any())
+                    {
+                        foreach (var flashcardData in flashcardsData)
+                        {
+                            var flashcardModel = new CreateFlashcardViewModel
+                            {
+                                SetId = flashcardSet.SetId,
+                                FrontText = flashcardData.FrontText,
+                                BackText = flashcardData.BackText,
+                                Hint = flashcardData.Hint,
+                                OrderIndex = flashcardData.OrderIndex
+                            };
+
+                            _flashcardService.CreateFlashcard(flashcardModel, userId);
+                        }
+                        
+                        _logger.LogInformation($"Created {flashcardsData.Count} flashcards for set {flashcardSet.SetId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error parsing flashcards JSON");
+                    // Continue anyway, just log the error
+                }
             }
 
             TempData["Success"] = "Tạo bộ flashcard thành công!";
