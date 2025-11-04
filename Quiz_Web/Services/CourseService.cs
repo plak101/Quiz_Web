@@ -947,6 +947,79 @@ namespace Quiz_Web.Services
 			}
 		}
 
+		public List<Course> GetFilteredAndSortedCourses(
+			string? searchKeyword = null,
+			string? categorySlug = null,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null)
+		{
+			try
+			{
+				var query = _context.Courses
+					.Include(c => c.Owner)
+					.Include(c => c.Category)
+					.Where(c => c.IsPublished)
+					.AsQueryable();
+
+				// Apply search filter
+				if (!string.IsNullOrWhiteSpace(searchKeyword))
+				{
+					query = query.Where(c => 
+						c.Title.Contains(searchKeyword) || 
+						(c.Summary != null && c.Summary.Contains(searchKeyword)));
+				}
+
+				// Apply category filter
+				if (!string.IsNullOrWhiteSpace(categorySlug))
+				{
+					query = query.Where(c => c.Category != null && c.Category.Slug == categorySlug);
+				}
+
+				// Apply rating filter
+				if (minRating.HasValue)
+				{
+					query = query.Where(c => c.AverageRating >= minRating.Value);
+				}
+				if (maxRating.HasValue)
+				{
+					query = query.Where(c => c.AverageRating < maxRating.Value);
+				}
+
+				// Apply price filter
+				if (isFree.HasValue)
+				{
+					if (isFree.Value)
+					{
+						query = query.Where(c => c.Price == 0);
+					}
+					else
+					{
+						query = query.Where(c => c.Price > 0);
+					}
+				}
+
+				// Apply sorting
+				query = sortBy switch
+				{
+					"rating" => query.OrderByDescending(c => c.AverageRating)
+									 .ThenByDescending(c => c.TotalReviews),
+					"price_asc" => query.OrderBy(c => c.Price),
+					"price_desc" => query.OrderByDescending(c => c.Price),
+					"newest" => query.OrderByDescending(c => c.CreatedAt),
+					_ => query.OrderByDescending(c => c.CreatedAt) // Default sort
+				};
+
+				return query.ToList();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error in GetFilteredAndSortedCourses");
+				return new List<Course>();
+			}
+		}
+
 		public List<Course> GetTopRatedCourses(int count = 6)
 		{
 			try

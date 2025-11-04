@@ -205,13 +205,9 @@
                     <div class="row g-4">
                         @foreach (var course in Model)
                         {
-                            // Use actual rating if available, otherwise generate random
-                            var rating = course.TotalReviews > 0 
-                                ? (double)course.AverageRating 
-                                : Math.Round(4.0 + new Random(course.CourseId).NextDouble(), 1);
-                            var reviewCount = course.TotalReviews > 0 
-                                ? course.TotalReviews 
-                                : new Random(course.CourseId).Next(10, 500);
+                            // ✅ SỬ DỤNG DỮ LIỆU THẬT TỪ DATABASE
+                            var rating = (double)course.AverageRating;
+                            var reviewCount = course.TotalReviews;
                             
                             <div class="col-lg-4 col-md-6">
                                 <a asp-action="Detail" asp-route-slug="@course.Slug" class="text-decoration-none">
@@ -241,27 +237,36 @@
                                             </p>
                                             
                                             <!-- Rating Section -->
-                                            <div class="rating-section mb-2">
-                                                <span class="rating-value fw-bold text-warning">@rating</span>
-                                                <span class="stars ms-1">
-                                                    @for (int i = 1; i <= 5; i++)
-                                                    {
-                                                        if (i <= Math.Floor(rating))
+                                            @if (reviewCount > 0)
+                                            {
+                                                <div class="rating-section mb-2">
+                                                    <span class="rating-value fw-bold text-warning">@rating.ToString("F1")</span>
+                                                    <span class="stars ms-1">
+                                                        @for (int i = 1; i <= 5; i++)
                                                         {
-                                                            <i class="fa-solid fa-star text-warning"></i>
+                                                            if (i <= Math.Floor(rating))
+                                                            {
+                                                                <i class="fa-solid fa-star text-warning"></i>
+                                                            }
+                                                            else if (i - rating < 1 && i - rating > 0)
+                                                            {
+                                                                <i class="fa-solid fa-star-half-stroke text-warning"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fa-regular fa-star text-warning"></i>
+                                                            }
                                                         }
-                                                        else if (i - rating < 1 && i - rating > 0)
-                                                        {
-                                                            <i class="fa-solid fa-star-half-stroke text-warning"></i>
-                                                        }
-                                                        else
-                                                        {
-                                                            <i class="fa-regular fa-star text-warning"></i>
-                                                        }
-                                                    }
-                                                </span>
-                                                <span class="text-muted small ms-1" style="white-space: nowrap;">(@reviewCount.ToString("N0"))</span>
-                                            </div>
+                                                    </span>
+                                                    <span class="text-muted small ms-1" style="white-space: nowrap;">(@reviewCount.ToString("N0"))</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="rating-section mb-2">
+                                                    <span class="text-muted small">Chưa có đánh giá</span>
+                                                </div>
+                                            }
                                             
                                             @if (course.Price == 0)
                                             {
