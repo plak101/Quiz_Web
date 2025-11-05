@@ -378,14 +378,30 @@ namespace Quiz_Web.Services
 							}
 							else if (contentVM.ContentType == "Test" && contentVM.Questions != null && contentVM.Questions.Any())
 							{
+								// ✅ VALIDATE: Kiểm tra TimeLimitMinutes và MaxAttempts không được âm
+								var timeLimitMinutes = contentVM.TimeLimitMinutes ?? 30;
+								var maxAttempts = contentVM.MaxAttempts ?? 3;
+
+								if (timeLimitMinutes < 1)
+								{
+									_logger.LogWarning("Invalid TimeLimitMinutes: {TimeLimitMinutes}. Using default value 30.", timeLimitMinutes);
+									timeLimitMinutes = 30;
+								}
+
+								if (maxAttempts < 1)
+								{
+									_logger.LogWarning("Invalid MaxAttempts: {MaxAttempts}. Using default value 3.", maxAttempts);
+									maxAttempts = 3;
+								}
+
 								var test = new Test
 								{
 									OwnerId = ownerId,
 									Title = contentVM.TestTitle ?? contentVM.Title ?? "Untitled Test",
 									Description = contentVM.TestDesc,
 									Visibility = "Course", // Course-only visibility
-									TimeLimitSec = (contentVM.TimeLimitMinutes ?? 30) * 60,
-									MaxAttempts = contentVM.MaxAttempts ?? 3,
+									TimeLimitSec = timeLimitMinutes * 60,
+									MaxAttempts = maxAttempts,
 									ShuffleQuestions = false,
 									ShuffleOptions = false,
 									GradingMode = "Auto",
@@ -605,14 +621,30 @@ namespace Quiz_Web.Services
 							}
 							else if (contentVM.ContentType == "Test" && contentVM.Questions != null && contentVM.Questions.Any())
 							{
+								// ✅ VALIDATE: Kiểm tra TimeLimitMinutes và MaxAttempts không được âm
+								var timeLimitMinutes = contentVM.TimeLimitMinutes ?? 30;
+								var maxAttempts = contentVM.MaxAttempts ?? 3;
+
+								if (timeLimitMinutes < 1)
+								{
+									_logger.LogWarning("Invalid TimeLimitMinutes: {TimeLimitMinutes}. Using default value 30.", timeLimitMinutes);
+									timeLimitMinutes = 30;
+								}
+
+								if (maxAttempts < 1)
+								{
+									_logger.LogWarning("Invalid MaxAttempts: {MaxAttempts}. Using default value 3.", maxAttempts);
+									maxAttempts = 3;
+								}
+
 								var test = new Test
 								{
 									OwnerId = ownerId,
 									Title = contentVM.TestTitle ?? contentVM.Title ?? "Untitled Test",
 									Description = contentVM.TestDesc,
 									Visibility = "Course",
-									TimeLimitSec = (contentVM.TimeLimitMinutes ?? 30) * 60,
-									MaxAttempts = contentVM.MaxAttempts ?? 3,
+									TimeLimitSec = timeLimitMinutes * 60,
+									MaxAttempts = maxAttempts,
 									ShuffleQuestions = false,
 									ShuffleOptions = false,
 									GradingMode = "Auto",

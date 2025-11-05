@@ -22,6 +22,7 @@ let ckEditorInstances = {};
 let lastSlugCheck = { value: '', available: true, loading: false };
 let slugDebounceTimer = null;
 let lastSlugNotice = { value: '', at: 0 };
+let autoSlugging = false;
 
 // Helper: notify by toastr (fallback to alert) and jump to Slug input (dedup)
 function notifyAndFocusSlug(message, slugValue) {
@@ -743,7 +744,7 @@ function generateSlug() {
         'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ả': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
         'È': 'E', 'É': 'E', 'Ẹ': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'ệ': 'E', 'Ể': 'E', 'Ễ': 'E',
         'Ì': 'I', 'Í': 'I', 'Ị': 'I', 'Ỉ': 'I', 'Ĩ': 'I',
-        'Ò': 'O', 'Ó': 'O', 'Ọ': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ộ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ợ': 'O', 'Ở': 'O', 'Ỡ': 'O',
+        'Ò': 'O', 'Ó': 'O', 'Ọ': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ô': 'O', 'Ồ': 'O', 'ố': 'O', 'Ộ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ợ': 'O', 'Ở': 'O', 'Ỡ': 'O',
         'Ù': 'U', 'Ú': 'U', 'Ụ': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ự': 'U', 'Ử': 'U', 'Ữ': 'U',
         'Ỳ': 'Y', 'Ý': 'Y', 'Ỵ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y',
         'Đ': 'D'
@@ -905,7 +906,7 @@ function addLesson(chapterId) {
                        value="Bài học ${lessonCounter}" 
                        required>
             </div>
-            <select class="lesson-visibility form-select">
+            <select class="lesson-visibility form-select invisible">
                 <option value="Course">Course</option>
                 <option value="Public">Public</option>
                 <option value="Private">Private</option>
@@ -1384,11 +1385,13 @@ function renderContentTypeFields(content, contentId, index) {
             <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div>
                     <label>Thời gian (phút):</label>
-                    <input type="number" class="form-control test-time" value="${content.timeLimitMinutes || 30}" min="1" onchange="updateTestTime(${index}, this.value)">
+                    <input type="number" class="form-control test-time" value="${content.timeLimitMinutes || 30}" min="1" max="1440" onchange="updateTestTime(${index}, this.value)">
+                    <small class="form-text text-muted">Tối thiểu: 1 phút, Tối đa: 1440 phút (24 giờ)</small>
                 </div>
                 <div>
                     <label>Số lần làm tối đa:</label>
-                    <input type="number" class="form-control test-attempts" value="${content.maxAttempts || 3}" min="1" onchange="updateTestAttempts(${index}, this.value)">
+                    <input type="number" class="form-control test-attempts" value="${content.maxAttempts || 3}" min="1" max="100" onchange="updateTestAttempts(${index}, this.value)">
+                    <small class="form-text text-muted">Tối thiểu: 1 lần</small>
                 </div>
             </div>
             <div class="test-questions-container" id="testQuestionsContainer_${index}">
@@ -1930,16 +1933,40 @@ function updateTestTime(contentIndex, value) {
     const currentLesson = window.currentLesson;
     if (!currentLesson) return;
     
+    // ✅ VALIDATE: Kiểm tra không được âm và không được 0
+    const timeValue = parseInt(value) || 30;
+    if (timeValue < 1) {
+        toastr.error('Thời gian làm bài phải lớn hơn 0 phút');
+        // Reset lại giá trị input về 30 (default)
+        const testTimeInput = document.querySelector(`.content-item[data-content-index="${contentIndex}"] .test-time`);
+        if (testTimeInput) {
+            testTimeInput.value = 30;
+        }
+        return;
+    }
+    
     const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
-    content.timeLimitMinutes = parseInt(value) || 30;
+    content.timeLimitMinutes = timeValue;
 }
 
 function updateTestAttempts(contentIndex, value) {
     const currentLesson = window.currentLesson;
     if (!currentLesson) return;
     
+    // ✅ VALIDATE: Kiểm tra không được âm và không được 0
+    const attemptsValue = parseInt(value) || 3;
+    if (attemptsValue < 1) {
+        toastr.error('Số lần làm bài tối đa phải lớn hơn 0');
+        // Reset lại giá trị input về 3 (default)
+        const testAttemptsInput = document.querySelector(`.content-item[data-content-index="${contentIndex}"] .test-attempts`);
+        if (testAttemptsInput) {
+            testAttemptsInput.value = 3;
+        }
+        return;
+    }
+    
     const content = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex].contents[contentIndex];
-    content.maxAttempts = parseInt(value) || 3;
+    content.maxAttempts = attemptsValue;
 }
 
 // ============================================
