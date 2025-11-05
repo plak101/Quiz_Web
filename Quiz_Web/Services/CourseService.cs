@@ -736,15 +736,70 @@ namespace Quiz_Web.Services
 							Description = l.Description,
 							OrderIndex = l.OrderIndex,
 							Visibility = l.Visibility,
-							Contents = l.LessonContents.Select(lc => new LessonContentBuilderViewModel
+							Contents = l.LessonContents.Select(lc =>
 							{
-								ContentId = lc.ContentId,
-								ContentType = lc.ContentType,
-								RefId = lc.RefId,
-								Title = lc.Title,
-								Body = lc.Body,
-								VideoUrl = lc.VideoUrl, // ADD THIS LINE
-								OrderIndex = lc.OrderIndex
+								var content = new LessonContentBuilderViewModel
+								{
+									ContentId = lc.ContentId,
+									ContentType = lc.ContentType,
+									RefId = lc.RefId,
+									Title = lc.Title,
+									Body = lc.Body,
+									VideoUrl = lc.VideoUrl,
+									OrderIndex = lc.OrderIndex
+								};
+
+								// ✅ LOAD FLASHCARD DATA
+								if (lc.ContentType == "FlashcardSet" && lc.RefId.HasValue)
+								{
+									var flashcardSet = _context.FlashcardSets
+										.Include(fs => fs.Flashcards.OrderBy(f => f.OrderIndex))
+										.FirstOrDefault(fs => fs.SetId == lc.RefId.Value);
+
+									if (flashcardSet != null)
+									{
+										content.FlashcardSetTitle = flashcardSet.Title;
+										content.FlashcardSetDesc = flashcardSet.Description;
+										content.Flashcards = flashcardSet.Flashcards.Select(f => new FlashcardBuilderViewModel
+										{
+											FrontText = f.FrontText,
+											BackText = f.BackText,
+											Hint = f.Hint,
+											OrderIndex = f.OrderIndex
+										}).ToList();
+									}
+								}
+								// ✅ LOAD TEST DATA
+								else if (lc.ContentType == "Test" && lc.RefId.HasValue)
+								{
+									var test = _context.Tests
+										.Include(t => t.Questions.OrderBy(q => q.OrderIndex))
+											.ThenInclude(q => q.QuestionOptions.OrderBy(o => o.OrderIndex))
+										.FirstOrDefault(t => t.TestId == lc.RefId.Value);
+
+									if (test != null)
+									{
+										content.TestTitle = test.Title;
+										content.TestDesc = test.Description;
+										content.TimeLimitMinutes = test.TimeLimitSec.HasValue ? test.TimeLimitSec.Value / 60 : 30;
+										content.MaxAttempts = test.MaxAttempts ?? 3;
+										content.Questions = test.Questions.Select(q => new TestQuestionBuilderViewModel
+										{
+											Type = q.Type,
+											StemText = q.StemText,
+											Points = q.Points,
+											OrderIndex = q.OrderIndex,
+											Options = q.QuestionOptions.Select(o => new TestQuestionOptionBuilderViewModel
+											{
+												OptionText = o.OptionText,
+												IsCorrect = o.IsCorrect,
+												OrderIndex = o.OrderIndex
+											}).ToList()
+										}).ToList();
+									}
+								}
+
+								return content;
 							}).ToList()
 						}).ToList()
 					}).ToList()
@@ -889,6 +944,79 @@ namespace Quiz_Web.Services
 					.OrderByDescending(c => c.CreatedAt)
 					.Take(count)
 					.ToList();
+			}
+		}
+
+		public List<Course> GetFilteredAndSortedCourses(
+			string? searchKeyword = null,
+			string? categorySlug = null,
+			decimal? minRating = null,
+			decimal? maxRating = null,
+			bool? isFree = null,
+			string? sortBy = null)
+		{
+			try
+			{
+				var query = _context.Courses
+					.Include(c => c.Owner)
+					.Include(c => c.Category)
+					.Where(c => c.IsPublished)
+					.AsQueryable();
+
+				// Apply search filter
+				if (!string.IsNullOrWhiteSpace(searchKeyword))
+				{
+					query = query.Where(c => 
+						c.Title.Contains(searchKeyword) || 
+						(c.Summary != null && c.Summary.Contains(searchKeyword)));
+				}
+
+				// Apply category filter
+				if (!string.IsNullOrWhiteSpace(categorySlug))
+				{
+					query = query.Where(c => c.Category != null && c.Category.Slug == categorySlug);
+				}
+
+				// Apply rating filter
+				if (minRating.HasValue)
+				{
+					query = query.Where(c => c.AverageRating >= minRating.Value);
+				}
+				if (maxRating.HasValue)
+				{
+					query = query.Where(c => c.AverageRating < maxRating.Value);
+				}
+
+				// Apply price filter
+				if (isFree.HasValue)
+				{
+					if (isFree.Value)
+					{
+						query = query.Where(c => c.Price == 0);
+					}
+					else
+					{
+						query = query.Where(c => c.Price > 0);
+					}
+				}
+
+				// Apply sorting
+				query = sortBy switch
+				{
+					"rating" => query.OrderByDescending(c => c.AverageRating)
+									 .ThenByDescending(c => c.TotalReviews),
+					"price_asc" => query.OrderBy(c => c.Price),
+					"price_desc" => query.OrderByDescending(c => c.Price),
+					"newest" => query.OrderByDescending(c => c.CreatedAt),
+					_ => query.OrderByDescending(c => c.CreatedAt) // Default sort
+				};
+
+				return query.ToList();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error in GetFilteredAndSortedCourses");
+				return new List<Course>();
 			}
 		}
 

@@ -110,7 +110,7 @@ namespace Quiz_Web.Controllers
 					Username = username.ToLower().Trim(),
 					PasswordHash = HashHelper.ComputeHash(password.Trim()),
 					FullName = fullname.Trim(),
-					RoleId = 3
+					RoleId = 2
 				};
 
 				if (_userService.Register(user))

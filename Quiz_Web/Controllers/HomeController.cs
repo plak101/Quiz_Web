@@ -1,10 +1,13 @@
 ﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models;
 using Quiz_Web.Models.EF;
+using Quiz_Web.Models.ViewModels;
 using Quiz_Web.Services;
 using Quiz_Web.Services.IServices;
+using System.Security.Claims;
 
 namespace Quiz_Web.Controllers
 {
@@ -12,15 +15,21 @@ namespace Quiz_Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ICourseService _courseService;
+        private readonly ICartService _cartService;
+        private readonly IFlashcardService _flashcardService;
         private readonly LearningPlatformContext _context;
 
         public HomeController(
             ILogger<HomeController> logger, 
             ICourseService courseService,
+            ICartService cartService,
+            IFlashcardService flashcardService,
             LearningPlatformContext context)
         {
             _logger = logger;
             _courseService = courseService;
+            _cartService = cartService;
+            _flashcardService = flashcardService;
             _context = context;
         }
 
@@ -48,12 +57,124 @@ namespace Quiz_Web.Controllers
                 return RedirectToAction("Index", "Introduce");
             }
             
-            return View();
+            // Lấy danh sách categories cho navigation
+            var categories = await _context.CourseCategories
+                .OrderBy(c => c.DisplayOrder)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
+            
+            // Lấy recommended courses dựa trên user interests
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var recommendedCourses = new List<Quiz_Web.Models.Entities.Course>();
+            
+            if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int userIdInt))
+            {
+                // Lấy user interests
+                var userInterests = await _context.UserInterests
+                    .Where(ui => ui.UserId == userIdInt)
+                    .Select(ui => ui.CategoryId)
+                    .ToListAsync();
+                
+                if (userInterests.Any())
+                {
+                    // Lấy courses từ các categories user quan tâm
+                    recommendedCourses = await _context.Courses
+                        .Include(c => c.Owner)
+                        .Include(c => c.Category)
+                        .Where(c => c.IsPublished 
+                                 && c.CategoryId.HasValue 
+                                 && userInterests.Contains(c.CategoryId.Value))
+                        .OrderByDescending(c => c.AverageRating)
+                        .ThenByDescending(c => c.TotalReviews)
+                        .Take(10)
+                        .ToListAsync();
+                }
+            }
+            
+            // Nếu không có recommended courses, lấy random courses
+            if (!recommendedCourses.Any())
+            {
+                recommendedCourses = await _context.Courses
+                    .Include(c => c.Owner)
+                    .Include(c => c.Category)
+                    .Where(c => c.IsPublished)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(10)
+                    .ToListAsync();
+            }
+            
+            // Lấy top rated courses
+            var topRatedCourses = await _context.Courses
+                .Include(c => c.Owner)
+                .Include(c => c.Category)
+                .Where(c => c.IsPublished && c.AverageRating > 0)
+                .OrderByDescending(c => c.AverageRating)
+                .ThenByDescending(c => c.TotalReviews)
+                .Take(5)
+                .ToListAsync();
+            
+            // Lấy public flashcard sets
+            var publicFlashcardSets = await _flashcardService.GetPublicFlashcardSetsAsync();
+            
+            ViewBag.RecommendedCourses = recommendedCourses;
+            ViewBag.TopRatedCourses = topRatedCourses;
+            ViewBag.PublicFlashcardSets = publicFlashcardSets.Take(10).ToList();
+            
+            return View(categories);
         }
 
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        [Authorize]
+        [Route("/checkout")]
+        public async Task<IActionResult> Checkout()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var cartItems = await _cartService.GetCartItemsAsync(userId);
+                
+                if (!cartItems.Any())
+                {
+                    TempData["Message"] = "Giỏ hàng của bạn đang trống";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var viewModel = new CheckoutViewModel
+                {
+                    CartItems = cartItems.Select(ci => new CartItemViewModel
+                    {
+                        CourseId = ci.CourseId,
+                        Title = ci.Course.Title,
+                        CoverUrl = ci.Course.CoverUrl,
+                        Price = ci.Course.Price,
+                        InstructorName = ci.Course.Owner.FullName,
+                        AddedAt = ci.AddedAt
+                    }).ToList(),
+                    Total = cartItems.Sum(ci => ci.Course.Price)
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading checkout page");
+                TempData["Error"] = "Có lỗi xảy ra khi tải trang thanh toán";
+                return RedirectToAction("Index");
+            }
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+            return userId;
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

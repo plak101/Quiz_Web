@@ -205,13 +205,9 @@
                     <div class="row g-4">
                         @foreach (var course in Model)
                         {
-                            // Use actual rating if available, otherwise generate random
-                            var rating = course.TotalReviews > 0 
-                                ? (double)course.AverageRating 
-                                : Math.Round(4.0 + new Random(course.CourseId).NextDouble(), 1);
-                            var reviewCount = course.TotalReviews > 0 
-                                ? course.TotalReviews 
-                                : new Random(course.CourseId).Next(10, 500);
+                            // ✅ SỬ DỤNG DỮ LIỆU THẬT TỪ DATABASE
+                            var rating = (double)course.AverageRating;
+                            var reviewCount = course.TotalReviews;
                             
                             <div class="col-lg-4 col-md-6">
                                 <a asp-action="Detail" asp-route-slug="@course.Slug" class="text-decoration-none">
@@ -241,27 +237,36 @@
                                             </p>
                                             
                                             <!-- Rating Section -->
-                                            <div class="rating-section mb-2">
-                                                <span class="rating-value fw-bold text-warning">@rating</span>
-                                                <span class="stars ms-1">
-                                                    @for (int i = 1; i <= 5; i++)
-                                                    {
-                                                        if (i <= Math.Floor(rating))
+                                            @if (reviewCount > 0)
+                                            {
+                                                <div class="rating-section mb-2">
+                                                    <span class="rating-value fw-bold text-warning">@rating.ToString("F1")</span>
+                                                    <span class="stars ms-1">
+                                                        @for (int i = 1; i <= 5; i++)
                                                         {
-                                                            <i class="fa-solid fa-star text-warning"></i>
+                                                            if (i <= Math.Floor(rating))
+                                                            {
+                                                                <i class="fa-solid fa-star text-warning"></i>
+                                                            }
+                                                            else if (i - rating < 1 && i - rating > 0)
+                                                            {
+                                                                <i class="fa-solid fa-star-half-stroke text-warning"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fa-regular fa-star text-warning"></i>
+                                                            }
                                                         }
-                                                        else if (i - rating < 1 && i - rating > 0)
-                                                        {
-                                                            <i class="fa-solid fa-star-half-stroke text-warning"></i>
-                                                        }
-                                                        else
-                                                        {
-                                                            <i class="fa-regular fa-star text-warning"></i>
-                                                        }
-                                                    }
-                                                </span>
-                                                <span class="text-muted small ms-1" style="white-space: nowrap;">(@reviewCount.ToString("N0"))</span>
-                                            </div>
+                                                    </span>
+                                                    <span class="text-muted small ms-1" style="white-space: nowrap;">(@reviewCount.ToString("N0"))</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="rating-section mb-2">
+                                                    <span class="text-muted small">Chưa có đánh giá</span>
+                                                </div>
+                                            }
                                             
                                             @if (course.Price == 0)
                                             {
@@ -274,9 +279,16 @@
                                                 </p>
                                             }
 
-                                            <span class="btn btn-outline-primary mt-auto w-100" style="white-space: nowrap;">
-                                                Xem chi tiết
-                                            </span>
+                                            <div class="d-flex gap-2 mt-auto">
+                                                <span class="btn btn-outline-primary flex-fill" style="white-space: nowrap;">
+                                                    Xem chi tiết
+                                                </span>
+                                                <button class="btn btn-primary" 
+                                                        onclick="event.preventDefault(); event.stopPropagation(); addToCart(@course.CourseId);"
+                                                        title="Thêm vào giỏ hàng">
+                                                    <i class="fas fa-cart-plus"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
@@ -465,6 +477,79 @@
                 });
             }
         });
+        
+        // Update cart badge function
+        function updateCartBadge() {
+            fetch('/api/cart/count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badge = document.querySelector('.cart-badge');
+                        const cartLink = document.getElementById('cartDropdownToggle');
+                        
+                        if (data.count > 0) {
+                            if (badge) {
+                                badge.textContent = data.count;
+                            } else if (cartLink) {
+                                const newBadge = document.createElement('span');
+                                newBadge.className = 'cart-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-purple';
+                                newBadge.textContent = data.count;
+                                cartLink.appendChild(newBadge);
+                            }
+                        } else {
+                            if (badge) {
+                                badge.remove();
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating cart badge:', error));
+        }
+        
+        // Add to cart function
+        async function addToCart(courseId) {
+            try {
+                const response = await fetch(`/api/cart/add/${courseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update cart count and dropdown
+                    updateCartBadge();
+                    document.dispatchEvent(new CustomEvent('cartUpdated'));
+                    
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Đã thêm vào giỏ hàng!');
+                    } else {
+                        alert('Đã thêm vào giỏ hàng!');
+                    }
+                } else {
+                    if (result.message && result.message.includes('đăng nhập')) {
+                        window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message || 'Không thể thêm vào giỏ hàng');
+                        } else {
+                            alert(result.message || 'Không thể thêm vào giỏ hàng');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Đã xảy ra lỗi');
+                } else {
+                    alert('Đã xảy ra lỗi');
+                }
+            }
+        }
     </script>
 }
 

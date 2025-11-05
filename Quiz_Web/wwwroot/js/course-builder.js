@@ -213,6 +213,11 @@ function setupEventListeners() {
 // STEP NAVIGATION
 // ============================================
 async function nextStep() {
+    // ✅ LƯU DỮ LIỆU CỦA LESSON HIỆN TẠI NẾU ĐANG Ở STEP 3
+    if (currentStep === 3 && window.currentLesson) {
+        saveCurrentLessonContents();
+    }
+
     // Save first so validation reads the latest DOM-derived state (especially for step 2)
     saveStepData();
 
@@ -248,7 +253,13 @@ async function nextStep() {
 }
 
 function prevStep() {
+    // ✅ LƯU DỮ LIỆU CỦA LESSON HIỆN TẠI NẾU ĐANG Ở STEP 3
+    if (currentStep === 3 && window.currentLesson) {
+        saveCurrentLessonContents();
+    }
+
     if (currentStep > 1) {
+        saveStepData();
         currentStep--;
         updateStepDisplay();
     }
@@ -360,6 +371,138 @@ function hideFieldError(fieldName) {
 // ============================================
 // SAVE STEP DATA
 // ============================================
+// Helper: save all contents of current lesson
+function saveCurrentLessonContents() {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+
+    const lesson = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex];
+
+    lesson.contents.forEach((content, index) => {
+        // Save title
+        const titleInput = document.querySelector(`.content-item[data-content-index="${index}"] .content-title-input`);
+        if (titleInput) {
+            content.title = titleInput.value.trim();
+        }
+
+        // Save content type
+        const typeSelect = document.querySelector(`.content-item[data-content-index="${index}"] .content-type-select`);
+        if (typeSelect) {
+            content.contentType = typeSelect.value;
+        }
+
+        // Save content based on type
+        if (content.contentType === 'Theory') {
+            // Save theory content from CKEditor
+            for (const [key, editor] of Object.entries(ckEditorInstances)) {
+                if (key.includes(`contentBody_`) && key.includes(`_${index}`)) {
+                    content.body = editor.getData();
+                    break;
+                }
+            }
+        } else if (content.contentType === 'Video') {
+            // Video URL đã được lưu trong handleVideoUpload
+            // Không cần làm gì thêm
+        } else if (content.contentType === 'FlashcardSet') {
+            // Save flashcard set title and description
+            const setTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-title`);
+            const setDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-desc`);
+            
+            if (setTitleInput) {
+                content.flashcardSetTitle = setTitleInput.value.trim();
+            }
+            if (setDescInput) {
+                content.flashcardSetDesc = setDescInput.value.trim();
+            }
+
+            // Save each flashcard from DOM
+            const flashcardItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .flashcard-item`);
+            if (!content.flashcards) {
+                content.flashcards = [];
+            }
+            
+            flashcardItems.forEach((flashcardEl, cardIndex) => {
+                const frontText = flashcardEl.querySelector('.flashcard-front')?.value || '';
+                const backText = flashcardEl.querySelector('.flashcard-back')?.value || '';
+                const hint = flashcardEl.querySelector('.flashcard-hint')?.value || '';
+                
+                if (content.flashcards[cardIndex]) {
+                    content.flashcards[cardIndex].frontText = frontText;
+                    content.flashcards[cardIndex].backText = backText;
+                    content.flashcards[cardIndex].hint = hint;
+                    content.flashcards[cardIndex].orderIndex = cardIndex;
+                }
+            });
+        } else if (content.contentType === 'Test') {
+            // Save test title, description, time limit, max attempts
+            const testTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-title`);
+            const testDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-desc`);
+            const testTimeInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-time`);
+            const testAttemptsInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-attempts`);
+            
+            if (testTitleInput) {
+                content.testTitle = testTitleInput.value.trim();
+            }
+            if (testDescInput) {
+                content.testDesc = testDescInput.value.trim();
+            }
+            if (testTimeInput) {
+                content.timeLimitMinutes = parseInt(testTimeInput.value) || 30;
+            }
+            if (testAttemptsInput) {
+                content.maxAttempts = parseInt(testAttemptsInput.value) || 3;
+            }
+
+            // Save each question from DOM
+            const questionItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .test-question-item`);
+            if (!content.questions) {
+                content.questions = [];
+            }
+            
+            questionItems.forEach((questionEl, qIndex) => {
+                const questionTypeSelect = questionEl.querySelector('.form-control');
+                const questionTextArea = questionEl.querySelectorAll('textarea')[0];
+                const questionPointsInput = questionEl.querySelector('input[type="number"]');
+                
+                if (content.questions[qIndex]) {
+                    if (questionTypeSelect) {
+                        content.questions[qIndex].type = questionTypeSelect.value;
+                    }
+                    if (questionTextArea) {
+                        content.questions[qIndex].stemText = questionTextArea.value.trim();
+                    }
+                    if (questionPointsInput) {
+                        content.questions[qIndex].points = parseFloat(questionPointsInput.value) || 1;
+                    }
+                    content.questions[qIndex].orderIndex = qIndex;
+
+                    // Save options
+                    const optionItems = questionEl.querySelectorAll('.option-item');
+                    if (!content.questions[qIndex].options) {
+                        content.questions[qIndex].options = [];
+                    }
+                    
+                    optionItems.forEach((optionEl, oIndex) => {
+                        const checkbox = optionEl.querySelector('input[type="checkbox"]');
+                        const textInput = optionEl.querySelector('input[type="text"]');
+                        
+                        if (content.questions[qIndex].options[oIndex]) {
+                            if (checkbox) {
+                                content.questions[qIndex].options[oIndex].isCorrect = checkbox.checked;
+                            }
+                            if (textInput) {
+                                content.questions[qIndex].options[oIndex].optionText = textInput.value.trim();
+                            }
+                            content.questions[qIndex].options[oIndex].orderIndex = oIndex;
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Save step data
 function saveStepData() {
     if (currentStep === 1) {
         // Save course info
@@ -378,13 +521,14 @@ function saveStepData() {
     }
 
     if (currentStep === 2) {
-        // ✅ LƯU LẠI TẤT CẢ CONTENTS TRƯỚC KHI XÓA
+        // ✅ LƯU LẠI TẤT CẢ CONTENTS TRƯỚC KHI CẬP NHẬT
         const oldContentsMap = new Map();
         courseData.chapters.forEach((chapter, chIdx) => {
             chapter.lessons.forEach((lesson, lIdx) => {
                 const key = `${chIdx}_${lIdx}`;
                 if (lesson.contents && lesson.contents.length > 0) {
-                    oldContentsMap.set(key, lesson.contents);
+                    // Clone deep để tránh mất reference
+                    oldContentsMap.set(key, JSON.parse(JSON.stringify(lesson.contents)));
                 }
             });
         });
@@ -433,13 +577,13 @@ function saveStepData() {
         });
     }
 
-    // ✅ THÊM LOGIC CHO STEP 3: LƯU NỘI DUNG TỪ CKEDITOR
+    // ✅ THÊM LOGIC CHO STEP 3: LƯU NỘI DUNG TỪ DOM VÀ CKEDITOR
     if (currentStep === 3) {
         const currentLesson = window.currentLesson;
         if (currentLesson) {
             const lesson = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex];
 
-            // Lưu contents từ DOM
+            // Lưu tất cả contents từ DOM
             lesson.contents.forEach((content, index) => {
                 // Lưu tiêu đề
                 const titleInput = document.querySelector(`.content-item[data-content-index="${index}"] .content-title-input`);
@@ -453,16 +597,114 @@ function saveStepData() {
                     content.contentType = typeSelect.value;
                 }
 
-                // Lưu nội dung lý thuyết từ CKEditor
+                // Lưu nội dung theo loại
                 if (content.contentType === 'Theory') {
-                    const contentId = `contentBody_content_${Date.now()}_${index}`;
-                    // Tìm CKEditor instance theo pattern
+                    // Lưu nội dung lý thuyết từ CKEditor
+                    // Tìm CKEditor instance theo pattern contentBody_*_index
                     for (const [key, editor] of Object.entries(ckEditorInstances)) {
                         if (key.includes(`contentBody_`) && key.includes(`_${index}`)) {
                             content.body = editor.getData();
                             break;
                         }
                     }
+                } else if (content.contentType === 'Video') {
+                    // Video URL đã được lưu trong handleVideoUpload
+                    // Không cần làm gì thêm
+                } else if (content.contentType === 'FlashcardSet') {
+                    // Lưu flashcard set title và description
+                    const setTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-title`);
+                    const setDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-desc`);
+                    
+                    if (setTitleInput) {
+                        content.flashcardSetTitle = setTitleInput.value.trim();
+                    }
+                    if (setDescInput) {
+                        content.flashcardSetDesc = setDescInput.value.trim();
+                    }
+
+                    // Lưu từng flashcard từ DOM
+                    const flashcardItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .flashcard-item`);
+                    if (!content.flashcards) {
+                        content.flashcards = [];
+                    }
+                    
+                    flashcardItems.forEach((flashcardEl, cardIndex) => {
+                        const frontText = flashcardEl.querySelector('.flashcard-front')?.value || '';
+                        const backText = flashcardEl.querySelector('.flashcard-back')?.value || '';
+                        const hint = flashcardEl.querySelector('.flashcard-hint')?.value || '';
+                        
+                        if (content.flashcards[cardIndex]) {
+                            content.flashcards[cardIndex].frontText = frontText;
+                            content.flashcards[cardIndex].backText = backText;
+                            content.flashcards[cardIndex].hint = hint;
+                            content.flashcards[cardIndex].orderIndex = cardIndex;
+                        }
+                    });
+                } else if (content.contentType === 'Test') {
+                    // Lưu test title, description, time limit, max attempts
+                    const testTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-title`);
+                    const testDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-desc`);
+                    const testTimeInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-time`);
+                    const testAttemptsInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-attempts`);
+                    
+                    if (testTitleInput) {
+                        content.testTitle = testTitleInput.value.trim();
+                    }
+                    if (testDescInput) {
+                        content.testDesc = testDescInput.value.trim();
+                    }
+                    if (testTimeInput) {
+                        content.timeLimitMinutes = parseInt(testTimeInput.value) || 30;
+                    }
+                    if (testAttemptsInput) {
+                        content.maxAttempts = parseInt(testAttemptsInput.value) || 3;
+                    }
+
+                    // Lưu từng question từ DOM
+                    const questionItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .test-question-item`);
+                    if (!content.questions) {
+                        content.questions = [];
+                    }
+                    
+                    questionItems.forEach((questionEl, qIndex) => {
+                        const questionTypeSelect = questionEl.querySelector('.form-control');
+                        const questionTextArea = questionEl.querySelectorAll('textarea')[0];
+                        const questionPointsInput = questionEl.querySelector('input[type="number"]');
+                        
+                        if (content.questions[qIndex]) {
+                            if (questionTypeSelect) {
+                                content.questions[qIndex].type = questionTypeSelect.value;
+                            }
+                            if (questionTextArea) {
+                                content.questions[qIndex].stemText = questionTextArea.value.trim();
+                            }
+                            if (questionPointsInput) {
+                                content.questions[qIndex].points = parseFloat(questionPointsInput.value) || 1;
+                            }
+                            content.questions[qIndex].orderIndex = qIndex;
+
+                            // Lưu options
+                            const optionItems = questionEl.querySelectorAll('.option-item');
+                            if (!content.questions[qIndex].options) {
+                                content.questions[qIndex].options = [];
+                            }
+                            
+                            optionItems.forEach((optionEl, oIndex) => {
+                                const checkbox = optionEl.querySelector('input[type="checkbox"]');
+                                const textInput = optionEl.querySelector('input[type="text"]');
+                                
+                                if (content.questions[qIndex].options[oIndex]) {
+                                    if (checkbox) {
+                                        content.questions[qIndex].options[oIndex].isCorrect = checkbox.checked;
+                                    }
+                                    if (textInput) {
+                                        content.questions[qIndex].options[oIndex].optionText = textInput.value.trim();
+                                    }
+                                    content.questions[qIndex].options[oIndex].orderIndex = oIndex;
+                                }
+                            });
+                        }
+                    });
                 }
             });
         }
@@ -495,7 +737,7 @@ function generateSlug() {
         'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
         'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
         'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o', 'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-        'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừng': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
+        'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
         'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
         'đ': 'd',
         'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ả': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
@@ -707,7 +949,144 @@ function initializeLessonsSortable(container) {
 // ============================================
 // LESSON CONTENTS MANAGEMENT
 // ============================================
+
+// ✅ HÀM MỚI: LƯU NỘI DUNG CỦA LESSON HIỆN TẠI
+function saveCurrentLessonContents() {
+    const currentLesson = window.currentLesson;
+    if (!currentLesson) return;
+
+    const lesson = courseData.chapters[currentLesson.chapterIndex].lessons[currentLesson.lessonIndex];
+
+    lesson.contents.forEach((content, index) => {
+        // Save title
+        const titleInput = document.querySelector(`.content-item[data-content-index="${index}"] .content-title-input`);
+        if (titleInput) {
+            content.title = titleInput.value.trim();
+        }
+
+        // Save content type
+        const typeSelect = document.querySelector(`.content-item[data-content-index="${index}"] .content-type-select`);
+        if (typeSelect) {
+            content.contentType = typeSelect.value;
+        }
+
+        // Save content based on type
+        if (content.contentType === 'Theory') {
+            // Save theory content from CKEditor
+            for (const [key, editor] of Object.entries(ckEditorInstances)) {
+                if (key.includes(`contentBody_`) && key.includes(`_${index}`)) {
+                    content.body = editor.getData();
+                    break;
+                }
+            }
+        } else if (content.contentType === 'Video') {
+            // Video URL đã được lưu trong handleVideoUpload
+            // Không cần làm gì thêm
+        } else if (content.contentType === 'FlashcardSet') {
+            // Save flashcard set title and description
+            const setTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-title`);
+            const setDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .flashcard-set-desc`);
+            
+            if (setTitleInput) {
+                content.flashcardSetTitle = setTitleInput.value.trim();
+            }
+            if (setDescInput) {
+                content.flashcardSetDesc = setDescInput.value.trim();
+            }
+
+            // Save each flashcard from DOM
+            const flashcardItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .flashcard-item`);
+            if (!content.flashcards) {
+                content.flashcards = [];
+            }
+            
+            flashcardItems.forEach((flashcardEl, cardIndex) => {
+                const frontText = flashcardEl.querySelector('.flashcard-front')?.value || '';
+                const backText = flashcardEl.querySelector('.flashcard-back')?.value || '';
+                const hint = flashcardEl.querySelector('.flashcard-hint')?.value || '';
+                
+                if (content.flashcards[cardIndex]) {
+                    content.flashcards[cardIndex].frontText = frontText;
+                    content.flashcards[cardIndex].backText = backText;
+                    content.flashcards[cardIndex].hint = hint;
+                    content.flashcards[cardIndex].orderIndex = cardIndex;
+                }
+            });
+        } else if (content.contentType === 'Test') {
+            // Save test title, description, time limit, max attempts
+            const testTitleInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-title`);
+            const testDescInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-desc`);
+            const testTimeInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-time`);
+            const testAttemptsInput = document.querySelector(`.content-item[data-content-index="${index}"] .test-attempts`);
+            
+            if (testTitleInput) {
+                content.testTitle = testTitleInput.value.trim();
+            }
+            if (testDescInput) {
+                content.testDesc = testDescInput.value.trim();
+            }
+            if (testTimeInput) {
+                content.timeLimitMinutes = parseInt(testTimeInput.value) || 30;
+            }
+            if (testAttemptsInput) {
+                content.maxAttempts = parseInt(testAttemptsInput.value) || 3;
+            }
+
+            // Save each question from DOM
+            const questionItems = document.querySelectorAll(`.content-item[data-content-index="${index}"] .test-question-item`);
+            if (!content.questions) {
+                content.questions = [];
+            }
+            
+            questionItems.forEach((questionEl, qIndex) => {
+                const questionTypeSelect = questionEl.querySelector('.form-control');
+                const questionTextArea = questionEl.querySelectorAll('textarea')[0];
+                const questionPointsInput = questionEl.querySelector('input[type="number"]');
+                
+                if (content.questions[qIndex]) {
+                    if (questionTypeSelect) {
+                        content.questions[qIndex].type = questionTypeSelect.value;
+                    }
+                    if (questionTextArea) {
+                        content.questions[qIndex].stemText = questionTextArea.value.trim();
+                    }
+                    if (questionPointsInput) {
+                        content.questions[qIndex].points = parseFloat(questionPointsInput.value) || 1;
+                    }
+                    content.questions[qIndex].orderIndex = qIndex;
+
+                    // Save options
+                    const optionItems = questionEl.querySelectorAll('.option-item');
+                    if (!content.questions[qIndex].options) {
+                        content.questions[qIndex].options = [];
+                    }
+                    
+                    optionItems.forEach((optionEl, oIndex) => {
+                        const checkbox = optionEl.querySelector('input[type="checkbox"]');
+                        const textInput = optionEl.querySelector('input[type="text"]');
+                        
+                        if (content.questions[qIndex].options[oIndex]) {
+                            if (checkbox) {
+                                content.questions[qIndex].options[oIndex].isCorrect = checkbox.checked;
+                            }
+                            if (textInput) {
+                                content.questions[qIndex].options[oIndex].optionText = textInput.value.trim();
+                            }
+                            content.questions[qIndex].options[oIndex].orderIndex = oIndex;
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
 function populateLessonSelector() {
+    // ✅ LƯU DỮ LIỆU CỦA LESSON HIỆN TẠI TRƯỚC KHI CHUYỂN
+    if (window.currentLesson) {
+        saveCurrentLessonContents();
+    }
+
     saveStepData(); // Make sure we have latest data
 
     const selector = document.getElementById('lessonSelector');
@@ -725,6 +1104,11 @@ function populateLessonSelector() {
 }
 
 function loadLessonContents() {
+    // ✅ LƯU DỮ LIỆU CỦA LESSON HIỆN TẠI TRƯỚC KHI CHUYỂN
+    if (window.currentLesson) {
+        saveCurrentLessonContents();
+    }
+
     const selector = document.getElementById('lessonSelector');
     const selectedKey = selector.value;
 
@@ -1272,6 +1656,7 @@ function addFlashcard(contentIndex) {
                 </div>
             </div>
         `;
+
         flashcardsContainer.insertAdjacentHTML('beforeend', newCardHTML);
     }
 }
@@ -1578,13 +1963,23 @@ function renderPreview() {
     let chaptersHTML = '';
     courseData.chapters.forEach(chapter => {
         let lessonsHTML = '<div class="preview-lessons">';
-        chapter.lessons.forEach(lesson => {
+
+        // Add a no-content message if chapter has no lessons
+        if (!chapter.lessons || chapter.lessons.length === 0) {
             lessonsHTML += `
-                <div class="preview-lesson">
-                    <i class="fas fa-book"></i> ${lesson.title} (${lesson.contents ? lesson.contents.length : 0} nội dung)
+                <div class="preview-lesson no-content">
+                    <i class="fas fa-info-circle"></i> Chương này chưa có bài học nào.
                 </div>
             `;
-        });
+        } else {
+            chapter.lessons.forEach(lesson => {
+                lessonsHTML += `                    
+                    <div class="preview-lesson">
+                        <i class="fas fa-book"></i> ${lesson.title} (${lesson.contents ? lesson.contents.length : 0} nội dung)
+                    </div>
+                `;
+            });
+        }
         lessonsHTML += '</div>';
 
         chaptersHTML += `
@@ -1649,6 +2044,11 @@ function renderPreview() {
 // SAVE COURSE
 // ============================================
 function saveCourse(publish) {
+    // ✅ LƯU DỮ LIỆU CỦA LESSON HIỆN TẠI NẾU CÓ
+    if (window.currentLesson) {
+        saveCurrentLessonContents();
+    }
+
     saveStepData();
 
     // Update publish status

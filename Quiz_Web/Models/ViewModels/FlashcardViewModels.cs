@@ -20,6 +20,9 @@ namespace Quiz_Web.Models.ViewModels
 
         [StringLength(50, ErrorMessage = "Ngôn ng? không ???c v??t quá 50 ký t?")]
         public string? Language { get; set; }
+
+        // JSON string containing flashcards data from client
+        public string? FlashcardsJson { get; set; }
     }
 
     public class EditFlashcardSetViewModel
@@ -95,6 +98,15 @@ namespace Quiz_Web.Models.ViewModels
         [StringLength(200, ErrorMessage = "G?i ý không ???c v??t quá 200 ký t?")]
         public string? Hint { get; set; }
 
+        public int OrderIndex { get; set; }
+    }
+
+    // Helper class for deserializing flashcards JSON
+    public class FlashcardDataViewModel
+    {
+        public string FrontText { get; set; } = string.Empty;
+        public string BackText { get; set; } = string.Empty;
+        public string? Hint { get; set; }
         public int OrderIndex { get; set; }
     }
 }

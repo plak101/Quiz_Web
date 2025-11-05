@@ -262,12 +262,52 @@
                                                     @foreach (var lesson in chapter.Lessons.OrderBy(l => l.OrderIndex))
                                                     {
                                                         var isPreview = lesson.Visibility == "Public";
-                                                        var hasVideo = lesson.LessonContents?.Any(c => c.ContentType == "Video") ?? false;
+                                                        // ✅ XÁC ĐỊNH LOẠI NỘI DUNG
+                                                        var contentTypes = lesson.LessonContents?.Select(c => c.ContentType).ToList() ?? new List<string>();
+                                                        var hasVideo = contentTypes.Contains("Video");
+                                                        var hasTheory = contentTypes.Contains("Theory");
+                                                        var hasFlashcard = contentTypes.Contains("FlashcardSet");
+                                                        var hasTest = contentTypes.Contains("Test");
+                                                        
+                                                        // ✅ CHỌN ICON DỰA TRÊN LOẠI NỘI DUNG
+                                                        string iconClass = "fa-file-alt"; // default
+                                                        if (hasVideo) iconClass = "fa-play-circle";
+                                                        else if (hasTest) iconClass = "fa-clipboard-check";
+                                                        else if (hasFlashcard) iconClass = "fa-layer-group";
                                                         
                                                         <li class="lesson-item">
                                                             <div class="lesson-info">
-                                                                <i class="fas @(hasVideo ? "fa-play-circle" : "fa-file-alt")"></i>
+                                                                <i class="fas @iconClass"></i>
                                                                 <span class="lesson-title">@lesson.Title</span>
+                                                                
+                                                                <!-- ✅ HIỂN THỊ BADGES CHO CÁC LOẠI NỘI DUNG -->
+                                                                <div class="content-type-badges ms-2">
+                                                                    @if (hasVideo)
+                                                                    {
+                                                                        <span class="badge bg-primary" title="Video">
+                                                                            <i class="fas fa-video"></i>
+                                                                        </span>
+                                                                    }
+                                                                    @if (hasTheory)
+                                                                    {
+                                                                        <span class="badge bg-info" title="Lý thuyết">
+                                                                            <i class="fas fa-book"></i>
+                                                                        </span>
+                                                                    }
+                                                                    @if (hasFlashcard)
+                                                                    {
+                                                                        <span class="badge bg-warning" title="Flashcard">
+                                                                            <i class="fas fa-layer-group"></i>
+                                                                        </span>
+                                                                    }
+                                                                    @if (hasTest)
+                                                                    {
+                                                                        <span class="badge bg-success" title="Bài kiểm tra">
+                                                                            <i class="fas fa-clipboard-check"></i>
+                                                                        </span>
+                                                                    }
+                                                                </div>
+                                                                
                                                                 @if (isPreview)
                                                                 {
                                                                     <button class="btn btn-link btn-sm preview-btn">
