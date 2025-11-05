@@ -33,6 +33,14 @@
                         Khám phá
                     </a>
                     <div class="dropdown-menu explore-dropdown-menu">
+                        <a class="dropdown-item explore-item" href="@Url.Action("Index", "Course")">
+                            @* @if (!string.IsNullOrEmpty(category.IconUrl))
+                            {
+                                <img src="@category.IconUrl" alt="@category.Name" class="explore-icon" />
+                            } *@
+                            <span>Tất cả</span>
+                        </a>
+
                         @{
                             var categories = CourseService.GetAllCategories();
                             foreach (var category in categories)
@@ -68,13 +76,13 @@
                     <!-- Right Navigation Items -->
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center navbar-nav-right">
                         <!-- Udemy Business -->
-                        <li class="nav-item d-none d-xl-flex">
+                        @* <li class="nav-item d-none d-xl-flex">
                             <a class="nav-link text-dark px-3" href="#">Udemy Business</a>
-                        </li>
+                        </li> *@
 
                         <!-- Giảng viên -->
                         <li class="nav-item d-none d-xl-flex">
-                            <a class="nav-link text-dark px-3" href="@Url.Action("Create", "Lesson")">Giảng viên</a>
+                            <a class="nav-link text-dark px-3" href="@Url.Action("My", "Course")">Giảng viên</a>
                         </li>
 
                         <!-- Học tập -->

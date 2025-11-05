@@ -30,14 +30,105 @@
             padding: 0;
         }
         
-        /* Ensure proper stacking context for sticky */
+        /* ✅ Floating Sidebar - Udemy Style */
+        .floating-sidebar {
+            position: absolute;
+            top: 2rem;
+            right: 0;
+            width: 340px;
+            max-width: 340px;
+            z-index: 1000;
+        }
+        
+        .sidebar-placeholder {
+            height: 1px;
+        }
+        
+        /* ✅ Make it sticky when scrolling */
+        @@media (min-width: 992px) {
+            .floating-sidebar {
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                top: 88px !important;
+                margin-right: calc((100vw - 1200px) / 2 + 15px);
+            }
+            
+            .course-hero .container {
+                position: relative;
+            }
+        }
+        
+        @@media (min-width: 1400px) {
+            .floating-sidebar {
+                margin-right: calc((100vw - 1320px) / 2 + 15px);
+            }
+        }
+        
+        /* Ensure overflow visible */
+        .course-hero {
+            overflow: visible;
+            position: relative;
+        }
+        
+        .course-hero .container {
+            overflow: visible;
+        }
+        
+        .course-content-section {
+            overflow: visible;
+        }
+        
+        .course-content-section .container {
+            overflow: visible;
+        }
+        
         .course-content-section .row {
             position: relative;
+            overflow: visible;
         }
         
         .course-content-section .col-lg-8,
         .course-content-section .col-lg-4 {
             position: relative;
+        }
+        
+        /* ✅ Ensure sticky works properly */
+        @@media (min-width: 992px) {
+            .course-card-sidebar,
+            .owner-actions-card {
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                top: 88px !important;
+                align-self: flex-start;
+            }
+        }
+
+        /* ✅ Floating Sidebar styles */
+        .floating-sidebar {
+            position: absolute;
+            top: 80px;
+            right: 15px;
+            z-index: 10;
+            display: none;
+        }
+
+        .sidebar-placeholder {
+            display: none;
+        }
+
+        @@media (min-width: 992px) {
+            .floating-sidebar {
+                display: block;
+            }
+
+            .sidebar-placeholder {
+                display: block;
+                height: 100%;
+                position: relative;
+                top: 0;
+                right: 0;
+                z-index: 1;
+            }
         }
     </style>
 }
@@ -61,12 +152,6 @@
 
                 <!-- Course Title -->
                 <h1 class="course-title">@Model.Title</h1>
-
-                <!-- Course Summary -->
-                @* @if (!string.IsNullOrEmpty(Model.Summary))
-                {
-                    <p class="course-summary">@(Model.Summary.Length > 200 ? Model.Summary.Substring(0, 200) + "..." : Model.Summary)</p>
-                } *@
 
                 <!-- Course Meta Info -->
                 <div class="course-meta">
@@ -116,71 +201,8 @@
                 </div>
             </div>
 
-            <!-- Sidebar Card (Desktop) -->
-            <div class="col-lg-4 d-none d-lg-block">
-                @if (!isOwner)
-                {
-                    <div class="course-card-sidebar sticky-top">
-                        @if (!string.IsNullOrEmpty(Model.CoverUrl))
-                        {
-                            <img src="@Model.CoverUrl" class="card-img-top" alt="@Model.Title" />
-                        }
-                        else
-                        {
-                            <div class="card-img-placeholder">
-                                <i class="fas fa-book"></i>
-                            </div>
-                        }
-                        <div class="card-body">
-                            @if (Model.Price == 0)
-                            {
-                                <h2 class="price text-success">MIỄN PHÍ</h2>
-                            }
-                            else
-                            {
-                                <div class="pricing">
-                                    <h2 class="current-price">₫@Model.Price.ToString("N0")</h2>
-                                </div>
-                            }
-                            
-                            <div class="d-grid gap-2 mt-3">
-                                <button class="btn btn-primary btn-lg" onclick="addToCartAndRedirect(@Model.CourseId)">
-                                    Thêm vào giỏ hàng
-                                </button>
-                                <button class="btn btn-outline-dark btn-lg">
-                                    <i class="far fa-heart me-2"></i>Yêu thích
-                                </button>
-                            </div>
-
-                            <div class="course-includes mt-4">
-                                <h6 class="fw-bold mb-3">Khóa học này bao gồm:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-video"></i> @totalLessons bài học</li>
-                                    <li><i class="fas fa-infinity"></i> Truy cập trọn đời</li>
-                                    <li><i class="fas fa-mobile-alt"></i> Truy cập trên mobile</li>
-                                    <li><i class="fas fa-certificate"></i> Chứng chỉ hoàn thành</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="owner-actions-card sticky-top">
-                        <div class="card-body">
-                            <h5 class="mb-3">Quản lý khóa học</h5>
-                            <div class="d-grid gap-2">
-                                <a asp-controller="Course" asp-action="Builder" asp-route-id="@Model.CourseId" class="btn btn-primary">
-                                    <i class="fas fa-edit me-2"></i>Chỉnh sửa khóa học
-                                </a>
-                                <a href="#" class="btn btn-outline-secondary">
-                                    <i class="fas fa-chart-line me-2"></i>Xem thống kê
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
+            <!-- Empty column for sidebar spacing on desktop -->
+            <div class="col-lg-4 d-none d-lg-block"></div>
         </div>
     </div>
 </section>
@@ -190,27 +212,6 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-8">
-                <!-- What you'll learn -->
-                <div class="content-box">
-                    <h2>Bạn sẽ học được gì</h2>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <ul class="learning-objectives">
-                                <li><i class="fas fa-check"></i> Nắm vững kiến thức cơ bản và nâng cao</li>
-                                <li><i class="fas fa-check"></i> Xây dựng các dự án thực tế</li>
-                                <li><i class="fas fa-check"></i> Áp dụng vào công việc thực tế</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul class="learning-objectives">
-                                <li><i class="fas fa-check"></i> Phát triển tư duy giải quyết vấn đề</li>
-                                <li><i class="fas fa-check"></i> Làm việc với công nghệ hiện đại</li>
-                                <li><i class="fas fa-check"></i> Chuẩn bị cho cơ hội nghề nghiệp</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Course Content -->
                 <div class="content-box">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -245,7 +246,7 @@
                                                     <strong>@chapter.Title</strong>
                                                     @if (!string.IsNullOrEmpty(chapter.Description))
                                                     {
-                                                        <p class="text-muted mb-0 small">@chapter.Description</p>
+                                                        <div class="text-muted mb-0 small">@Html.Raw(chapter.Description)</div>
                                                     }
                                                 </div>
                                                 <span class="badge bg-secondary">@lessonCount bài học</span>
@@ -341,16 +342,6 @@
                             </div>
                         }
                     </div>
-                </div>
-
-                <!-- Requirements -->
-                <div class="content-box">
-                    <h2>Yêu cầu</h2>
-                    <ul>
-                        <li>Không yêu cầu kiến thức trước đó</li>
-                        <li>Máy tính có kết nối Internet</li>
-                        <li>Tinh thần học hỏi và thực hành</li>
-                    </ul>
                 </div>
 
                 <!-- Description -->
@@ -593,6 +584,62 @@
                         </div>
                     }
                 </div>
+            </div>
+            
+            <!-- Sidebar Card (Desktop Only) - SINGLE IMPLEMENTATION -->
+            <div class="col-lg-4 d-none d-lg-block">
+                @if (!isOwner)
+                {
+                    <div class="course-card-sidebar">
+                        @if (!string.IsNullOrEmpty(Model.CoverUrl))
+                        {
+                            <img src="@Model.CoverUrl" class="card-img-top" alt="@Model.Title" />
+                        }
+                        else
+                        {
+                            <div class="card-img-placeholder">
+                                <i class="fas fa-book"></i>
+                            </div>
+                        }
+                        <div class="card-body">
+                            @if (Model.Price == 0)
+                            {
+                                <h2 class="price text-success">MIỄN PHÍ</h2>
+                            }
+                            else
+                            {
+                                <div class="pricing">
+                                    <h2 class="current-price">₫@Model.Price.ToString("N0")</h2>
+                                </div>
+                            }
+                            
+                            <div class="d-grid gap-2 mt-3">
+                                <button class="btn btn-primary btn-lg" onclick="addToCartAndRedirect(@Model.CourseId)">
+                                    Thêm vào giỏ hàng
+                                </button>
+                                <button class="btn btn-outline-dark btn-lg">
+                                    <i class="far fa-heart me-2"></i>Yêu thích
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="owner-actions-card">
+                        <div class="card-body">
+                            <h5 class="mb-3">Quản lý khóa học</h5>
+                            <div class="d-grid gap-2">
+                                <a asp-controller="Course" asp-action="Builder" asp-route-id="@Model.CourseId" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Chỉnh sửa khóa học
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary">
+                                    <i class="fas fa-chart-line me-2"></i>Xem thống kê
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
