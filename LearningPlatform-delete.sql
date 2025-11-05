@@ -725,3 +725,12 @@ GO
 -- Test xem điểm trung bình được cập nhật
 SELECT Title, AverageRating, TotalReviews FROM dbo.Courses;
 GO
+
+ALTER DATABASE LearningPlatform
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE;
+GO
+
+-- 2. Xóa database
+DROP DATABASE LearningPlatform;
+GO
