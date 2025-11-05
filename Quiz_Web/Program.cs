@@ -10,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// ? Add API Controllers support
+builder.Services.AddControllers();
+
 //session
 builder.Services.AddSession(options=>
 {
@@ -85,6 +89,9 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
+// ? Map API Controllers FIRST (before MVC routes)
+app.MapControllers();
+
 // Add explicit route for Onboarding
 app.MapControllerRoute(
     name: "onboarding",
@@ -103,7 +110,7 @@ app.MapControllerRoute(
     pattern: "Checkout/{action=Index}/{id?}",
     defaults: new { controller = "Checkout" });
 
-// Route m?c ??nh tr? ??n Welcome action ?? x? l? logic
+// Route m?c ??nh tr? ??n Welcome action ?? x? lý logic
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Welcome}/{id?}")

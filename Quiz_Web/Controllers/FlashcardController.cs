@@ -307,7 +307,7 @@ namespace Quiz_Web.Controllers
         // Route: /flashcards/study/{setId}
         // Example: /flashcards/study/5
         [HttpGet("study/{setId:int}")]
-        public async Task<IActionResult> Study(int setId)
+        public async Task<IActionResult> Study(int setId, string? courseSlug, int? lessonId, int? contentId)
         {
             if (setId <= 0)
             {
@@ -335,13 +335,18 @@ namespace Quiz_Web.Controllers
             ViewBag.TotalCards = flashcardSet.Flashcards.Count;
             ViewBag.SetId = setId;
             
+            // Pass course link data to view
+            ViewBag.CourseSlug = courseSlug;
+            ViewBag.LessonId = lessonId;
+            ViewBag.ContentId = contentId;
+            
             return View(flashcardSet.Flashcards.ToList());
         }
 
         // Route: /flashcards/finish/{setId}
         // Example: /flashcards/finish/5
         [HttpGet("finish/{setId:int}")]
-        public async Task<IActionResult> Finish(int setId)
+        public async Task<IActionResult> Finish(int setId, string? courseSlug, int? lessonId, int? contentId)
         {
             if (setId <= 0)
             {
@@ -359,6 +364,12 @@ namespace Quiz_Web.Controllers
             }
 
             ViewBag.SetId = setId;
+            
+            // Pass course link data to view
+            ViewBag.CourseSlug = courseSlug;
+            ViewBag.LessonId = lessonId;
+            ViewBag.ContentId = contentId;
+            
             return View();
         }
 
@@ -367,6 +378,37 @@ namespace Quiz_Web.Controllers
         {
             var publicFlashcardSets = _flashcardService.GetAllPublishedFlashcardSets();
             return View(publicFlashcardSets);
+        }
+
+        // ✅ NEW API ENDPOINT: GET /api/flashcards/{setId}
+        [HttpGet("/api/flashcards/{setId:int}")]
+        public async Task<IActionResult> GetFlashcardsApi(int setId)
+        {
+            try
+            {
+                var flashcards = await _flashcardService.GetFlashcardsBySetIdAsync(setId);
+                
+                if (flashcards == null || !flashcards.Any())
+                {
+                    return Json(new { success = false, message = "Không tìm thấy flashcards" });
+                }
+                
+                var flashcardsDto = flashcards.Select(f => new
+                {
+                    cardId = f.CardId,
+                    frontText = f.FrontText,
+                    backText = f.BackText,
+                    hint = f.Hint,
+                    orderIndex = f.OrderIndex
+                }).ToList();
+                
+                return Json(new { success = true, flashcards = flashcardsDto });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting flashcards for set {setId}");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải flashcards" });
+            }
         }
     }
 }

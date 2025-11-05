@@ -201,8 +201,85 @@
                 </div>
             </div>
 
-            <!-- Empty column for sidebar spacing on desktop -->
-            <div class="col-lg-4 d-none d-lg-block"></div>
+            <!-- Sidebar Card (Desktop) -->
+            <div class="col-lg-4 d-none d-lg-block">
+                @if (!isOwner)
+                {
+                    <div class="course-card-sidebar sticky-top">
+                        @if (!string.IsNullOrEmpty(Model.CoverUrl))
+                        {
+                            <img src="@Model.CoverUrl" class="card-img-top" alt="@Model.Title" />
+                        }
+                        else
+                        {
+                            <div class="card-img-placeholder">
+                                <i class="fas fa-book"></i>
+                            </div>
+                        }
+                        <div class="card-body">
+                            @if (Model.Price == 0)
+                            {
+                                <h2 class="price text-success">MIỄN PHÍ</h2>
+                            }
+                            else
+                            {
+                                <div class="pricing">
+                                    <h2 class="current-price">₫@Model.Price.ToString("N0")</h2>
+                                </div>
+                            }
+                            
+                            <div class="d-grid gap-2 mt-3">
+                                @if (hasPurchased)
+                                {
+                                    <a asp-controller="Course" asp-action="Learn" asp-route-slug="@Model.Slug" 
+                                       class="btn btn-primary btn-lg">
+                                        <i class="fas fa-play-circle me-2"></i>Bắt đầu học
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-primary btn-lg" onclick="addToCartAndRedirect(@Model.CourseId)">
+                                        Thêm vào giỏ hàng
+                                    </button>
+                                }
+                                <button class="btn btn-outline-dark btn-lg">
+                                    <i class="far fa-heart me-2"></i>Yêu thích
+                                </button>
+                            </div>
+
+                            <div class="course-includes mt-4">
+                                <h6 class="fw-bold mb-3">Khóa học này bao gồm:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-video"></i> @totalLessons bài học</li>
+                                    <li><i class="fas fa-infinity"></i> Truy cập trọn đời</li>
+                                    <li><i class="fas fa-mobile-alt"></i> Truy cập trên mobile</li>
+                                    <li><i class="fas fa-certificate"></i> Chứng chỉ hoàn thành</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="owner-actions-card sticky-top">
+                        <div class="card-body">
+                            <h5 class="mb-3">Quản lý khóa học</h5>
+                            <div class="d-grid gap-2">
+                                <a asp-controller="Course" asp-action="Builder" asp-route-id="@Model.CourseId" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Chỉnh sửa khóa học
+                                </a>
+                                <a asp-controller="Course" asp-action="Learn" asp-route-slug="@Model.Slug" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-play-circle me-2"></i>Xem trước bài học
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary">
+                                    <i class="fas fa-chart-line me-2"></i>Xem thống kê
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </section>
@@ -660,9 +737,19 @@
                     <div class="price-mobile">₫@Model.Price.ToString("N0")</div>
                 }
             </div>
-            <button class="btn btn-primary" onclick="addToCartAndRedirect(@Model.CourseId)">
-                Thêm vào giỏ hàng
-            </button>
+            @if (hasPurchased)
+            {
+                <a asp-controller="Course" asp-action="Learn" asp-route-slug="@Model.Slug" 
+                   class="btn btn-primary">
+                    <i class="fas fa-play-circle me-2"></i>Bắt đầu học
+                </a>
+            }
+            else
+            {
+                <button class="btn btn-primary" onclick="addToCartAndRedirect(@Model.CourseId)">
+                    Thêm vào giỏ hàng
+                </button>
+            }
         </div>
     </div>
 }
