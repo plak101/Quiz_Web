@@ -49,7 +49,7 @@ namespace Quiz_Web.Controllers
             }
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             // Nếu người dùng chưa đăng nhập, redirect về Introduce
             if (User.Identity?.IsAuthenticated != true)

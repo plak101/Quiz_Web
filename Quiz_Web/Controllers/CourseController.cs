@@ -717,5 +717,93 @@ namespace Quiz_Web.Controllers
 				return Json(new { success = false, message = $"Có lỗi xảy ra khi tải video lên: {ex.Message}" });
 			}
 		}
+
+		// GET: /courses/{slug}/learn
+		[Authorize]
+		[Route("/courses/{slug}/learn")]
+		[HttpGet]
+		public IActionResult Learn(string slug, int? chapterId = null, int? lessonId = null)
+		{
+			_logger.LogInformation($"Course Learn - Slug: {slug}, ChapterId: {chapterId}, LessonId: {lessonId}");
+			
+			if (string.IsNullOrWhiteSpace(slug))
+				return RedirectToAction(nameof(Index));
+
+			var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+				return Challenge();
+
+			// Get course with full structure
+			var course = _courseService.GetCourseBySlugWithFullDetails(slug);
+			if (course == null)
+			{
+				_logger.LogWarning($"Course not found with slug: {slug}");
+				TempData["Error"] = "Không tìm thấy khóa học.";
+				return RedirectToAction(nameof(Index));
+			}
+
+			// Check if user has access to this course (purchased or is owner)
+			var isOwner = course.OwnerId == userId;
+			var hasPurchased = course.CoursePurchases?.Any(p => p.BuyerId == userId && p.Status == "Paid") ?? false;
+
+			// ✅ FIXED: Allow owner to preview even if not published
+			if (!isOwner && !hasPurchased)
+			{
+				TempData["Error"] = "Bạn cần mua khóa học này để xem nội dung.";
+				return RedirectToAction("Detail", new { slug });
+			}
+
+			// If no chapters or lessons exist
+			if (course.CourseChapters == null || !course.CourseChapters.Any())
+			{
+				TempData["Error"] = "Khóa học này chưa có nội dung.";
+				if (isOwner)
+				{
+					TempData["Info"] = "Hãy thêm chương và bài học vào khóa học của bạn.";
+					return RedirectToAction("Builder", new { id = course.CourseId });
+				}
+				return RedirectToAction("Detail", new { slug });
+			}
+
+			// If no specific lesson is requested, get the first lesson
+			if (!chapterId.HasValue || !lessonId.HasValue)
+			{
+				var firstChapter = course.CourseChapters.OrderBy(c => c.OrderIndex).FirstOrDefault();
+				if (firstChapter != null)
+				{
+					var firstLesson = firstChapter.Lessons?.OrderBy(l => l.OrderIndex).FirstOrDefault();
+					if (firstLesson != null)
+					{
+						return RedirectToAction("Learn", new { slug, chapterId = firstChapter.ChapterId, lessonId = firstLesson.LessonId });
+					}
+				}
+				
+				// No lessons found
+				TempData["Error"] = "Khóa học này chưa có bài học nào.";
+				if (isOwner)
+				{
+					return RedirectToAction("Builder", new { id = course.CourseId });
+				}
+				return RedirectToAction("Detail", new { slug });
+			}
+
+			// Get current lesson
+			var currentChapter = course.CourseChapters.FirstOrDefault(c => c.ChapterId == chapterId);
+			var currentLesson = currentChapter?.Lessons?.FirstOrDefault(l => l.LessonId == lessonId);
+
+			if (currentChapter == null || currentLesson == null)
+			{
+				_logger.LogWarning($"Lesson not found - ChapterId: {chapterId}, LessonId: {lessonId}");
+				TempData["Error"] = "Không tìm thấy bài học.";
+				return RedirectToAction("Detail", new { slug });
+			}
+
+			ViewBag.Course = course;
+			ViewBag.CurrentChapter = currentChapter;
+			ViewBag.CurrentLesson = currentLesson;
+			ViewBag.IsOwner = isOwner;
+
+			return View();
+		}
 	}
 }

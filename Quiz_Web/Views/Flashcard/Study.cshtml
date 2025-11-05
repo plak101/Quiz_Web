@@ -24,7 +24,7 @@
 else
 {
     <div class="flashcard-container">
-        <!-- Header v?i progress bar và coin -->
+        <!-- Header với progress bar và coin -->
         <div class="flashcard-header">
             <div class="progress-section">
                 <div class="progress" style="width: 200px; height: 8px;">
@@ -97,22 +97,53 @@ else
     @section Scripts {
         <script src="~/js/flashcards/index.js" asp-append-version="true"></script>
         <script>
-            // Initialize flashcards data
-            const flashcardsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(f => new { 
-                FrontText = f.FrontText ?? "", 
-                BackText = f.BackText ?? "" 
-            }).ToList()));
-            
-            const setId = @ViewBag.SetId;
-            
-            console.log('Flashcards data:', flashcardsData);
-            console.log('Total cards:', @ViewBag.TotalCards);
-            
-            if (typeof initializeFlashcards === 'function') {
-                initializeFlashcards(flashcardsData, @ViewBag.TotalCards, setId);
-            } else {
-                console.error('initializeFlashcards function not found');
-            }
+            (function() {
+                // Initialize flashcards data - sanitize and ensure proper serialization
+                const flashcardsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.Select(f => new { 
+                        FrontText = f.FrontText ?? "", 
+                        BackText = f.BackText ?? "" 
+                    }).ToList(), 
+                    new System.Text.Json.JsonSerializerOptions { 
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                    }
+                ));
+                
+                const setId = @ViewBag.SetId;
+                
+                // Safely get ViewBag values with null checks
+                const courseSlugValue = '@(ViewBag.CourseSlug ?? "")';
+                const lessonIdValue = '@(ViewBag.LessonId ?? "")';
+                const contentIdValue = '@(ViewBag.ContentId ?? "")';
+                
+                // Only create courseLinkData if all values are present and not empty
+                let courseLinkData = null;
+                
+                if (courseSlugValue && lessonIdValue && contentIdValue) {
+                    courseLinkData = {
+                        courseSlug: courseSlugValue,
+                        lessonId: parseInt(lessonIdValue) || null,
+                        contentId: parseInt(contentIdValue) || null
+                    };
+                    console.log('Course link data:', courseLinkData);
+                } else {
+                    console.log('No course link data (standalone flashcard)');
+                }
+                
+                console.log('Flashcards loaded:', flashcardsData.length, 'cards');
+                console.log('Total cards:', @ViewBag.TotalCards);
+                
+                if (typeof initializeFlashcards === 'function') {
+                    initializeFlashcards(
+                        flashcardsData, 
+                        @ViewBag.TotalCards, 
+                        setId,
+                        courseLinkData
+                    );
+                } else {
+                    console.error('initializeFlashcards function not found');
+                }
+            })();
         </script>
     }
 }

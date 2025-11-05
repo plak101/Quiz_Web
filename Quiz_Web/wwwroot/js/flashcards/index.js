@@ -8,24 +8,36 @@ let currentCardIndex = 0;
 let isFlipped = false;
 let totalCards = 0;
 let currentSetId = 0;
+let courseLinkData = null; // Store course link info
 
 /**
  * Initialize flashcards with data
  * @param {Array} data - Array of flashcard objects with FrontText and BackText
  * @param {Number} total - Total number of flashcards
  * @param {Number} setId - Current flashcard set ID
+ * @param {Object} linkData - Course link data {courseSlug, lessonId, contentId}
  */
-function initializeFlashcards(data, total, setId) {
-    flashcards = data;
-    totalCards = total;
+function initializeFlashcards(data, total, setId, linkData) {
+    console.log('Initializing flashcards with:', { data, total, setId, linkData });
+    
+    flashcards = data || [];
+    totalCards = total || 0;
     currentCardIndex = 0;
     isFlipped = false;
     currentSetId = setId || 0;
+    courseLinkData = linkData || null;
     
-    console.log('Initializing flashcards:', flashcards.length, 'cards');
+    console.log('Flashcards initialized:', flashcards.length, 'cards');
+    console.log('First card:', flashcards.length > 0 ? flashcards[0] : 'No cards');
     
     if (flashcards.length > 0) {
         updateCard();
+    } else {
+        console.error('No flashcards to display');
+        const frontText = document.getElementById('frontText');
+        const backText = document.getElementById('backText');
+        if (frontText) frontText.textContent = 'Không có th? nào';
+        if (backText) backText.textContent = 'B? flashcard tr?ng';
     }
 }
 
@@ -36,10 +48,23 @@ function updateCard() {
     const frontText = document.getElementById('frontText');
     const backText = document.getElementById('backText');
     
-    if (frontText && backText && flashcards.length > 0) {
-        frontText.textContent = flashcards[currentCardIndex].frontText || flashcards[currentCardIndex].FrontText || 'No text';
-        backText.textContent = flashcards[currentCardIndex].backText || flashcards[currentCardIndex].BackText || 'No text';
+    if (!frontText || !backText) {
+        console.error('Card text elements not found');
+        return;
     }
+    
+    if (flashcards.length === 0) {
+        frontText.textContent = 'Không có th? nào';
+        backText.textContent = 'B? flashcard tr?ng';
+        return;
+    }
+    
+    const currentCard = flashcards[currentCardIndex];
+    console.log('Current card index:', currentCardIndex, 'Card data:', currentCard);
+    
+    // Handle both property name formats (FrontText/frontText)
+    frontText.textContent = currentCard.FrontText || currentCard.frontText || 'Không có n?i dung';
+    backText.textContent = currentCard.BackText || currentCard.backText || 'Không có n?i dung';
     
     // Reset flip state
     const card = document.getElementById('flashcard');
@@ -92,7 +117,19 @@ function checkCompletion() {
  * Navigate to finish page
  */
 function goToFinish() {
-    window.location.href = `/flashcards/finish/${currentSetId}`;
+    let url = `/flashcards/finish/${currentSetId}`;
+    
+    // Add course link params if available
+    if (courseLinkData && courseLinkData.courseSlug && courseLinkData.lessonId && courseLinkData.contentId) {
+        const params = new URLSearchParams({
+            courseSlug: courseLinkData.courseSlug,
+            lessonId: courseLinkData.lessonId,
+            contentId: courseLinkData.contentId
+        });
+        url += `?${params.toString()}`;
+    }
+    
+    window.location.href = url;
 }
 
 /**
