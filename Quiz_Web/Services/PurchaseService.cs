@@ -21,7 +21,7 @@ namespace Quiz_Web.Services
             return await _context.CoursePurchases
                 .AnyAsync(cp => cp.BuyerId == userId && 
                                cp.CourseId == courseId && 
-                               cp.Status == "completed");
+                               cp.Status == "Paid");
         }
 
         public async Task<CoursePurchase> CreatePurchaseAsync(int userId, List<int> courseIds, decimal totalAmount)
@@ -36,7 +36,7 @@ namespace Quiz_Web.Services
                     CourseId = courseIds.First(),
                     PricePaid = totalAmount,
                     Currency = "VND",
-                    Status = "pending",
+                    Status = "Pending",
                     PurchasedAt = DateTime.UtcNow
                 };
 
@@ -52,7 +52,7 @@ namespace Quiz_Web.Services
                         CourseId = courseId,
                         PricePaid = 0, // Đã tính trong purchase chính
                         Currency = "VND",
-                        Status = "pending",
+                        Status = "Pending",
                         PurchasedAt = DateTime.UtcNow
                     };
                     _context.CoursePurchases.Add(purchase);
@@ -84,18 +84,18 @@ namespace Quiz_Web.Services
                     return false;
                 }
 
-                purchase.Status = "completed";
+                purchase.Status = "Paid";
 
                 // Cập nhật tất cả purchase cùng user và cùng thời điểm (trong vòng 1 phút)
                 var relatedPurchases = await _context.CoursePurchases
                     .Where(p => p.BuyerId == purchase.BuyerId &&
-                               p.Status == "pending" &&
+                               p.Status == "Pending" &&
                                Math.Abs(EF.Functions.DateDiffSecond(p.PurchasedAt, purchase.PurchasedAt)) <= 60)
                     .ToListAsync();
 
                 foreach (var relatedPurchase in relatedPurchases)
                 {
-                    relatedPurchase.Status = "completed";
+                    relatedPurchase.Status = "Paid";
                 }
 
                 await _context.SaveChangesAsync();
@@ -112,7 +112,7 @@ namespace Quiz_Web.Services
         {
             return await _context.CoursePurchases
                 .Include(cp => cp.Course)
-                .Where(cp => cp.BuyerId == userId && cp.Status == "completed")
+                .Where(cp => cp.BuyerId == userId && cp.Status == "Paid")
                 .OrderByDescending(cp => cp.PurchasedAt)
                 .ToListAsync();
         }

@@ -251,8 +251,98 @@ namespace Quiz_Web.Controllers
 		// COURSE MANAGEMENT
 		public async Task<IActionResult> Courses()
 		{
-			var courses = await _context.Courses.Include(c => c.Owner).ToListAsync();
+			var courses = await _context.Courses.Include(c => c.Owner).Include(c => c.Category).ToListAsync();
+			ViewBag.Categories = await _context.CourseCategories.ToListAsync();
 			return View(courses);
+		}
+
+		// CATEGORY MANAGEMENT
+		public async Task<IActionResult> Categories()
+		{
+			var categories = await _context.CourseCategories.ToListAsync();
+			return View(categories);
+		}
+
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> CreateCategory(CourseCategory category)
+		{
+			if (string.IsNullOrWhiteSpace(category.Name) || category.Name.Length > 100)
+			{
+				TempData["Error"] = "Tên danh mục là bắt buộc và không quá 100 ký tự";
+				return RedirectToAction("Categories");
+			}
+
+			if (string.IsNullOrWhiteSpace(category.Slug) || category.Slug.Length > 100)
+			{
+				TempData["Error"] = "Slug là bắt buộc và không quá 100 ký tự";
+				return RedirectToAction("Categories");
+			}
+
+			if (await _context.CourseCategories.AnyAsync(c => c.Slug == category.Slug.ToLower().Trim()))
+			{
+				TempData["Error"] = "Slug đã tồn tại";
+				return RedirectToAction("Categories");
+			}
+
+			category.Name = category.Name.Trim();
+			category.Slug = category.Slug.ToLower().Trim();
+			category.Description = category.Description?.Trim();
+
+			_context.CourseCategories.Add(category);
+			await _context.SaveChangesAsync();
+			TempData["Success"] = "Tạo danh mục thành công";
+			return RedirectToAction("Categories");
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> EditCategory(int id, string name, string slug, string description)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(name))
+				{
+					return Json(new { success = false, message = "Tên danh mục không được để trống" });
+				}
+
+				var category = await _context.CourseCategories.FindAsync(id);
+				if (category == null)
+				{
+					return Json(new { success = false, message = "Không tìm thấy danh mục" });
+				}
+
+				// Check if slug already exists (excluding current category)
+				if (!string.IsNullOrWhiteSpace(slug) && await _context.CourseCategories
+					.AnyAsync(c => c.Slug == slug.ToLower().Trim() && c.CategoryId != id))
+				{
+					return Json(new { success = false, message = "Slug đã tồn tại" });
+				}
+
+				category.Name = name.Trim();
+				category.Slug = slug?.ToLower().Trim() ?? category.Slug;
+				category.Description = description?.Trim();
+				await _context.SaveChangesAsync();
+
+				return Json(new { success = true, message = "Cập nhật danh mục thành công" });
+			}
+			catch (Exception ex)
+			{
+				return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+			}
+		}
+
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> DeleteCategory(int id)
+		{
+			var category = await _context.CourseCategories.FindAsync(id);
+			if (category != null)
+			{
+				_context.CourseCategories.Remove(category);
+				await _context.SaveChangesAsync();
+				TempData["Success"] = "Xóa danh mục thành công";
+			}
+			return RedirectToAction("Categories");
 		}
 
 		[HttpPost]
@@ -695,25 +785,52 @@ namespace Quiz_Web.Controllers
 		//}
 
 		// REPORTS
-		public async Task<IActionResult> Reports()
+		public async Task<IActionResult> UserReports()
 		{
-			var reports = new
+			var data = new
 			{
-				RecentAttempts = await _context.TestAttempts
-					.Include(a => a.User)
-					.Include(a => a.Test)
-					.OrderByDescending(a => a.StartedAt)
-					.Take(10)
-					.ToListAsync(),
-				TopScores = await _context.TestAttempts
-					.Include(a => a.User)
-					.Include(a => a.Test)
-					.Where(a => a.Score.HasValue)
-					.OrderByDescending(a => a.Score)
-					.Take(10)
-					.ToListAsync()
+				TotalUsers = await _context.Users.CountAsync(),
+				ActiveUsers = await _context.Users.Where(u => u.Status == 1).CountAsync(),
+				NewUsersThisMonth = await _context.Users.Where(u => u.CreatedAt >= DateTime.UtcNow.AddDays(-30)).CountAsync(),
+				UsersByRole = await _context.Users.Include(u => u.Role).GroupBy(u => u.Role.Name).Select(g => new { Role = g.Key, Count = g.Count() }).ToListAsync()
 			};
-			return View(reports);
+			return View(data);
+		}
+
+		public async Task<IActionResult> CourseReports()
+		{
+			var data = new
+			{
+				TotalCourses = await _context.Courses.CountAsync(),
+				PublishedCourses = await _context.Courses.Where(c => c.IsPublished).CountAsync(),
+				TotalPurchases = await _context.CoursePurchases.Where(p => p.Status == "Paid").CountAsync(),
+				PopularCourses = await _context.CoursePurchases.Where(p => p.Status == "Paid").GroupBy(p => p.Course.Title).Select(g => new { Course = g.Key, Purchases = g.Count() }).OrderByDescending(x => x.Purchases).Take(10).ToListAsync()
+			};
+			return View(data);
+		}
+
+		public async Task<IActionResult> TestReports()
+		{
+			var data = new
+			{
+				TotalTests = await _context.Tests.CountAsync(),
+				TotalAttempts = await _context.TestAttempts.CountAsync(),
+				RecentAttempts = await _context.TestAttempts.Include(a => a.User).Include(a => a.Test).OrderByDescending(a => a.StartedAt).Take(15).Select(a => new { a.User.FullName, a.Test.Title, a.Score, a.MaxScore, a.StartedAt }).ToListAsync(),
+				TopScores = await _context.TestAttempts.Include(a => a.User).Include(a => a.Test).Where(a => a.Score.HasValue && a.MaxScore.HasValue && a.MaxScore > 0).OrderByDescending(a => (decimal)a.Score / a.MaxScore).Take(15).Select(a => new { a.User.FullName, a.Test.Title, a.Score, a.MaxScore, Percentage = (decimal)a.Score / a.MaxScore * 100 }).ToListAsync()
+			};
+			return View(data);
+		}
+
+		public async Task<IActionResult> RevenueReports()
+		{
+			var data = new
+			{
+				TotalRevenue = await _context.CoursePurchases.Where(p => p.Status == "Paid").SumAsync(p => p.PricePaid),
+				MonthlyRevenue = await _context.CoursePurchases.Where(p => p.Status == "Paid" && p.PurchasedAt >= DateTime.UtcNow.AddDays(-30)).SumAsync(p => p.PricePaid),
+				RecentPurchases = await _context.CoursePurchases.Include(p => p.Buyer).Include(p => p.Course).Where(p => p.Status == "Paid").OrderByDescending(p => p.PurchasedAt).Take(15).Select(p => new { p.Buyer.FullName, p.Course.Title, p.PricePaid, p.PurchasedAt }).ToListAsync(),
+				TopPayments = await _context.Payments.Where(p => p.Status == "completed").OrderByDescending(p => p.Amount).Take(10).Select(p => new { p.Amount, p.PaidAt }).ToListAsync()
+			};
+			return View(data);
 		}
 
 		// PROFILE & SETTINGS
