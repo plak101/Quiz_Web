@@ -16,10 +16,12 @@ namespace Quiz_Web.Controllers
 	{
 		private readonly IUserService _userService;
 		private readonly IEmailService _emailService;
-		public AccountController(IUserService userService, IEmailService emailService)
+		private readonly IPurchaseService _purchaseService;
+		public AccountController(IUserService userService, IEmailService emailService, IPurchaseService purchaseService)
 		{
 			_userService = userService;
 			_emailService = emailService;
+			_purchaseService = purchaseService;
 		}
 
 		public IActionResult Index()
@@ -349,7 +351,7 @@ namespace Quiz_Web.Controllers
 
 		[Authorize]
 		[Route("/account/purchase-history")]
-		public IActionResult PurchaseHistory()
+		public async Task<IActionResult> PurchaseHistory()
 		{
 			var userId = GetCurrentUserId();
 			var user = _userService.GetUserById(userId);
@@ -357,6 +359,10 @@ namespace Quiz_Web.Controllers
 			{
 				return RedirectToAction("Login");
 			}
+			
+			var purchases = await _purchaseService.GetUserPurchasesAsync(userId);
+			ViewBag.Purchases = purchases;
+			ViewBag.PurchaseCount = purchases.Count;
 			return View(user);
 		}
 

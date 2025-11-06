@@ -37,7 +37,7 @@
         cartItemsList.innerHTML = `
             <div class="text-center py-3">
                 <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">?ang t?i...</span>
+                    <span class="visually-hidden">Đang tải...</span>
                 </div>
             </div>
         `;
@@ -48,12 +48,12 @@
                 if (data.success) {
                     renderCartItems(data.items, data.total);
                 } else {
-                    showError('không thể thêm vào gỏi hàng');
+                    showError('Không thể tải giỏ hàng');
                 }
             })
             .catch(error => {
                 console.error('Error loading cart:', error);
-                showError('Đã xảy ra lỗi khi tới gỏi hàng');
+                showError('Đã xảy ra lỗi khi tải giỏ hàng');
             });
     }
 
@@ -69,9 +69,9 @@
             cartContent.innerHTML = `
                 <div class="cart-empty text-center py-5 px-3">
                     <i class="bi bi-cart-x text-muted" style="font-size: 48px;"></i>
-                    <p class="text-muted mt-3 mb-2">Gi? hàng c?a b?n ?ang tr?ng.</p>
+                    <p class="text-muted mt-3 mb-2">Giỏ hàng của bạn đang trống.</p>
                     <a href="/courses" class="text-decoration-none text-primary">
-                        Ti?p t?c mua s?m <i class="bi bi-arrow-right"></i>
+                        Tiếp tục mua sắm <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             `;
@@ -81,13 +81,13 @@
         // Render cart items
         let html = '';
         items.forEach(item => {
-            const imageUrl = item.coverUrl || '/images/default-course.jpg';
+            const imageUrl = item.coverUrl && item.coverUrl !== '/images/default-course.jpg' ? item.coverUrl : 'https://via.placeholder.com/150x100/6c5ce7/ffffff?text=Course';
             const price = formatPrice(item.price);
             
             html += `
                 <div class="cart-item" data-course-id="${item.courseId}">
                     <img src="${imageUrl}" alt="${escapeHtml(item.title)}" class="cart-item-image" 
-                         onerror="this.src='/images/default-course.jpg'">
+                         onerror="this.src='https://via.placeholder.com/150x100/6c5ce7/ffffff?text=Course'">
                     <div class="cart-item-details">
                         <div class="cart-item-title">${escapeHtml(item.title)}</div>
                         <div class="cart-item-instructor">
@@ -113,7 +113,7 @@
     }
 
     function formatPrice(price) {
-        return new Intl.NumberFormat('vi-VN').format(price) + ' ?';
+        return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
     }
 
     function escapeHtml(text) {
@@ -198,7 +198,7 @@
         })
         .catch(error => {
             console.error('Error removing from cart:', error);
-            showToast('error', 'Đã xảy ra lổi');
+            showToast('error', 'Đã xảy ra lỗi');
         });
     };
 
@@ -214,6 +214,7 @@
         .then(data => {
             if (data.success) {
                 updateCartBadge();
+                loadCartItems(); // Tự động reload giỏ hàng
                 showToast('success', data.message || 'Đã thêm vào giỏ hàng');
                 
                 // Dispatch custom event
@@ -224,7 +225,7 @@
         })
         .catch(error => {
             console.error('Error adding to cart:', error);
-            showToast('error', 'Đã xảy ra lổi');
+            showToast('error', 'Đã xảy ra lỗi');
         });
     };
 

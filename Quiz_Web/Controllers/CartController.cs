@@ -10,11 +10,13 @@ namespace Quiz_Web.Controllers
     public class CartController : Controller
     {
         private readonly ICartService _cartService;
+        private readonly IPurchaseService _purchaseService;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(ICartService cartService, ILogger<CartController> logger)
+        public CartController(ICartService cartService, IPurchaseService purchaseService, ILogger<CartController> logger)
         {
             _cartService = cartService;
+            _purchaseService = purchaseService;
             _logger = logger;
         }
 
@@ -44,9 +46,9 @@ namespace Quiz_Web.Controllers
                     {
                         courseId = ci.CourseId,
                         title = ci.Course.Title,
-                        coverUrl = ci.Course.CoverUrl,
+                        coverUrl = string.IsNullOrEmpty(ci.Course.CoverUrl) ? "https://via.placeholder.com/150x100/6c5ce7/ffffff?text=Course" : ci.Course.CoverUrl,
                         price = ci.Course.Price,
-                        instructor = ci.Course.Owner.FullName,
+                        instructor = ci.Course.Owner?.FullName ?? "Giảng viên",
                         addedAt = ci.AddedAt
                     }),
                     total = total,
@@ -56,7 +58,7 @@ namespace Quiz_Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting cart items");
-                return Json(new { success = false, message = "Kh�ng th? t?i gi? h�ng" });
+                return Json(new { success = false, message = "Không thể tải giỏ hàng" });
             }
         }
 
@@ -66,20 +68,27 @@ namespace Quiz_Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
+                
+                var hasPurchased = await _purchaseService.HasUserPurchasedCourseAsync(userId, courseId);
+                if (hasPurchased)
+                {
+                    return Json(new { success = false, message = "Bạn đã sở hữu khóa học này" });
+                }
+                
                 var success = await _cartService.AddToCartAsync(userId, courseId);
 
                 if (!success)
                 {
-                    return Json(new { success = false, message = "Kh�ng th? th�m kh�a h?c v�o gi? h�ng" });
+                    return Json(new { success = false, message = "Không thể thêm khóa học vào giỏ hàng" });
                 }
 
                 var count = await _cartService.GetCartItemCountAsync(userId);
-                return Json(new { success = true, message = "?� th�m v�o gi? h�ng", count = count });
+                return Json(new { success = true, message = "Đã thêm vào giỏ hàng", count = count });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding course {CourseId} to cart", courseId);
-                return Json(new { success = false, message = "?� x?y ra l?i" });
+                return Json(new { success = false, message = "Đã xảy ra lỗi" });
             }
         }
 
@@ -93,18 +102,18 @@ namespace Quiz_Web.Controllers
 
                 if (!success)
                 {
-                    return Json(new { success = false, message = "Kh�ng th? x�a kh�a h?c kh?i gi? h�ng" });
+                    return Json(new { success = false, message = "Không thể xóa khóa học khỏi giỏ hàng" });
                 }
 
                 var count = await _cartService.GetCartItemCountAsync(userId);
                 var total = await _cartService.GetCartTotalAsync(userId);
 
-                return Json(new { success = true, message = "?� x�a kh?i gi? h�ng", count = count, total = total });
+                return Json(new { success = true, message = "Đã xóa khỏi giỏ hàng", count = count, total = total });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing course {CourseId} from cart", courseId);
-                return Json(new { success = false, message = "?� x?y ra l?i" });
+                return Json(new { success = false, message = "Đã xảy ra lỗi" });
             }
         }
 
@@ -118,15 +127,15 @@ namespace Quiz_Web.Controllers
 
                 if (!success)
                 {
-                    return Json(new { success = false, message = "Kh�ng th? x�a gi? h�ng" });
+                    return Json(new { success = false, message = "Không thể xóa giỏ hàng" });
                 }
 
-                return Json(new { success = true, message = "?� x�a t?t c? kh�a h?c kh?i gi? h�ng" });
+                return Json(new { success = true, message = "Đã xóa tất cả khóa học khỏi giỏ hàng" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error clearing cart");
-                return Json(new { success = false, message = "?� x?y ra l?i" });
+                return Json(new { success = false, message = "Đã xảy ra lỗi" });
             }
         }
 
@@ -143,6 +152,22 @@ namespace Quiz_Web.Controllers
             {
                 _logger.LogError(ex, "Error getting cart count");
                 return Json(new { success = false, count = 0 });
+            }
+        }
+
+        [HttpGet("check-purchased/{courseId}")]
+        public async Task<IActionResult> CheckPurchased(int courseId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var hasPurchased = await _purchaseService.HasUserPurchasedCourseAsync(userId, courseId);
+                return Json(new { success = true, hasPurchased = hasPurchased });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking purchased course {CourseId}", courseId);
+                return Json(new { success = false, hasPurchased = false });
             }
         }
     }
