@@ -66,10 +66,10 @@ namespace Quiz_Web.Controllers
                     return PartialView("_FlashcardsPartial", new List<Models.Entities.FlashcardSet>());
                 }
 
-                // Get user's own flashcard sets
+                // Get flashcard sets owned by user
                 var flashcardSets = await _context.FlashcardSets
                     .Where(fs => fs.OwnerId == userId && !fs.IsDeleted)
-                    .Include(fs => fs.Owner)
+                    .Include(fs => fs.Flashcards)
                     .OrderByDescending(fs => fs.CreatedAt)
                     .ToListAsync();
 
