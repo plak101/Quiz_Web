@@ -329,6 +329,7 @@ function validateCurrentStep() {
         }
     }
 
+    //step 2
     if (currentStep === 2) {
         // Validate chapters and lessons
         if (courseData.chapters.length === 0) {
@@ -349,8 +350,73 @@ function validateCurrentStep() {
         }
     }
 
+    //step 3
+    if (currentStep === 3) {
+        //luu noi dung hien tai truoc khi validate 
+        if (window.currentLesson) {
+            saveCurrentLessonContents();
+        }
+
+        const testErrors = validateStep3LessonContents();
+        if (testErrors.length > 0) {
+            testErrors.forEach(err => toastr.error(err));
+            isValid = false;
+        }
+    }
+
     return isValid;
 }
+
+//valid step 3
+function validateStep3LessonContents() {
+    const errors = [];
+    courseData.chapters.forEach((chapter, chapterIndex) => {
+        chapter.lessons.forEach((lesson, lessonIndex) => {
+            if (!lesson.contents) return;
+
+            lesson.contents.forEach((contents, contentIndex) => {
+                //kiem tra bai test
+                if (contents.contentType === 'Test') {
+                    const path = `Chương ${chapterIndex + 1} -> Bài ${lessonIndex + 1} -> Test ${contentIndex + 1}`;
+
+
+                    //1. bai test phai co it nhat 1 cau hoi
+                    if (!contents.questions || contents.questions.length === 0) {
+                        errors.push(`${path} phải có ít nhất một câu hỏi.`);
+                        return;
+                    }
+
+                    contents.questions.forEach((question, questionIndex) => {
+                        const questionPath = `${path} -> Câu hỏi ${questionIndex + 1}`;
+
+                        //2.cau hỏi phai co noi dung
+                        if (!question.stemText || question.stemText.trim() === "") {
+                            errors.push(`${questionPath} chưa có nội dung câu hỏi`)
+                        }
+                        //3. cau hoi phai co it nhat 2 lua chon
+                        if (!question.options || question.options.length < 2) {
+                            errors.push(`${questionPath} phải có ít nhất 2 đáp án`);
+                            return;
+                        }
+                        //4. moi dap an phai co noi dung
+                        question.options.forEach((option, optionIndex) => {
+                            if (!option.optionText || option.optionText.trim() === "")
+                                errors.push(`${questionPath} -> Đáp án ${optionIndex + 1}không có nội dung`)
+                        });
+                        //5. phải có ít nhất 1 đáp án đúng
+                        const anyCorrect = question.options.some(option => option.isCorrect === true);
+                        if (!anyCorrect) {
+                            errors.push(`${questionPath} chưa có đáp án đúng nào`);
+                        }
+                    });
+                }
+            });
+
+        });
+    });
+    return errors;
+}
+
 
 function showFieldError(fieldName, message) {
     const errorSpan = document.querySelector(`.field-error[data-field="${fieldName}"]`);

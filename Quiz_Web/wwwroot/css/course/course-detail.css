@@ -445,10 +445,10 @@ body > .container > main {
     flex-wrap: wrap;
 }
 
-.lesson-info i {
+/*.lesson-info i {
     color: var(--accent-cyan);
     font-size: 1.25rem;
-}
+}*/
 
 .lesson-title {
     flex: 1;
