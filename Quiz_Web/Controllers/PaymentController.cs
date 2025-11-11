@@ -135,7 +135,7 @@ namespace Quiz_Web.Controllers
                 payment.RawPayload = JsonSerializer.Serialize(ipnRequest);
 
                 // Cập nhật purchase status
-                payment.Purchase.Status = ipnRequest.resultCode == 0 ? "completed" : "failed";
+                payment.Purchase.Status = ipnRequest.resultCode == 0 ? "Paid" : "Failed";
 
                 if (ipnRequest.resultCode == 0)
                 {
@@ -172,6 +172,21 @@ namespace Quiz_Web.Controllers
 
                 if (resultCode == 0)
                 {
+                    // Cập nhật payment status nếu chưa được cập nhật
+                    if (payment.Status == "pending")
+                    {
+                        payment.Status = "completed";
+                        payment.PaidAt = DateTime.UtcNow;
+                        
+                        // Cập nhật purchase status
+                        payment.Purchase.Status = "Paid";
+                        
+                        // Hoàn thành purchase
+                        await _purchaseService.CompletePurchaseAsync(payment.PurchaseId, orderId);
+                        
+                        await _context.SaveChangesAsync();
+                    }
+                    
                     ViewBag.Message = "Thanh toán thành công! Bạn đã có thể truy cập khóa học.";
                     ViewBag.Success = true;
                     
@@ -180,6 +195,14 @@ namespace Quiz_Web.Controllers
                 }
                 else
                 {
+                    // Cập nhật payment status thất bại
+                    if (payment.Status == "pending")
+                    {
+                        payment.Status = "failed";
+                        payment.Purchase.Status = "Failed";
+                        await _context.SaveChangesAsync();
+                    }
+                    
                     ViewBag.Message = $"Thanh toán thất bại: {message}";
                     ViewBag.Success = false;
                 }
@@ -211,6 +234,48 @@ namespace Quiz_Web.Controllers
             {
                 _logger.LogError(ex, "Error checking course access");
                 return Json(new { hasAccess = false });
+            }
+        }
+
+        // Endpoint để kiểm tra và cập nhật status pending purchases (chỉ dùng cho testing)
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> UpdatePendingPurchases()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                // Tìm các purchase pending của user trong 24h qua
+                var pendingPurchases = await _context.CoursePurchases
+                    .Where(p => p.BuyerId == userId && 
+                               p.Status == "Pending" && 
+                               p.PurchasedAt >= DateTime.UtcNow.AddHours(-24))
+                    .ToListAsync();
+                
+                if (!pendingPurchases.Any())
+                {
+                    return Json(new { success = false, message = "Không có giao dịch pending nào" });
+                }
+                
+                // Cập nhật tất cả thành Paid
+                foreach (var purchase in pendingPurchases)
+                {
+                    purchase.Status = "Paid";
+                }
+                
+                await _context.SaveChangesAsync();
+                
+                return Json(new { 
+                    success = true, 
+                    message = $"Đã cập nhật {pendingPurchases.Count} giao dịch thành completed",
+                    count = pendingPurchases.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating pending purchases");
+                return Json(new { success = false, message = "Có lỗi xảy ra" });
             }
         }
     }
