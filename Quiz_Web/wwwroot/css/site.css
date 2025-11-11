@@ -69,36 +69,43 @@ body {
 /* Search Bar Container */
 .header-search {
     max-width: 100%;
-    border: 1px solid #1c1d1f;
+    border: 2px solid #d1d7dc; /* Thicker border, lighter color */
     border-radius: 50px;
-    background-color: #f7f9fa;
-    overflow: hidden;
+    background-color: #ffffff; /* Pure white background */
+    overflow: visible; /* Changed from hidden to visible */
     transition: all 0.2s ease;
     height: 48px;
     display: flex;
     align-items: center;
     flex: 1;
+    position: relative; /* Added for z-index */
+    z-index: 100; /* Ensure it's above other elements */
+    pointer-events: auto; /* Explicitly enable pointer events */
 }
 
 .header-search:hover {
     background-color: #fff;
+    border-color: #5624d0; /* Purple on hover */
 }
 
 .header-search:focus-within {
     background-color: #fff;
-    border-color: #1c1d1f;
-    box-shadow: 0 2px 4px rgba(0,0,0,.12);
+    border-color: #5624d0; /* Purple when focused */
+    box-shadow: 0 0 0 3px rgba(86, 36, 208, 0.1);
+    z-index: 101; /* Raise when focused */
 }
 
 .header-search .input-group-text {
     background-color: transparent;
     border: none;
     padding: 0 0.5rem 0 1rem;
-    color: #6a6f73;
+    color: #1c1d1f; /* Darker color for better visibility */
     display: flex;
     align-items: center;
     height: 100%;
     transition: color 0.2s ease;
+    z-index: 1; /* Ensure button is above */
+    pointer-events: auto; /* Enable pointer events */
 }
 
 /* Search button hover effect */
@@ -118,6 +125,12 @@ body {
     color: #1c1d1f;
     height: 48px;
     line-height: 1.5;
+    position: relative; /* Added for z-index */
+    z-index: 1; /* Ensure input is above */
+    pointer-events: auto; /* Explicitly enable pointer events */
+    cursor: text; /* Show text cursor */
+    top: -45px;
+    left: 40px;
 }
 
 .header-search .form-control:focus {
@@ -130,6 +143,24 @@ body {
     color: #6a6f73;
     opacity: 1;
     font-size: 14px;
+}
+
+/* Disable browser autocomplete dropdown */
+.header-search .form-control::-webkit-contacts-auto-fill-button,
+.header-search .form-control::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+}
+
+/* Hide any autocomplete suggestions */
+.header-search input[type="search"]::-webkit-search-decoration,
+.header-search input[type="search"]::-webkit-search-cancel-button,
+.header-search input[type="search"]::-webkit-search-results-button,
+.header-search input[type="search"]::-webkit-search-results-decoration {
+    display: none;
 }
 
 /* Right Side Navigation */

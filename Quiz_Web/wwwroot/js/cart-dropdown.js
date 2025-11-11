@@ -213,12 +213,13 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                updateCartBadge();
-                loadCartItems(); // Tự động reload giỏ hàng
+                // Show success message
                 showToast('success', data.message || 'Đã thêm vào giỏ hàng');
                 
-                // Dispatch custom event
-                document.dispatchEvent(new CustomEvent('cartUpdated'));
+                // Reload page after short delay to show toast
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             } else {
                 showToast('error', data.message || 'Không thể thêm vào giỏ hàng');
             }
