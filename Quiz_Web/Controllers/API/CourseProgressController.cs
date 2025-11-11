@@ -47,11 +47,15 @@ namespace Quiz_Web.Controllers.API
 					return NotFound(new { success = false, message = "Course not found" });
 				}
 
-				// ? Calculate total contents in course
-				var totalContents = course.CourseChapters
+				// ? Get all valid ContentIds in this course (t? LessonContents)
+				var allCourseContentIds = course.CourseChapters
 					.SelectMany(ch => ch.Lessons)
 					.SelectMany(l => l.LessonContents)
-					.Count();
+					.Select(c => c.ContentId)
+					.Distinct()
+					.ToList();
+
+				var totalContents = allCourseContentIds.Count;
 
 				if (totalContents == 0)
 				{
@@ -65,28 +69,37 @@ namespace Quiz_Web.Controllers.API
 					});
 				}
 
-				// ? Get completed contents for this user
-				var completedContents = await _context.CourseProgresses
-					.Where(p => p.CourseId == course.CourseId && p.UserId == userId && p.IsCompleted)
-					.Select(p => new { p.LessonId, p.ContentId, p.ContentType })
+				// ? Get completed ContentIds for this user (ch? l?y ContentId ?ã complete)
+				var completedContentIds = await _context.CourseProgresses
+					.Where(p => p.CourseId == course.CourseId && 
+					           p.UserId == userId && 
+					           p.IsCompleted && 
+					           allCourseContentIds.Contains(p.ContentId)) // ? Ch? l?y ContentId thu?c course này
+					.Select(p => p.ContentId)
 					.Distinct()
 					.ToListAsync();
 
-				// ? Get unique lesson IDs that have at least one completed content
-				var completedLessons = completedContents
-					.Where(c => c.LessonId.HasValue)
-					.Select(c => c.LessonId.Value)
-					.Distinct()
-					.ToList();
+				var completedContentsCount = completedContentIds.Count;
 
-				// ? Calculate completion percentage based on contents
-				var completionPercentage = (double)completedContents.Count / totalContents * 100;
+				// ? Get unique lesson IDs that have at least one completed content
+				var completedLessons = await _context.CourseProgresses
+					.Where(p => p.CourseId == course.CourseId && 
+					           p.UserId == userId && 
+					           p.IsCompleted && 
+					           p.LessonId.HasValue)
+					.Select(p => p.LessonId.Value)
+					.Distinct()
+					.ToListAsync();
+
+				// ? Calculate completion percentage (??m b?o không v??t quá 100%)
+				var completionPercentage = (double)completedContentsCount / totalContents * 100;
+				completionPercentage = Math.Min(completionPercentage, 100); // Cap at 100%
 
 				return Ok(new
 				{
 					success = true,
 					completionPercentage = Math.Round(completionPercentage, 2),
-					completedContents = completedContents.Count,
+					completedContents = completedContentsCount,
 					totalContents = totalContents,
 					completedLessons = completedLessons
 				});
@@ -351,6 +364,204 @@ namespace Quiz_Web.Controllers.API
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Error marking content complete: {ContentId}", request.ContentId);
+				return StatusCode(500, new { success = false, message = "Internal server error" });
+			}
+		}
+
+		// ? DEBUG ENDPOINT - Get detailed progress info
+		[HttpGet("debug-progress")]
+		public async Task<IActionResult> DebugProgress([FromQuery] string courseSlug)
+		{
+			try
+			{
+				var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+				{
+					return Unauthorized(new { success = false, message = "Unauthorized" });
+				}
+
+				var course = await _context.Courses
+					.Include(c => c.CourseChapters)
+						.ThenInclude(ch => ch.Lessons)
+							.ThenInclude(l => l.LessonContents)
+					.FirstOrDefaultAsync(c => c.Slug == courseSlug);
+
+				if (course == null)
+				{
+					return NotFound(new { success = false, message = "Course not found" });
+				}
+
+				// Get all contents in course
+				var allContents = course.CourseChapters
+					.SelectMany(ch => ch.Lessons)
+					.SelectMany(l => l.LessonContents)
+					.Select(c => new
+					{
+						c.ContentId,
+						c.ContentType,
+						c.LessonId,
+						c.Title,
+						LessonTitle = c.Lesson.Title
+					})
+					.ToList();
+
+				// Get all progress records for this user and course
+				var progressRecords = await _context.CourseProgresses
+					.Where(p => p.CourseId == course.CourseId && p.UserId == userId)
+					.Select(p => new
+					{
+						p.ProgressId,
+						p.ContentId,
+						p.ContentType,
+						p.LessonId,
+						p.IsCompleted,
+						p.CompletionAt
+					})
+					.ToListAsync();
+
+				return Ok(new
+				{
+					success = true,
+					courseId = course.CourseId,
+					courseName = course.Title,
+					allContents = allContents,
+					totalContents = allContents.Count,
+					progressRecords = progressRecords,
+					totalProgressRecords = progressRecords.Count,
+					completedRecords = progressRecords.Count(p => p.IsCompleted),
+					// ? Find duplicate or invalid records
+					duplicateContentIds = progressRecords
+						.GroupBy(p => p.ContentId)
+						.Where(g => g.Count() > 1)
+						.Select(g => new { ContentId = g.Key, Count = g.Count() })
+						.ToList(),
+					invalidContentIds = progressRecords
+						.Where(p => !allContents.Any(c => c.ContentId == p.ContentId))
+						.Select(p => p.ContentId)
+						.Distinct()
+						.ToList()
+				});
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error debugging progress");
+				return StatusCode(500, new { success = false, message = "Internal server error" });
+			}
+		}
+
+		// ? CLEANUP ENDPOINT - Remove invalid progress records
+		[HttpPost("cleanup-progress")]
+		public async Task<IActionResult> CleanupProgress([FromQuery] string courseSlug)
+		{
+			try
+			{
+				var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+				{
+					return Unauthorized(new { success = false, message = "Unauthorized" });
+				}
+
+				var course = await _context.Courses
+					.Include(c => c.CourseChapters)
+						.ThenInclude(ch => ch.Lessons)
+							.ThenInclude(l => l.LessonContents)
+					.FirstOrDefaultAsync(c => c.Slug == courseSlug);
+
+				if (course == null)
+				{
+					return NotFound(new { success = false, message = "Course not found" });
+				}
+
+				// Get valid ContentIds
+				var validContentIds = course.CourseChapters
+					.SelectMany(ch => ch.Lessons)
+					.SelectMany(l => l.LessonContents)
+					.Select(c => c.ContentId)
+					.ToList();
+
+				// Find invalid progress records (ContentId not in course anymore)
+				var invalidRecords = await _context.CourseProgresses
+					.Where(p => p.CourseId == course.CourseId && 
+					           p.UserId == userId && 
+					           !validContentIds.Contains(p.ContentId))
+					.ToListAsync();
+
+				if (invalidRecords.Any())
+				{
+					_context.CourseProgresses.RemoveRange(invalidRecords);
+					await _context.SaveChangesAsync();
+
+					_logger.LogInformation("Cleaned up {Count} invalid progress records for user {UserId} in course {CourseId}", 
+						invalidRecords.Count, userId, course.CourseId);
+
+					return Ok(new
+					{
+						success = true,
+						message = $"Cleaned up {invalidRecords.Count} invalid records",
+						removedRecords = invalidRecords.Select(r => new
+						{
+							r.ProgressId,
+							r.ContentId,
+							r.ContentType
+						})
+					});
+				}
+
+				return Ok(new
+				{
+					success = true,
+					message = "No invalid records found"
+				});
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error cleaning up progress");
+				return StatusCode(500, new { success = false, message = "Internal server error" });
+			}
+		}
+
+		// GET: /api/course-progress/check-content-completion
+		[HttpGet("check-content-completion")]
+		public async Task<IActionResult> CheckContentCompletion(
+			[FromQuery] string courseSlug, 
+			[FromQuery] int lessonId, 
+			[FromQuery] int contentId)
+		{
+			try
+			{
+				var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+				{
+					return Unauthorized(new { success = false, message = "Unauthorized" });
+				}
+
+				// Get course by slug
+				var course = await _context.Courses
+					.FirstOrDefaultAsync(c => c.Slug == courseSlug);
+
+				if (course == null)
+				{
+					return NotFound(new { success = false, message = "Course not found" });
+				}
+
+				// Check if content completion exists for this user
+				var isCompleted = await _context.CourseProgresses
+					.AnyAsync(p => 
+						p.CourseId == course.CourseId && 
+						p.UserId == userId && 
+						p.LessonId == lessonId &&
+						p.ContentId == contentId &&
+						p.IsCompleted);
+
+				return Ok(new 
+				{ 
+					success = true, 
+					isCompleted = isCompleted 
+				});
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error checking content completion for contentId: {ContentId}", contentId);
 				return StatusCode(500, new { success = false, message = "Internal server error" });
 			}
 		}

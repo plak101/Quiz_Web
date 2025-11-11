@@ -56,12 +56,12 @@
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Search Bar -->
-                    <form class="d-flex flex-grow-1 my-2 my-lg-0 mx-lg-4" role="search">
+                    <form asp-controller="Course" asp-action="Search" method="get" class="d-flex flex-grow-1 my-2 my-lg-0 mx-lg-4" role="search">
                         <div class="input-group header-search w-100">
-                            <span class="input-group-text">
+                            <button type="submit" class="input-group-text bg-transparent border-0" style="cursor: pointer;" title="Tìm kiếm">
                                 <i class="bi bi-search"></i>
-                            </span>
-                            <input class="form-control" type="search" placeholder="Tìm kiếm nội dung bất kỳ" aria-label="Search">
+                            </button>
+                            <input class="form-control" type="search" name="q" placeholder="Tìm kiếm khóa học..." aria-label="Search" autocomplete="off">
                         </div>
                     </form>
 
@@ -239,7 +239,8 @@
 
                 <div class="col-6 col-md-3">
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#">Business</a></li>
+                        <li class="mb-2"><a href="#">Business</a>
+                        </li>
                     </ul>
                 </div>
 
