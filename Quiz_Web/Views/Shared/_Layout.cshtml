@@ -87,15 +87,15 @@
 
                         <!-- Học tập -->
                         <li class="nav-item d-none d-xl-flex">
-                            <a class="nav-link text-dark px-3" href="#">Học tập</a>
+                            <a class="nav-link text-dark px-3" href="@Url.Action("Library", "Library")">Học tập</a>
                         </li>
 
                         <!-- Wishlist/Heart Icon -->
-                        <li class="nav-item ms-2">
+                        @* <li class="nav-item ms-2">
                             <a class="nav-link px-2" href="#" title="Danh sách yêu thích">
                                 <i class="bi bi-heart"></i>
                             </a>
-                        </li>
+                        </li> *@
 
                         <!-- Cart Dropdown -->
                         @await Html.PartialAsync("_CartDropdown")
@@ -148,21 +148,26 @@
 
                                     <!-- Khối 2: Điều hướng chính -->
                                     <div class="dropdown-section">
-                                        <a class="dropdown-item" href="#">Học tập</a>
+                                        <a class="dropdown-item" href="@Url.Action("Library", "Library")">Học tập</a>
                                         <a class="dropdown-item" href="/checkout">Giỏ hàng của tôi</a>
-                                        <a class="dropdown-item" href="#">Danh sách mong ước</a>
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <a class="dropdown-item" href="@Url.Action("Index", "Admin")">Bảng điều khiển admin</a>
+                                        }
+
                                         <a class="dropdown-item" href="@Url.Action("Create", "Lesson")">Bảng điều khiển của giảng viên</a>
+
                                     </div>
 
                                     <hr class="dropdown-divider my-0">
 
                                     <!-- Khối 3: Thông báo -->
-                                    <div class="dropdown-section">
+                                    @* <div class="dropdown-section">
                                         <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">
                                             <span>Thông báo</span>
                                             <span class="badge bg-purple rounded-circle">2</span>
                                         </a>
-                                    </div>
+                                    </div> *@
 
                                     <hr class="dropdown-divider my-0">
 
@@ -189,15 +194,15 @@
                                     <hr class="dropdown-divider my-0">
 
                                     <!-- Khối 6: Hồ sơ -->
-                                    <div class="dropdown-section">
+                                    @* <div class="dropdown-section">
                                         <a class="dropdown-item" href="#">Chỉnh sửa hồ sơ</a>
-                                    </div>
+                                    </div> *@
 
                                     <hr class="dropdown-divider my-0">
 
                                     <!-- Khối 7: Hỗ trợ & Đăng xuất -->
                                     <div class="dropdown-section">
-                                        <a class="dropdown-item" href="#">Trợ giúp và Hỗ trợ</a>
+                                        @* <a class="dropdown-item" href="#">Trợ giúp và Hỗ trợ</a> *@
                                         <a class="dropdown-item fw-semibold" href="@Url.Action("Logout", "Account")">Đăng xuất</a>
                                     </div>
                                 }
@@ -267,7 +272,7 @@
                     <img src="~/asset/image/logo/logo.png" alt="Udemy Logo" width="150" height="100">
                 </a>
 
-                <span class="text-white-50">&copy; 2025 Udemy, Inc.</span>
+                <span class="text-white-50">&copy; 2025 Ymedu, Inc.</span>
 
                 <button class="btn btn-outline-light d-flex align-items-center">
                     <i class="bi bi-globe me-2"></i> <span>Tiếng Việt</span>

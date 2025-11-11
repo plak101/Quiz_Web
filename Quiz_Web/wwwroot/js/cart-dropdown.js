@@ -13,7 +13,7 @@
                 const isAuthenticated = document.body.dataset.userAuthenticated === 'true';
                 if (!isAuthenticated) {
                     e.preventDefault();
-                    window.location.href = '/login' + encodeURIComponent(window.location.pathname);
+                    window.location.href = '/login?returnUrl=' + encodeURIComponent(window.location.pathname);
                     return;
                 }
 
