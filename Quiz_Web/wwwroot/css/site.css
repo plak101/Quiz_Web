@@ -98,6 +98,16 @@ body {
     display: flex;
     align-items: center;
     height: 100%;
+    transition: color 0.2s ease;
+}
+
+/* Search button hover effect */
+.header-search button.input-group-text:hover {
+    color: #5624d0;
+}
+
+.header-search button.input-group-text:active {
+    color: #401b9c;
 }
 
 .header-search .form-control {

@@ -3,25 +3,6 @@
     ViewData["Title"] = "Danh sách khóa học";
 }
 
-<!-- Compact Search Section -->
-<section class="py-4 search-section">
-    <div class="container">
-        <div class="search-wrapper">
-            <form asp-action="Search" method="get" class="search-form">
-                <input type="text" 
-                       name="q" 
-                       class="search-input" 
-                       placeholder="Tìm kiếm khóa học..." 
-                       value="@ViewBag.SearchKeyword" />
-                <button type="submit" class="search-btn">
-                    <i class="fa-solid fa-search"></i>
-                    <span>Tìm</span>
-                </button>
-            </form>
-        </div>
-    </div>
-</section>
-
 <!-- Courses Grid with Filters -->
 <section class="py-5">
     <div class="container">
@@ -35,7 +16,7 @@
                         @* Preserve search/category param *@
                         @if (ViewBag.SearchKeyword != null)
                         {
-                            <input type="hidden" name="search" value="@ViewBag.SearchKeyword" />
+                            <input type="hidden" name="q" value="@ViewBag.SearchKeyword" />
                         }
                         @if (ViewBag.CategorySlug != null)
                         {
@@ -324,9 +305,9 @@
                                         else
                                         {
                                             <a class="page-link" 
-                                               asp-action="Index" 
+                                               asp-action="Search" 
                                                asp-route-page="@(ViewBag.CurrentPage - 1)"
-                                               asp-route-search="@ViewBag.SearchKeyword"
+                                               asp-route-q="@ViewBag.SearchKeyword"
                                                asp-route-minRating="@ViewBag.MinRating"
                                                asp-route-maxRating="@ViewBag.MaxRating"
                                                asp-route-isFree="@ViewBag.IsFree"
@@ -356,9 +337,9 @@
                                         else
                                         {
                                             <a class="page-link" 
-                                               asp-action="Index" 
+                                               asp-action="Search" 
                                                asp-route-page="@i"
-                                               asp-route-search="@ViewBag.SearchKeyword"
+                                               asp-route-q="@ViewBag.SearchKeyword"
                                                asp-route-minRating="@ViewBag.MinRating"
                                                asp-route-maxRating="@ViewBag.MaxRating"
                                                asp-route-isFree="@ViewBag.IsFree"
@@ -388,9 +369,9 @@
                                         else
                                         {
                                             <a class="page-link" 
-                                               asp-action="Index" 
+                                               asp-action="Search" 
                                                asp-route-page="@(ViewBag.CurrentPage + 1)"
-                                               asp-route-search="@ViewBag.SearchKeyword"
+                                               asp-route-q="@ViewBag.SearchKeyword"
                                                asp-route-minRating="@ViewBag.MinRating"
                                                asp-route-maxRating="@ViewBag.MaxRating"
                                                asp-route-isFree="@ViewBag.IsFree"

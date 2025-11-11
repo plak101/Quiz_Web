@@ -1,4 +1,4 @@
-// ============================================
+Ôªø// ============================================
 // COURSE LEARN PAGE - JAVASCRIPT
 // ============================================
 
@@ -143,7 +143,7 @@ function setupTestToggles() {
             if (expandableSection.style.display === 'none') {
                 // Open test section
                 expandableSection.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-times me-2"></i>?Ûng';
+                this.innerHTML = '<i class="fas fa-times me-2"></i>?√≥ng';
                 this.classList.add('active');
                 this.classList.remove('btn-success');
                 this.classList.add('btn-danger');
@@ -160,7 +160,7 @@ function setupTestToggles() {
             } else {
                 // Close test section
                 expandableSection.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-pencil-alt me-2"></i>L‡m b‡i ki?m tra';
+                this.innerHTML = '<i class="fas fa-pencil-alt me-2"></i>L√†m b√†i ki?m tra';
                 this.classList.remove('active');
                 this.classList.add('btn-success');
                 this.classList.remove('btn-danger');
@@ -212,14 +212,14 @@ async function loadTest(contentId, testId) {
         } else {
             loadingDiv.innerHTML = `
                 <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                <p>${data.message || 'B‡i ki?m tra n‡y ch?a cÛ c‚u h?i n‡o.'}</p>
+                <p>${data.message || 'B√†i ki?m tra n√†y ch?a c√≥ c√¢u h?i n√†o.'}</p>
             `;
         }
     } catch (error) {
         console.error('Error loading test:', error);
         loadingDiv.innerHTML = `
             <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-            <p>KhÙng th? t?i b‡i ki?m tra. Vui lÚng th? l?i.</p>
+            <p>Kh√¥ng th? t?i b√†i ki?m tra. Vui l√≤ng th? l?i.</p>
         `;
     }
 }
@@ -234,10 +234,10 @@ function renderTestInfo(contentId) {
     
     if (titleElement) titleElement.textContent = state.test.title;
     if (timeElement && state.test.timeLimitSec) {
-        timeElement.textContent = `${Math.floor(state.test.timeLimitSec / 60)} ph˙t`;
+        timeElement.textContent = `${Math.floor(state.test.timeLimitSec / 60)} ph√∫t`;
     }
     if (questionCountElement) {
-        questionCountElement.textContent = `${state.questions.length} c‚u h?i`;
+        questionCountElement.textContent = `${state.questions.length} c√¢u h?i`;
     }
 }
 
@@ -276,7 +276,7 @@ function renderQuestions(contentId) {
         
         questionDiv.innerHTML = `
             <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="mb-0">C‚u ${index + 1}</h5>
+                <h5 class="mb-0">C√¢u ${index + 1}</h5>
                 <span class="badge bg-info">${question.points} ?i?m</span>
             </div>
             <p class="mb-3">${question.stemText}</p>
@@ -348,7 +348,7 @@ function startTestTimer(contentId, timeLimitSec) {
             clearInterval(testTimers[contentId]);
             delete testTimers[contentId];
             
-            toastr.warning('H?t gi? l‡m b‡i!');
+            toastr.warning('H?t gi? l√†m b√†i!');
             submitTest(contentId);
         }
     }, 1000);
@@ -387,7 +387,7 @@ async function submitTest(contentId) {
     const submitBtn = document.getElementById(`btnSubmitTest-${contentId}`);
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>?ang ch?m b‡i...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>?ang ch?m b√†i...';
     }
     
     try {
@@ -414,21 +414,21 @@ async function submitTest(contentId) {
             const courseSlug = expandableSection.dataset.courseSlug;
             const lessonId = expandableSection.dataset.lessonId;
             const testContentId = expandableSection.dataset.contentId;
-            
+			
             await markTestComplete(courseSlug, lessonId, testContentId, data.score);
         } else {
-            toastr.error(data.message || 'KhÙng th? n?p b‡i');
+            toastr.error(data.message || 'Kh√¥ng th? n?p b√†i');
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p b‡i';
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p b√†i';
             }
         }
     } catch (error) {
         console.error('Error submitting test:', error);
-        toastr.error('CÛ l?i x?y ra khi n?p b‡i');
+        toastr.error('C√≥ l?i x?y ra khi n?p b√†i');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p b‡i';
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p b√†i';
         }
     }
 }
@@ -452,11 +452,11 @@ function showTestResult(contentId, result) {
                 <h1 class="display-3 fw-bold mb-0">
                     ${result.correctAnswers} / ${result.totalQuestions}
                 </h1>
-                <p class="text-muted fs-5">C‚u ?˙ng</p>
+                <p class="text-muted fs-5">C√¢u ?√∫ng</p>
                 <p class="text-muted fs-6">?i?m: ${result.score}/${result.maxScore} (${result.percentage}%)</p>
             </div>
             <button class="btn btn-primary btn-lg" onclick="location.reload()">
-                <i class="fas fa-redo me-2"></i>L‡m l?i
+                <i class="fas fa-redo me-2"></i>L√†m l?i
             </button>
         </div>
     `;
@@ -470,7 +470,7 @@ function showTestResult(contentId, result) {
 
 async function markTestComplete(courseSlug, lessonId, contentId, score) {
     try {
-        const response = await fetch('/api/course-progress/mark-complete', {
+        const response = await fetch('/api/course-progress/mark-content-complete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -478,15 +478,15 @@ async function markTestComplete(courseSlug, lessonId, contentId, score) {
             body: JSON.stringify({
                 courseSlug: courseSlug,
                 lessonId: parseInt(lessonId),
-                contentType: 'Test',
                 contentId: parseInt(contentId),
-                score: score
+                contentType: 'Test'
             })
         });
         
         const data = await response.json();
         
         if (data.success) {
+            console.log('Test marked as complete:', contentId);
             // Update progress bar
             loadCourseProgress();
         }
@@ -515,7 +515,7 @@ function setupFlashcardToggles() {
             if (expandableSection.style.display === 'none') {
                 // Open flashcard section
                 expandableSection.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-times me-2"></i>?Ûng';
+                this.innerHTML = '<i class="fas fa-times me-2"></i>?√≥ng';
                 this.classList.add('active');
                 this.classList.remove('btn-primary');
                 this.classList.add('btn-danger');
@@ -574,18 +574,46 @@ async function loadFlashcardSet(contentId, flashcardSetId) {
             // Setup card click to flip
             const flashcard = document.getElementById(`flashcard-${contentId}`);
             flashcard.addEventListener('click', () => toggleFlip(contentId));
+            
+            // Check if this flashcard set is already completed
+            const courseSlug = expandableSection.dataset.courseSlug;
+            const lessonId = expandableSection.dataset.lessonId;
+            await checkFlashcardCompletion(contentId, courseSlug, lessonId);
         } else {
             loadingDiv.innerHTML = `
                 <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                <p>B? flashcard n‡y ch?a cÛ th? n‡o.</p>
+                <p>B·ªô flashcard n√†y ch∆∞a c√≥ th·∫ª n√†o.</p>
             `;
         }
     } catch (error) {
         console.error('Error loading flashcards:', error);
         loadingDiv.innerHTML = `
             <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-            <p>KhÙng th? t?i flashcards. Vui lÚng th? l?i.</p>
+            <p>Kh√¥ng th·ªÉ t·∫£i flashcards. Vui l√≤ng th·ª≠ l·∫°i.</p>
         `;
+    }
+}
+
+async function checkFlashcardCompletion(contentId, courseSlug, lessonId) {
+    try {
+        const response = await fetch(`/api/course-progress/check-content-completion?courseSlug=${courseSlug}&lessonId=${lessonId}&contentId=${contentId}`);
+        const data = await response.json();
+        
+        if (data.success && data.isCompleted) {
+            // Show complete button in completed state
+            const completeSection = document.getElementById(`completeSection-${contentId}`);
+            const completeBtn = document.getElementById(`btnComplete-${contentId}`);
+            
+            if (completeSection && completeBtn) {
+                completeSection.style.display = 'block';
+                completeSection.classList.add('show-complete');
+                completeBtn.disabled = true;
+                completeBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>ƒê√£ ho√†n th√†nh';
+                completeBtn.style.background = 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)';
+            }
+        }
+    } catch (error) {
+        console.error('Error checking flashcard completion:', error);
     }
 }
 
@@ -599,8 +627,8 @@ function renderFlashcard(contentId) {
     const flashcard = document.getElementById(`flashcard-${contentId}`);
     
     // Update text
-    frontText.textContent = currentCard.frontText || 'KhÙng cÛ n?i dung';
-    backText.textContent = currentCard.backText || 'KhÙng cÛ n?i dung';
+    frontText.textContent = currentCard.frontText || 'Kh√¥ng c√≥ n?i dung';
+    backText.textContent = currentCard.backText || 'Kh√¥ng c√≥ n?i dung';
     
     // Reset flip state
     flashcard.classList.remove('flipped');
@@ -626,6 +654,14 @@ function previousCard(contentId) {
     state.currentIndex--;
     renderFlashcard(contentId);
     updateFlashcardCounter(contentId);
+    
+    // Hide complete button if not on last card anymore
+    if (state.currentIndex < state.totalCards - 1) {
+        const completeSection = document.getElementById(`completeSection-${contentId}`);
+        if (completeSection) {
+            completeSection.classList.remove('show-complete');
+        }
+    }
 }
 
 function nextCard(contentId) {
@@ -636,13 +672,41 @@ function nextCard(contentId) {
     renderFlashcard(contentId);
     updateFlashcardCounter(contentId);
     
-    // Show complete button if reached the end
+    // Show complete button if reached the last card
     if (state.currentIndex === state.totalCards - 1) {
         const completeSection = document.getElementById(`completeSection-${contentId}`);
         if (completeSection) {
-            completeSection.style.display = 'block';
+            // Remove any inline display style first
+            completeSection.removeAttribute('style');
+            
+            // Add show-complete class with slight delay for animation
+            setTimeout(() => {
+                completeSection.classList.add('show-complete');
+                
+                // Add a subtle shake animation to draw attention
+                const tempStyle = completeSection.getAttribute('style') || '';
+                completeSection.setAttribute('style', tempStyle + ' animation: shake 0.5s ease-in-out;');
+                setTimeout(() => {
+                    // Remove only the animation style
+                    completeSection.setAttribute('style', tempStyle);
+                }, 500);
+            }, 300);
         }
     }
+}
+
+// Add shake animation keyframes dynamically if not exists
+if (!document.querySelector('#shake-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'shake-keyframes';
+    style.textContent = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) scale(1); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) scale(1); }
+            20%, 40%, 60%, 80% { transform: translateX(5px) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 function updateFlashcardCounter(contentId) {
@@ -696,8 +760,17 @@ async function completeFlashcardSet(contentId) {
     const lessonId = expandableSection.dataset.lessonId;
     const flashcardContentId = expandableSection.dataset.contentId;
     
+    // Get complete button
+    const completeBtn = document.getElementById(`btnComplete-${contentId}`);
+    if (!completeBtn) return;
+    
+    // Disable button and show loading
+    completeBtn.disabled = true;
+    completeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ƒêang x·ª≠ l√Ω...';
+    
     try {
-        const response = await fetch('/api/course-progress/mark-complete', {
+        // ? FIX: Use mark-content-complete endpoint for flashcards
+        const response = await fetch('/api/course-progress/mark-content-complete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -705,31 +778,54 @@ async function completeFlashcardSet(contentId) {
             body: JSON.stringify({
                 courseSlug: courseSlug,
                 lessonId: parseInt(lessonId),
-                contentType: 'FlashcardSet',
-                contentId: parseInt(flashcardContentId)
+                contentId: parseInt(flashcardContentId),
+                contentType: 'FlashcardSet'
             })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            toastr.success('?„ ho‡n th‡nh b? flashcard!');
+            // Show success animation
+            completeBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>ƒê√£ ho√†n th√†nh!';
+            completeBtn.style.background = 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)';
+            
+            // Show success message
+            const completeSection = document.getElementById(`completeSection-${contentId}`);
+            if (completeSection) {
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message show';
+                successMsg.innerHTML = '<i class="fas fa-trophy me-2"></i>Ch√∫c m·ª´ng! B·∫°n ƒë√£ ho√†n th√†nh b·ªô flashcard n√†y!';
+                completeSection.appendChild(successMsg);
+            }
+            
+            // Show toastr notification
+            toastr.success('ƒê√£ ho√†n th√†nh b·ªô flashcard!', 'Xu·∫•t s·∫Øc!');
             
             // Update progress bar
             loadCourseProgress();
             
-            // Disable complete button
-            const completeBtn = document.getElementById(`btnComplete-${contentId}`);
-            if (completeBtn) {
-                completeBtn.disabled = true;
-                completeBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>?„ ho‡n th‡nh';
+            // Add confetti effect (optional)
+            if (typeof confetti !== 'undefined') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
             }
         } else {
-            toastr.error(data.message || 'KhÙng th? ?·nh d?u ho‡n th‡nh');
+            // Reset button on error
+            completeBtn.disabled = false;
+            completeBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Ho√†n th√†nh';
+            toastr.error(data.message || 'Kh√¥ng th·ªÉ ƒë√°nh d·∫•u ho√†n th√†nh');
         }
     } catch (error) {
         console.error('Error completing flashcard set:', error);
-        toastr.error('CÛ l?i x?y ra');
+        
+        // Reset button on error
+        completeBtn.disabled = false;
+        completeBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Ho√†n th√†nh';
+        toastr.error('C√≥ l·ªói x·∫£y ra');
     }
 }
 
@@ -809,7 +905,7 @@ function navigateToPreviousLesson() {
             window.location.href = prevLink.href;
         }
     } else {
-        toastr.info('?‚y l‡ b‡i h?c ??u tiÍn');
+        toastr.info('?√¢y l√† b√†i h?c ??u ti√™n');
     }
 }
 
@@ -828,7 +924,7 @@ function navigateToNextLesson() {
             window.location.href = nextLink.href;
         }
     } else {
-        toastr.success('B?n ?„ ho‡n th‡nh t?t c? b‡i h?c!');
+        toastr.success('B?n ?√£ ho√†n th√†nh t?t c? b√†i h?c!');
     }
 }
 
@@ -845,7 +941,7 @@ function setupMarkComplete() {
 // Mark lesson as complete
 function markLessonComplete() {
     if (isCompleted) {
-        toastr.info('B‡i h?c n‡y ?„ ???c ?·nh d?u ho‡n th‡nh');
+        toastr.info('B√†i h?c n√†y ?√£ ???c ?√°nh d?u ho√†n th√†nh');
         return;
     }
 
@@ -872,7 +968,7 @@ function markLessonComplete() {
     .then(data => {
         if (data.success) {
             isCompleted = true;
-            toastr.success('?„ ?·nh d?u ho‡n th‡nh b‡i h?c!');
+            toastr.success('?√£ ?√°nh d?u ho√†n th√†nh b√†i h?c!');
             
             // Update UI
             const currentLessonItem = document.querySelector('.lesson-list-item.current-lesson');
@@ -891,15 +987,15 @@ function markLessonComplete() {
             const markCompleteBtn = document.getElementById('markCompleteBtn');
             if (markCompleteBtn) {
                 markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
-                markCompleteBtn.title = '?„ ho‡n th‡nh';
+                markCompleteBtn.title = '?√£ ho√†n th√†nh';
             }
         } else {
-            toastr.error(data.message || 'KhÙng th? ?·nh d?u ho‡n th‡nh');
+            toastr.error(data.message || 'Kh√¥ng th? ?√°nh d?u ho√†n th√†nh');
         }
     })
     .catch(error => {
         console.error('Error marking complete:', error);
-        toastr.error('CÛ l?i x?y ra');
+        toastr.error('C√≥ l?i x?y ra');
     });
 }
 
@@ -975,7 +1071,7 @@ function loadCourseProgress() {
                     const markCompleteBtn = document.getElementById('markCompleteBtn');
                     if (markCompleteBtn) {
                         markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
-                        markCompleteBtn.title = '?„ ho‡n th‡nh';
+                        markCompleteBtn.title = '?√£ ho√†n th√†nh';
                     }
                 }
                 

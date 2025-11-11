@@ -18,53 +18,27 @@
     <div class="row g-0">
         <!-- Left Column: Video & Content Area (70%) -->
         <div class="col-lg-9 main-content-area">
-            <!-- Video Player Section -->
-            <div class="video-player-section">
-                @if (currentLesson?.LessonContents != null && currentLesson.LessonContents.Any())
-                {
-                    var videoContent = currentLesson.LessonContents
-                        .Where(c => c.ContentType == "Video" && !string.IsNullOrEmpty(c.VideoUrl))
-                        .OrderBy(c => c.OrderIndex)
-                        .FirstOrDefault();
-                    
-                    @if (videoContent != null)
-                    {
-                        <video id="videoPlayer" class="video-js vjs-default-skin" controls preload="auto" 
-                               data-setup='{"fluid": true, "aspectRatio": "16:9"}'>
-                            <source src="@videoContent.VideoUrl" type="video/mp4">
-                            Trình duyệt của bạn không hỗ trợ video HTML5.
-                        </video>
-                    }
-                    else
-                    {
-                        <div class="no-video-placeholder">
-                            <i class="fas fa-video-slash fa-4x"></i>
-                            <p>Bài học này không có video</p>
-                            @if (isOwner)
-                            {
-                                <a asp-controller="Course" asp-action="Builder" asp-route-id="@course.CourseId" 
-                                   class="btn btn-outline-secondary mt-3">
-                                    <i class="fas fa-plus me-2"></i>Thêm video
-                                </a>
-                            }
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="no-video-placeholder">
-                        <i class="fas fa-video-slash fa-4x"></i>
-                        <p>Bài học này chưa có nội dung</p>
-                        @if (isOwner)
-                        {
-                            <a asp-controller="Course" asp-action="Builder" asp-route-id="@course.CourseId" 
-                               class="btn btn-outline-secondary mt-3">
-                                <i class="fas fa-plus me-2"></i>Thêm nội dung
-                            </a>
-                        }
-                    </div>
-                }
-            </div>
+            @* <!-- Video Player Section - Only show if lesson has video --> *@
+            @{
+                var hasVideo = currentLesson?.LessonContents != null && 
+                               currentLesson.LessonContents.Any(c => c.ContentType == "Video" && !string.IsNullOrEmpty(c.VideoUrl));
+            }
+            
+            @if (hasVideo)
+            {
+                var videoContent = currentLesson.LessonContents
+                    .Where(c => c.ContentType == "Video" && !string.IsNullOrEmpty(c.VideoUrl))
+                    .OrderBy(c => c.OrderIndex)
+                    .FirstOrDefault();
+                
+                <div class="video-player-section">
+                    <video id="videoPlayer" class="video-js vjs-default-skin" controls preload="auto" 
+                           data-setup='{"fluid": true, "aspectRatio": "16:9"}'>
+                        <source src="@videoContent.VideoUrl" type="video/mp4">
+                        Trình duyệt của bạn không hỗ trợ video HTML5.
+                    </video>
+                </div>
+            }
 
             <!-- Lesson Title & Navigation -->
             <div class="lesson-header">
@@ -191,7 +165,7 @@
                                                 </div>
 
                                                 <!-- Complete Button -->
-                                                <div class="complete-section mb-3 text-center" id="completeSection-@content.ContentId" style="display: none;">
+                                                <div class="complete-section mb-3 text-center" id="completeSection-@content.ContentId">
                                                     <button class="btn btn-success btn-lg rounded-pill px-5 shadow" 
                                                             id="btnComplete-@content.ContentId" 
                                                             onclick="completeFlashcardSet('@content.ContentId')">
@@ -434,7 +408,7 @@
                                             {
                                                 var isCurrentLesson = lesson.LessonId == currentLesson?.LessonId;
                                                 var contentTypes = lesson.LessonContents?.Select(c => c.ContentType).ToList() ?? new List<string>();
-                                                var hasVideo = contentTypes.Contains("Video");
+                                                var hasVideoInLesson = contentTypes.Contains("Video");
                                                 var hasTest = contentTypes.Contains("Test");
                                                 var hasFlashcard = contentTypes.Contains("FlashcardSet");
 
@@ -454,7 +428,7 @@
                                                         <div class="lesson-info-item">
                                                             <div class="lesson-title-item">@lesson.Title</div>
                                                             <div class="lesson-meta">
-                                                                @if (hasVideo)
+                                                                @if (hasVideoInLesson)
                                                                 {
                                                                     <span class="badge bg-primary"><i class="fas fa-video"></i></span>
                                                                 }
