@@ -149,13 +149,13 @@
                                     <!-- Khối 2: Điều hướng chính -->
                                     <div class="dropdown-section">
                                         <a class="dropdown-item" href="@Url.Action("Library", "Library")">Học tập</a>
-                                        <a class="dropdown-item" href="/checkout">Giỏ hàng của tôi</a>
+                                        <a class="dropdown-item" href="@Url.Action("Index", "Checkout")">Giỏ hàng của tôi</a>
                                         @if (User.IsInRole("Admin"))
                                         {
                                             <a class="dropdown-item" href="@Url.Action("Index", "Admin")">Bảng điều khiển admin</a>
                                         }
 
-                                        <a class="dropdown-item" href="@Url.Action("Create", "Lesson")">Bảng điều khiển của giảng viên</a>
+                                        <a class="dropdown-item" href="@Url.Action("My", "Course")">Bảng điều khiển của giảng viên</a>
 
                                     </div>
 
