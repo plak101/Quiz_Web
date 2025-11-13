@@ -143,7 +143,7 @@ function setupTestToggles() {
             if (expandableSection.style.display === 'none') {
                 // Open test section
                 expandableSection.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-times me-2"></i>?óng';
+                this.innerHTML = '<i class="fas fa-times me-2"></i>Đóng';
                 this.classList.add('active');
                 this.classList.remove('btn-success');
                 this.classList.add('btn-danger');
@@ -160,7 +160,7 @@ function setupTestToggles() {
             } else {
                 // Close test section
                 expandableSection.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-pencil-alt me-2"></i>Làm bài ki?m tra';
+                this.innerHTML = '<i class="fas fa-pencil-alt me-2"></i>Làm bài kiểm tra';
                 this.classList.remove('active');
                 this.classList.add('btn-success');
                 this.classList.remove('btn-danger');
@@ -212,14 +212,14 @@ async function loadTest(contentId, testId) {
         } else {
             loadingDiv.innerHTML = `
                 <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                <p>${data.message || 'Bài ki?m tra này ch?a có câu h?i nào.'}</p>
+                <p>${data.message || 'Bài kiểm tra này chưa có câu hỏi nào.'}</p>
             `;
         }
     } catch (error) {
         console.error('Error loading test:', error);
         loadingDiv.innerHTML = `
             <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-            <p>Không th? t?i bài ki?m tra. Vui lòng th? l?i.</p>
+            <p>Không thể tải bài kiểm tra. Vui lòng thử lại.</p>
         `;
     }
 }
@@ -237,7 +237,7 @@ function renderTestInfo(contentId) {
         timeElement.textContent = `${Math.floor(state.test.timeLimitSec / 60)} phút`;
     }
     if (questionCountElement) {
-        questionCountElement.textContent = `${state.questions.length} câu h?i`;
+        questionCountElement.textContent = `${state.questions.length} câu hỏi`;
     }
 }
 
@@ -277,7 +277,7 @@ function renderQuestions(contentId) {
         questionDiv.innerHTML = `
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h5 class="mb-0">Câu ${index + 1}</h5>
-                <span class="badge bg-info">${question.points} ?i?m</span>
+                <span class="badge bg-info">${question.points} điểm</span>
             </div>
             <p class="mb-3">${question.stemText}</p>
             <div class="options-container">
@@ -348,7 +348,7 @@ function startTestTimer(contentId, timeLimitSec) {
             clearInterval(testTimers[contentId]);
             delete testTimers[contentId];
             
-            toastr.warning('H?t gi? làm bài!');
+            toastr.warning('Hết giờ làm bài!');
             submitTest(contentId);
         }
     }, 1000);
@@ -387,7 +387,7 @@ async function submitTest(contentId) {
     const submitBtn = document.getElementById(`btnSubmitTest-${contentId}`);
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>?ang ch?m bài...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang chấm bài...';
     }
     
     try {
@@ -417,18 +417,18 @@ async function submitTest(contentId) {
 			
             await markTestComplete(courseSlug, lessonId, testContentId, data.score);
         } else {
-            toastr.error(data.message || 'Không th? n?p bài');
+            toastr.error(data.message || 'Không thể nộp bài');
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p bài';
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Nộp bài';
             }
         }
     } catch (error) {
         console.error('Error submitting test:', error);
-        toastr.error('Có l?i x?y ra khi n?p bài');
+        toastr.error('Có lỗi xảy ra khi nộp bài');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>N?p bài';
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Nộp bài';
         }
     }
 }
@@ -452,11 +452,11 @@ function showTestResult(contentId, result) {
                 <h1 class="display-3 fw-bold mb-0">
                     ${result.correctAnswers} / ${result.totalQuestions}
                 </h1>
-                <p class="text-muted fs-5">Câu ?úng</p>
-                <p class="text-muted fs-6">?i?m: ${result.score}/${result.maxScore} (${result.percentage}%)</p>
+                <p class="text-muted fs-5">Câu đúng</p>
+                <p class="text-muted fs-6">Điểm: ${result.score}/${result.maxScore} (${result.percentage}%)</p>
             </div>
             <button class="btn btn-primary btn-lg" onclick="location.reload()">
-                <i class="fas fa-redo me-2"></i>Làm l?i
+                <i class="fas fa-redo me-2"></i>Làm lại
             </button>
         </div>
     `;
@@ -515,7 +515,7 @@ function setupFlashcardToggles() {
             if (expandableSection.style.display === 'none') {
                 // Open flashcard section
                 expandableSection.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-times me-2"></i>?óng';
+                this.innerHTML = '<i class="fas fa-times me-2"></i>Đóng';
                 this.classList.add('active');
                 this.classList.remove('btn-primary');
                 this.classList.add('btn-danger');
@@ -532,7 +532,7 @@ function setupFlashcardToggles() {
             } else {
                 // Close flashcard section
                 expandableSection.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-play me-2"></i>Luy?n t?p Flashcard';
+                this.innerHTML = '<i class="fas fa-play me-2"></i>Luyện tập Flashcard';
                 this.classList.remove('active');
                 this.classList.add('btn-primary');
                 this.classList.remove('btn-danger');
@@ -627,8 +627,8 @@ function renderFlashcard(contentId) {
     const flashcard = document.getElementById(`flashcard-${contentId}`);
     
     // Update text
-    frontText.textContent = currentCard.frontText || 'Không có n?i dung';
-    backText.textContent = currentCard.backText || 'Không có n?i dung';
+    frontText.textContent = currentCard.frontText || 'Không có nội dung';
+    backText.textContent = currentCard.backText || 'Không có nội dung';
     
     // Reset flip state
     flashcard.classList.remove('flipped');
@@ -905,7 +905,7 @@ function navigateToPreviousLesson() {
             window.location.href = prevLink.href;
         }
     } else {
-        toastr.info('?ây là bài h?c ??u tiên');
+        toastr.info('Đây là bài học đầu tiên');
     }
 }
 
@@ -924,7 +924,7 @@ function navigateToNextLesson() {
             window.location.href = nextLink.href;
         }
     } else {
-        toastr.success('B?n ?ã hoàn thành t?t c? bài h?c!');
+        toastr.success('Bạn đã hoàn thành tất cả bài học!');
     }
 }
 
@@ -941,7 +941,7 @@ function setupMarkComplete() {
 // Mark lesson as complete
 function markLessonComplete() {
     if (isCompleted) {
-        toastr.info('Bài h?c này ?ã ???c ?ánh d?u hoàn thành');
+        toastr.info('Bài học này đã được đánh dấu hoàn thành');
         return;
     }
 
@@ -968,7 +968,7 @@ function markLessonComplete() {
     .then(data => {
         if (data.success) {
             isCompleted = true;
-            toastr.success('?ã ?ánh d?u hoàn thành bài h?c!');
+            toastr.success('Đã đánh dấu hoàn thành bài học!');
             
             // Update UI
             const currentLessonItem = document.querySelector('.lesson-list-item.current-lesson');
@@ -987,15 +987,15 @@ function markLessonComplete() {
             const markCompleteBtn = document.getElementById('markCompleteBtn');
             if (markCompleteBtn) {
                 markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
-                markCompleteBtn.title = '?ã hoàn thành';
+                markCompleteBtn.title = 'Đã hoàn thành';
             }
         } else {
-            toastr.error(data.message || 'Không th? ?ánh d?u hoàn thành');
+            toastr.error(data.message || 'Không thể đánh dấu hoàn thành');
         }
     })
     .catch(error => {
         console.error('Error marking complete:', error);
-        toastr.error('Có l?i x?y ra');
+        toastr.error('Có lỗi xảy ra');
     });
 }
 
@@ -1071,7 +1071,7 @@ function loadCourseProgress() {
                     const markCompleteBtn = document.getElementById('markCompleteBtn');
                     if (markCompleteBtn) {
                         markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
-                        markCompleteBtn.title = '?ã hoàn thành';
+                        markCompleteBtn.title = 'Đã hoàn thành';
                     }
                 }
                 

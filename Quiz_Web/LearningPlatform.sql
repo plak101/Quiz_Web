@@ -726,3 +726,5 @@ GO
 -- Test xem điểm trung bình được cập nhật
 SELECT Title, AverageRating, TotalReviews FROM dbo.Courses;
 GO
+
+select * from CoursePurchases

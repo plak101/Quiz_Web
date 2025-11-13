@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Start autosave
-    startAutosave();
+    //startAutosave();
 
     // Initialize slug generation
     const titleInput = document.getElementById('Title');
@@ -2168,6 +2168,7 @@ function saveCourse(publish) {
 // AUTOSAVE
 // ============================================
 function startAutosave() {
+    if
     // Autosave every 10 seconds
     autosaveTimer = setInterval(() => {
         if (currentStep === 1) {
