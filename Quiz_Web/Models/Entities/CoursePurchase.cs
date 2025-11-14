@@ -22,6 +22,4 @@ public partial class CoursePurchase
     public virtual User Buyer { get; set; } = null!;
 
     public virtual Course Course { get; set; } = null!;
-
-    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

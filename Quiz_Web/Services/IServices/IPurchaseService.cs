@@ -8,5 +8,7 @@ namespace Quiz_Web.Services.IServices
         Task<CoursePurchase> CreatePurchaseAsync(int userId, List<int> courseIds, decimal totalAmount);
         Task<bool> CompletePurchaseAsync(int purchaseId, string providerRef);
         Task<List<CoursePurchase>> GetUserPurchasesAsync(int userId);
-    }
+		//Task<bool> HasUserPurchasedCourseAsync(int userId, int courseId);
+		Task GrantAccessAsync(int userId, int courseId);
+	}
 }

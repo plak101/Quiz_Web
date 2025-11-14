@@ -34,16 +34,13 @@ class PaymentHandler {
 
             const result = await response.json();
 
-            if (result.success) {
-                // Chuyển hướng đến trang thanh toán MoMo
-                if (result.payUrl) {
-                    window.location.href = result.payUrl;
-                } else if (result.qrCodeUrl) {
-                    this.showQRCode(result.qrCodeUrl);
-                }
-            } else {
-                this.showError(result.message || 'Có lỗi xảy ra khi tạo thanh toán');
+            if (!result || !result.payUrl) {
+                this.showError(result.message || 'Không tạo được liên kết thanh toán MoMo');
+                return;
             }
+
+            //  ĐÚNG CHUẨN MOMO: chỉ redirect sang payUrl
+            window.location.href = result.payUrl;
         } catch (error) {
             console.error('Payment error:', error);
             this.showError('Có lỗi xảy ra khi xử lý thanh toán');
