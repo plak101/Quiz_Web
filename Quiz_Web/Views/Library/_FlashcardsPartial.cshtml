@@ -91,7 +91,7 @@ else
                                 <a href="/flashcards/edit/@flashcardSet.SetId" class="btn btn-icon" title="Chỉnh sửa">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="/flashcards/detail/@flashcardSet.SetId" class="btn btn-icon" title="Chi tiết">
+                                <a href="@Url.Action("Detail", "Flashcard", new{id = flashcardSet.SetId})" class="btn btn-icon" title="Chi tiết">
                                     <i class="fas fa-info-circle"></i>
                                 </a>
                             </div>
