@@ -81,4 +81,16 @@ namespace Quiz_Web.Models.ViewModels
                 yield return new ValidationResult("Giá chỉ tối đa 2 chữ số thập phân", new[] { nameof(Price) });
         }
     }
+
+    // ViewModel cho thống kê doanh thu khóa học
+    public class CourseRevenueViewModel
+    {
+        public int CourseId { get; set; }
+        public string CourseTitle { get; set; } = null!;
+        public decimal CoursePrice { get; set; }
+        public int TotalPurchases { get; set; }
+        public decimal GrossRevenue { get; set; } // Tổng doanh thu
+        public decimal InstructorRevenue { get; set; } // Doanh thu người tạo (60%)
+        public decimal PlatformFee { get; set; } // Phí nền tảng (40%)
+    }
 }
