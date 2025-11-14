@@ -107,6 +107,11 @@
 
         cartItemsList.innerHTML = html;
 
+        // Show footer because items exist
+        if (cartFooter) {
+            cartFooter.style.display = "";
+        }
+
         // Update total
         if (cartTotal) {
             cartTotal.textContent = formatPrice(total);
