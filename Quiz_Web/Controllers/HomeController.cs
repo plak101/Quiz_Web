@@ -61,7 +61,7 @@ namespace Quiz_Web.Controllers
             var categories = await _context.CourseCategories
                 .OrderBy(c => c.DisplayOrder)
                 .ThenBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(); 
             
             // Lấy recommended courses dựa trên user interests
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

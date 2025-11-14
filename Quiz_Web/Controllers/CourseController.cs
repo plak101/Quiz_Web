@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using Ganss.Xss;
+using Microsoft.EntityFrameworkCore;
+using Quiz_Web.Models.EF;
 
 namespace Quiz_Web.Controllers
 {
@@ -13,15 +15,18 @@ namespace Quiz_Web.Controllers
 		private readonly ILogger<CourseController> _logger;
 		private readonly ICourseService _courseService;
 		private readonly IWebHostEnvironment _env;
+		private readonly LearningPlatformContext _context;
 
 		public CourseController(
 			ILogger<CourseController> logger,
 			ICourseService courseService,
-			IWebHostEnvironment env)
+			IWebHostEnvironment env,
+			LearningPlatformContext context)
 		{
 			_logger = logger;
 			_courseService = courseService;
 			_env = env;
+			_context = context;
 		}
 
 		// GET: /courses
@@ -804,6 +809,45 @@ namespace Quiz_Web.Controllers
 			ViewBag.IsOwner = isOwner;
 
 			return View();
+		}
+
+		// GET: /courses/revenue - thống kê doanh thu từ các khóa học của người dùng
+		[Authorize]
+		[Route("/courses/revenue")]
+		[HttpGet]
+		public IActionResult Revenue()
+		{
+			var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+				return Challenge();
+
+			// Lấy danh sách khóa học của người dùng cùng với thông tin mua hàng
+			var courses = _context.Courses
+				.Include(c => c.CoursePurchases.Where(p => p.Status == "Paid"))
+					.ThenInclude(p => p.Payments)
+				.Where(c => c.OwnerId == userId && c.IsPublished)
+				.OrderByDescending(c => c.CreatedAt)
+				.ToList();
+
+			// Tính toán doanh thu cho từng khóa học
+			var revenueData = courses.Select(c => new CourseRevenueViewModel
+			{
+				CourseId = c.CourseId,
+				CourseTitle = c.Title,
+				CoursePrice = c.Price,
+				TotalPurchases = c.CoursePurchases.Count(p => p.Status == "Paid"),
+				GrossRevenue = c.Price * c.CoursePurchases.Count(p => p.Status == "Paid"),
+				InstructorRevenue = c.Price * c.CoursePurchases.Count(p => p.Status == "Paid") * 0.60m, // 60% cho người tạo
+				PlatformFee = c.Price * c.CoursePurchases.Count(p => p.Status == "Paid") * 0.40m // 40% phí nền tảng
+			}).ToList();
+
+			// Tính tổng doanh thu
+			ViewBag.TotalGrossRevenue = revenueData.Sum(r => r.GrossRevenue);
+			ViewBag.TotalInstructorRevenue = revenueData.Sum(r => r.InstructorRevenue);
+			ViewBag.TotalPlatformFee = revenueData.Sum(r => r.PlatformFee);
+			ViewBag.TotalPurchases = revenueData.Sum(r => r.TotalPurchases);
+
+			return View(revenueData);
 		}
 	}
 }
