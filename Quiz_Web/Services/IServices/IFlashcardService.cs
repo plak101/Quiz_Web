@@ -26,6 +26,7 @@ namespace Quiz_Web.Services.IServices
         Flashcard? CreateFlashcard(CreateFlashcardViewModel model, int ownerId);
         Flashcard? UpdateFlashcard(EditFlashcardViewModel model, int ownerId);
         bool DeleteFlashcard(int cardId, int ownerId);
+        bool DeleteAllFlashcardsInSet(int setId, int ownerId);
         Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync();
     }
 }

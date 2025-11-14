@@ -101,12 +101,7 @@
                         @await Html.PartialAsync("_CartDropdown")
 
                         <!-- Notification Dropdown -->
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                @await Html.PartialAsync("_NotificationDropdown")
-                            </li>
-                        }
+                        
 
                         <!-- User Avatar with Dropdown -->
                         <li class="nav-item dropdown user-dropdown ms-2">
@@ -229,43 +224,7 @@
     </div>
 
     <footer class="site-footer text-white py-4">
-        <div class="container">
-            <div class="row g-4">
-                <div class="col-6 col-md-3">
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#">Giới thiệu về chúng tôi</a></li>
-                        <li class="mb-2"><a href="#">Việc làm</a></li>
-                        <li class="mb-2"><a href="#">Liên hệ với chúng tôi</a></li>
-                        <li class="mb-2"><a href="#">Blog</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#">Tải ứng dụng</a></li>
-                        <li class="mb-2"><a href="#">Giảng dạy với chúng tôi</a></li>
-                        <li class="mb-2"><a href="#">Gói và Giá cả</a></li>
-                        <li class="mb-2"><a href="#">Đơn vị liên kết</a></li>
-                        <li class="mb-2"><a href="#">Trợ giúp và Hỗ trợ</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#">Business</a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#">Tuyên bố về khả năng tiếp cận</a></li>
-                        <li class="mb-2"><a href="#">Chính sách về quyền riêng tư</a></li>
-                        <li class="mb-2"><a href="#">Sơ đồ trang web</a></li>
-                        <li class="mb-2"><a href="#">Điều khoản</a></li>
-                    </ul>
-                </div>
-            </div>
+        
 
             <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap gap-3">
                 <a href="#">

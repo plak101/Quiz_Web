@@ -7,11 +7,14 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">Khóa học của tôi</h2>
         <div class="d-flex gap-2">
+            <a asp-action="Builder" class="btn btn-primary">
+                <i class="fa-solid fa-plus me-1"></i> Tạo khóa học
+            </a>
             <a asp-action="Revenue" class="btn btn-success">
                 <i class="fa-solid fa-chart-line me-1"></i> Doanh thu
             </a>
-            <a asp-action="Builder" class="btn btn-primary">
-                <i class="fa-solid fa-plus me-1"></i> Tạo khóa học
+            <a asp-controller="Flashcard" asp-action="My" class="btn btn-info">
+                <i class="fa-solid fa-layer-group me-1"></i> Flashcard của tôi
             </a>
         </div>
     </div>
