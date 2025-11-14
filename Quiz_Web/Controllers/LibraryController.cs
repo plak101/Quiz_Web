@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quiz_Web.Models.EF;
 using Quiz_Web.Services.IServices;
@@ -17,8 +18,9 @@ namespace Quiz_Web.Controllers
             _libraryService = libraryService;
         }
 
+        [Authorize]
         [HttpGet]
-        [Route("/admin/Library")]
+        [Route("/library")]
         public IActionResult Library()
         {
             return View("~/Views/Library/Library.cshtml");
@@ -37,10 +39,11 @@ namespace Quiz_Web.Controllers
                 }
 
                 var purchasedCourses = await _context.CoursePurchases
-                    .Where(cp => cp.BuyerId == userId && cp.Status == "completed")
+                    .Where(cp => cp.BuyerId == userId && cp.Status == "Paid")
                     .Include(cp => cp.Course)
                         .ThenInclude(c => c.Owner)
                     .Select(cp => cp.Course)
+                    .Distinct()
                     .ToListAsync();
 
                 return PartialView("_AllCoursesPartial", purchasedCourses);
@@ -48,6 +51,33 @@ namespace Quiz_Web.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, "Error loading courses");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Flashcards()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                
+                if (userId == 0)
+                {
+                    return PartialView("_FlashcardsPartial", new List<Models.Entities.FlashcardSet>());
+                }
+
+                // Get flashcard sets owned by user
+                var flashcardSets = await _context.FlashcardSets
+                    .Where(fs => fs.OwnerId == userId && !fs.IsDeleted)
+                    .Include(fs => fs.Flashcards)
+                    .OrderByDescending(fs => fs.CreatedAt)
+                    .ToListAsync();
+
+                return PartialView("_FlashcardsPartial", flashcardSets);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error loading flashcards");
             }
         }
 

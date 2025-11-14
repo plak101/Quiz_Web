@@ -310,7 +310,7 @@ CREATE TABLE dbo.CourseReviews (
     CreatedAt    DATETIME2(7) NOT NULL DEFAULT SYSUTCDATETIME(),
     UpdatedAt    DATETIME2(7) NULL,
     IsApproved   BIT NOT NULL DEFAULT (1),
-    FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId),
+    FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,
     FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId)
 );
 GO
@@ -358,7 +358,7 @@ CREATE TABLE dbo.CourseChapters (
     Title       NVARCHAR(200)  NOT NULL,
     Description NVARCHAR(MAX)  NULL,
     OrderIndex  INT            NOT NULL CONSTRAINT DF_Chapters_Order DEFAULT (0),
-    CONSTRAINT FK_Chapters_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId)
+    CONSTRAINT FK_Chapters_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE
 );
 GO
 
@@ -372,7 +372,7 @@ CREATE TABLE dbo.Lessons (
     CreatedAt   DATETIME2(7)   NOT NULL CONSTRAINT DF_Lessons_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt   DATETIME2(7)   NULL,
     CONSTRAINT CK_Lessons_Visibility CHECK (Visibility IN ('Private','Public','Course')),
-    CONSTRAINT FK_Lessons_Chapter FOREIGN KEY (ChapterId) REFERENCES dbo.CourseChapters(ChapterId)
+    CONSTRAINT FK_Lessons_Chapter FOREIGN KEY (ChapterId) REFERENCES dbo.CourseChapters(ChapterId) ON DELETE CASCADE
 );
 GO
 
@@ -387,7 +387,7 @@ CREATE TABLE dbo.LessonContents (
     OrderIndex  INT            NOT NULL CONSTRAINT DF_LessonContents_Order DEFAULT (0),
     CreatedAt   DATETIME2(7)   NOT NULL CONSTRAINT DF_LessonContents_CreatedAt DEFAULT SYSUTCDATETIME(),
     CONSTRAINT CK_LessonContents_Type CHECK (ContentType IN ('Video','Theory','FlashcardSet','Test')),
-    CONSTRAINT FK_LessonContents_Lesson FOREIGN KEY (LessonId) REFERENCES dbo.Lessons(LessonId)
+    CONSTRAINT FK_LessonContents_Lesson FOREIGN KEY (LessonId) REFERENCES dbo.Lessons(LessonId) ON DELETE CASCADE
 );
 GO
 
@@ -404,7 +404,7 @@ CREATE TABLE dbo.CourseProgress (
     Score         DECIMAL(6,2)   NULL,
     DurationSec   INT            NULL,
     FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId),
-    FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId)
+    FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE
 );
 GO
 
@@ -423,7 +423,7 @@ CREATE TABLE dbo.CoursePurchases (
     Status      VARCHAR(20)   NOT NULL, -- Pending/Paid/Refunded/Failed
     PurchasedAt DATETIME2(7)  NOT NULL CONSTRAINT DF_CoursePurchases_At DEFAULT SYSUTCDATETIME(),
     CONSTRAINT CK_CoursePurchases_Status CHECK (Status IN ('Pending','Paid','Refunded','Failed')),
-    CONSTRAINT FK_CPurchases_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId),
+    CONSTRAINT FK_CPurchases_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,
     CONSTRAINT FK_CPurchases_Buyer  FOREIGN KEY (BuyerId)  REFERENCES dbo.Users(UserId)
 );
 GO
@@ -438,7 +438,7 @@ CREATE TABLE dbo.Payments (
     Status      VARCHAR(20)   NOT NULL, -- Pending/Paid/Failed/Refunded
     PaidAt      DATETIME2(7)  NULL,
     RawPayload  NVARCHAR(MAX) NULL,
-    CONSTRAINT FK_Payments_Purchase FOREIGN KEY (PurchaseId) REFERENCES dbo.CoursePurchases(PurchaseId)
+    CONSTRAINT FK_Payments_Purchase FOREIGN KEY (PurchaseId) REFERENCES dbo.CoursePurchases(PurchaseId) ON DELETE CASCADE
 );
 GO
 
@@ -450,7 +450,7 @@ CREATE TABLE dbo.Certificates (
     Serial     NVARCHAR(50)  NULL,
     VerifyCode NVARCHAR(50)  NOT NULL,
     CONSTRAINT UQ_Certificates_Verify UNIQUE (VerifyCode),
-    CONSTRAINT FK_Certificates_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId),
+    CONSTRAINT FK_Certificates_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,
     CONSTRAINT FK_Certificates_User   FOREIGN KEY (UserId)   REFERENCES dbo.Users(UserId)
 );
 GO
@@ -726,3 +726,5 @@ GO
 -- Test xem điểm trung bình được cập nhật
 SELECT Title, AverageRating, TotalReviews FROM dbo.Courses;
 GO
+
+select * from CoursePurchases

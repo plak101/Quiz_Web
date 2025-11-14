@@ -79,7 +79,8 @@ namespace Quiz_Web.Services
 					.Include(c => c.CoursePurchases)
 					.Include(c => c.CourseReviews.OrderByDescending(r => r.CreatedAt))
 						.ThenInclude(r => r.User)
-					.FirstOrDefault(c => c.Slug == slug && c.IsPublished);
+					.FirstOrDefault(c => c.Slug == slug);
+					//.FirstOrDefault(c => c.Slug == slug && c.IsPublished);
 			}
 			catch (Exception ex)
 			{
