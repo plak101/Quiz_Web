@@ -423,7 +423,7 @@ CREATE TABLE dbo.CoursePurchases (
     Status      VARCHAR(20)   NOT NULL, -- Pending/Paid/Refunded/Failed
     PurchasedAt DATETIME2(7)  NOT NULL CONSTRAINT DF_CoursePurchases_At DEFAULT SYSUTCDATETIME(),
     CONSTRAINT CK_CoursePurchases_Status CHECK (Status IN ('Pending','Paid','Refunded','Failed')),
-    CONSTRAINT FK_CPurchases_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,,
+    CONSTRAINT FK_CPurchases_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,
     CONSTRAINT FK_CPurchases_Buyer  FOREIGN KEY (BuyerId)  REFERENCES dbo.Users(UserId)
 );
 GO
@@ -726,3 +726,5 @@ GO
 -- Test xem điểm trung bình được cập nhật
 SELECT Title, AverageRating, TotalReviews FROM dbo.Courses;
 GO
+
+select * from CoursePurchases
