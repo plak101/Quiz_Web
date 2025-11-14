@@ -2167,15 +2167,15 @@ function saveCourse(publish) {
 // ============================================
 // AUTOSAVE
 // ============================================
-function startAutosave() {
-    if
-    // Autosave every 10 seconds
-    autosaveTimer = setInterval(() => {
-        if (currentStep === 1) {
-            performAutosave();
-        }
-    }, 10000);
-}
+//function startAutosave() {
+    
+//    // Autosave every 10 seconds
+//    autosaveTimer = setInterval(() => {
+//        if (currentStep === 1) {
+//            performAutosave();
+//        }
+//    }, 10000);
+//}
 
 async function performAutosave() {
     saveStepData();
