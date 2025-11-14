@@ -116,5 +116,25 @@ namespace Quiz_Web.Services
                 .OrderByDescending(cp => cp.PurchasedAt)
                 .ToListAsync();
         }
-    }
+		public async Task GrantAccessAsync(int userId, int courseId)
+		{
+			var exists = await _context.CoursePurchases
+				.AnyAsync(x => x.BuyerId == userId && x.CourseId == courseId && x.Status == "Paid");
+
+			if (!exists)
+			{
+				_context.CoursePurchases.Add(new CoursePurchase
+				{
+					BuyerId = userId,
+					CourseId = courseId,
+					PricePaid = 0,
+					Currency = "VND",
+					Status = "Paid"
+				});
+
+				await _context.SaveChangesAsync();
+			}
+		}
+
+	}
 }

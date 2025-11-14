@@ -428,18 +428,18 @@ CREATE TABLE dbo.CoursePurchases (
 );
 GO
 
-CREATE TABLE dbo.Payments (
-    PaymentId   INT IDENTITY(1,1) PRIMARY KEY,
-    PurchaseId  INT           NOT NULL,
-    Provider    VARCHAR(40)   NOT NULL, -- VNPay/Stripe/...
-    ProviderRef NVARCHAR(120) NULL,
-    Amount      DECIMAL(12,2) NOT NULL,
-    Currency    NVARCHAR(10)  NOT NULL,
-    Status      VARCHAR(20)   NOT NULL, -- Pending/Paid/Failed/Refunded
-    PaidAt      DATETIME2(7)  NULL,
-    RawPayload  NVARCHAR(MAX) NULL,
-    CONSTRAINT FK_Payments_Purchase FOREIGN KEY (PurchaseId) REFERENCES dbo.CoursePurchases(PurchaseId) ON DELETE CASCADE
-);
+--CREATE TABLE dbo.Payments (
+ --   PaymentId   INT IDENTITY(1,1) PRIMARY KEY,
+ --   PurchaseId  INT           NOT NULL,
+ --   Provider    VARCHAR(40)   NOT NULL, -- VNPay/Stripe/...
+ --   ProviderRef NVARCHAR(120) NULL,
+--    Amount      DECIMAL(12,2) NOT NULL,
+--    Currency    NVARCHAR(10)  NOT NULL,
+--    Status      VARCHAR(20)   NOT NULL, -- Pending/Paid/Failed/Refunded
+--    PaidAt      DATETIME2(7)  NULL,
+--    RawPayload  NVARCHAR(MAX) NULL,
+--    CONSTRAINT FK_Payments_Purchase FOREIGN KEY (PurchaseId) REFERENCES dbo.CoursePurchases(PurchaseId) ON DELETE CASCADE
+--);
 GO
 
 CREATE TABLE dbo.Certificates (
@@ -454,6 +454,47 @@ CREATE TABLE dbo.Certificates (
     CONSTRAINT FK_Certificates_User   FOREIGN KEY (UserId)   REFERENCES dbo.Users(UserId)
 );
 GO
+
+
+CREATE TABLE Orders (
+    OrderId INT IDENTITY(1,1) PRIMARY KEY,
+    BuyerId INT NOT NULL,
+    TotalAmount DECIMAL(12,2) NOT NULL,
+    Currency NVARCHAR(10) NOT NULL DEFAULT 'VND',
+    Status VARCHAR(20) NOT NULL, -- Pending/Paid/Failed
+    CreatedAt DATETIME2(7) NOT NULL DEFAULT SYSUTCDATETIME(),
+    PaidAt DATETIME2(7) NULL,
+
+    CONSTRAINT FK_Orders_User FOREIGN KEY (BuyerId)
+        REFERENCES dbo.Users(UserId)
+);
+
+CREATE TABLE OrderItems (
+    ItemId INT IDENTITY(1,1) PRIMARY KEY,
+    OrderId INT NOT NULL,
+    CourseId INT NOT NULL,
+    Price DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT FK_OrderItems_Order FOREIGN KEY (OrderId)
+        REFERENCES Orders(OrderId) ON DELETE CASCADE,
+
+    CONSTRAINT FK_OrderItems_Course FOREIGN KEY (CourseId)
+        REFERENCES Courses(CourseId)
+);
+CREATE TABLE Payments (
+    PaymentId INT IDENTITY(1,1) PRIMARY KEY,
+    OrderId INT NOT NULL,
+    Provider VARCHAR(40) NOT NULL,
+    ProviderRef NVARCHAR(200) NULL,
+    Amount DECIMAL(12,2) NOT NULL,
+    Currency NVARCHAR(10) NOT NULL,
+    Status VARCHAR(20) NOT NULL, -- Pending/Paid/Failed
+    PaidAt DATETIME2(7) NULL,
+    RawPayload NVARCHAR(MAX) NULL,
+
+    CONSTRAINT FK_Payments_Order FOREIGN KEY (OrderId)
+        REFERENCES Orders(OrderId) ON DELETE CASCADE
+);
 
 /* =========================================================
    7) LIBRARIES (save/favorite)

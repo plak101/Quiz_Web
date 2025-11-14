@@ -57,6 +57,8 @@ public partial class User
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
     public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
 
     public virtual Role Role { get; set; } = null!;

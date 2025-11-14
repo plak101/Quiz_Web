@@ -7,7 +7,7 @@ public partial class Payment
 {
     public int PaymentId { get; set; }
 
-    public int PurchaseId { get; set; }
+    public int OrderId { get; set; }
 
     public string Provider { get; set; } = null!;
 
@@ -23,5 +23,5 @@ public partial class Payment
 
     public string? RawPayload { get; set; }
 
-    public virtual CoursePurchase Purchase { get; set; } = null!;
+    public virtual Order Order { get; set; } = null!;
 }

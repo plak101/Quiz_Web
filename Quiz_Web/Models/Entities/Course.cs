@@ -45,5 +45,7 @@ public partial class Course
 
     public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
 
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
     public virtual User Owner { get; set; } = null!;
 }

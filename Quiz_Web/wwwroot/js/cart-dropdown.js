@@ -81,13 +81,14 @@
         // Render cart items
         let html = '';
         items.forEach(item => {
-            const imageUrl = item.coverUrl && item.coverUrl !== '/images/default-course.jpg' ? item.coverUrl : 'https://via.placeholder.com/150x100/6c5ce7/ffffff?text=Course';
+            const imageUrl = item.coverUrl && item.coverUrl !== '/images/default-course.jpg' ? item.coverUrl : 'https://placehold.co/300x200/ffffff/000000?text=Course';
             const price = formatPrice(item.price);
             
             html += `
                 <div class="cart-item" data-course-id="${item.courseId}">
                     <img src="${imageUrl}" alt="${escapeHtml(item.title)}" class="cart-item-image" 
-                         onerror="this.src='https://via.placeholder.com/150x100/6c5ce7/ffffff?text=Course'">
+                         onerror="this.src='https://placehold.co/300x200/ffffff/000000?text=Course'">
+
                     <div class="cart-item-details">
                         <div class="cart-item-title">${escapeHtml(item.title)}</div>
                         <div class="cart-item-instructor">
