@@ -61,6 +61,10 @@ public partial class LearningPlatformContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<OrderItem> OrderItems { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Question> Questions { get; set; }
@@ -95,13 +99,13 @@ public partial class LearningPlatformContext : DbContext
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=localhost,1434;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
+//        => optionsBuilder.UseSqlServer("Server=DESKTOP-3Q3UNK4\\MSSQLSERVER01;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=solar;Password=@Abcd@1234;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AttemptAnswer>(entity =>
         {
-            entity.HasKey(e => e.AttemptAnswerId).HasName("PK__AttemptA__EC6FE54E0C627F92");
+            entity.HasKey(e => e.AttemptAnswerId).HasName("PK__AttemptA__EC6FE54E12C4C90E");
 
             entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
 
@@ -122,7 +126,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<AuditLog>(entity =>
         {
-            entity.HasKey(e => e.AuditId).HasName("PK__AuditLog__A17F239896D0E7A7");
+            entity.HasKey(e => e.AuditId).HasName("PK__AuditLog__A17F2398427591F1");
 
             entity.Property(e => e.Action).HasMaxLength(100);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -138,7 +142,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<CartItem>(entity =>
         {
-            entity.HasKey(e => e.CartItemId).HasName("PK__CartItem__488B0B0A397BC188");
+            entity.HasKey(e => e.CartItemId).HasName("PK__CartItem__488B0B0A3432F85C");
 
             entity.HasIndex(e => new { e.CartId, e.CourseId }, "UQ_CartItems_Cart_Course").IsUnique();
 
@@ -157,7 +161,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Certificate>(entity =>
         {
-            entity.HasKey(e => e.CertId).HasName("PK__Certific__E5BD38C5A50B0ED4");
+            entity.HasKey(e => e.CertId).HasName("PK__Certific__E5BD38C54777E926");
 
             entity.HasIndex(e => e.VerifyCode, "UQ_Certificates_Verify").IsUnique();
 
@@ -167,7 +171,6 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.Certificates)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Certificates_Course");
 
             entity.HasOne(d => d.User).WithMany(p => p.Certificates)
@@ -178,7 +181,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<ContentShare>(entity =>
         {
-            entity.HasKey(e => e.ShareId).HasName("PK__ContentS__D32A3FEE4B87286C");
+            entity.HasKey(e => e.ShareId).HasName("PK__ContentS__D32A3FEEB660997F");
 
             entity.Property(e => e.CanView).HasDefaultValue(true);
             entity.Property(e => e.ContentType)
@@ -197,7 +200,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<ContentTag>(entity =>
         {
-            entity.HasKey(e => e.ContentTagId).HasName("PK__ContentT__8FE574850032094C");
+            entity.HasKey(e => e.ContentTagId).HasName("PK__ContentT__8FE574855212AE62");
 
             entity.Property(e => e.ContentType)
                 .HasMaxLength(20)
@@ -211,7 +214,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Course>(entity =>
         {
-            entity.HasKey(e => e.CourseId).HasName("PK__Courses__C92D71A7F5E5E535");
+            entity.HasKey(e => e.CourseId).HasName("PK__Courses__C92D71A708E633CE");
 
             entity.HasIndex(e => e.Slug, "UQ_Courses_Slug").IsUnique();
 
@@ -234,9 +237,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<CourseCategory>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__CourseCa__19093A0B0EE2BBB4");
+            entity.HasKey(e => e.CategoryId).HasName("PK__CourseCa__19093A0B182C995A");
 
-            entity.HasIndex(e => e.Slug, "UQ__CourseCa__BC7B5FB6CAE61356").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__CourseCa__BC7B5FB6F93D6A58").IsUnique();
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.IconUrl).HasMaxLength(500);
@@ -246,19 +249,18 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<CourseChapter>(entity =>
         {
-            entity.HasKey(e => e.ChapterId).HasName("PK__CourseCh__0893A36A7EEB24AD");
+            entity.HasKey(e => e.ChapterId).HasName("PK__CourseCh__0893A36A1A132FA9");
 
             entity.Property(e => e.Title).HasMaxLength(200);
 
             entity.HasOne(d => d.Course).WithMany(p => p.CourseChapters)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Chapters_Course");
         });
 
         modelBuilder.Entity<CourseProgress>(entity =>
         {
-            entity.HasKey(e => e.ProgressId).HasName("PK__CoursePr__BAE29CA50D5320D3");
+            entity.HasKey(e => e.ProgressId).HasName("PK__CoursePr__BAE29CA5857FEE59");
 
             entity.ToTable("CourseProgress");
 
@@ -270,7 +272,6 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.CourseProgresses)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__CoursePro__Cours__3493CFA7");
 
             entity.HasOne(d => d.User).WithMany(p => p.CourseProgresses)
@@ -281,7 +282,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<CoursePurchase>(entity =>
         {
-            entity.HasKey(e => e.PurchaseId).HasName("PK__CoursePu__6B0A6BBED670D6FB");
+            entity.HasKey(e => e.PurchaseId).HasName("PK__CoursePu__6B0A6BBE3B207A0E");
 
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.PricePaid).HasColumnType("decimal(12, 2)");
@@ -297,13 +298,12 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.CoursePurchases)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_CPurchases_Course");
         });
 
         modelBuilder.Entity<CourseReview>(entity =>
         {
-            entity.HasKey(e => e.ReviewId).HasName("PK__CourseRe__74BC79CE5090472E");
+            entity.HasKey(e => e.ReviewId).HasName("PK__CourseRe__74BC79CE283AC994");
 
             entity.ToTable(tb => tb.HasTrigger("trg_UpdateCourseRating"));
 
@@ -316,7 +316,6 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.CourseReviews)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__CourseRev__Cours__1CBC4616");
 
             entity.HasOne(d => d.User).WithMany(p => p.CourseReviews)
@@ -327,7 +326,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<ErrorLog>(entity =>
         {
-            entity.HasKey(e => e.ErrorId).HasName("PK__ErrorLog__35856A2AB83BF2AD");
+            entity.HasKey(e => e.ErrorId).HasName("PK__ErrorLog__35856A2A985924C4");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Message).HasMaxLength(4000);
@@ -338,7 +337,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<File>(entity =>
         {
-            entity.HasKey(e => e.FileId).HasName("PK__Files__6F0F98BF7090B249");
+            entity.HasKey(e => e.FileId).HasName("PK__Files__6F0F98BFEE73AFB7");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(255);
@@ -353,7 +352,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Flashcard>(entity =>
         {
-            entity.HasKey(e => e.CardId).HasName("PK__Flashcar__55FECDAECF1FA82B");
+            entity.HasKey(e => e.CardId).HasName("PK__Flashcar__55FECDAE22B679D4");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Hint).HasMaxLength(500);
@@ -374,7 +373,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<FlashcardPracticeLog>(entity =>
         {
-            entity.HasKey(e => e.LogId).HasName("PK__Flashcar__5E5486484E850B5C");
+            entity.HasKey(e => e.LogId).HasName("PK__Flashcar__5E5486486B3F9ECA");
 
             entity.Property(e => e.EaseFactor).HasColumnType("decimal(4, 2)");
 
@@ -396,7 +395,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<FlashcardSet>(entity =>
         {
-            entity.HasKey(e => e.SetId).HasName("PK__Flashcar__7E08471D905B4D18");
+            entity.HasKey(e => e.SetId).HasName("PK__Flashcar__7E08471D6D606900");
 
             entity.Property(e => e.CoverUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -415,7 +414,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Folder>(entity =>
         {
-            entity.HasKey(e => e.FolderId).HasName("PK__Folders__ACD7107FA752D1F0");
+            entity.HasKey(e => e.FolderId).HasName("PK__Folders__ACD7107F7D93F1ED");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Name).HasMaxLength(200);
@@ -432,7 +431,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD0C33C6B12");
+            entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD022F804BF");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
@@ -443,13 +442,12 @@ public partial class LearningPlatformContext : DbContext
 
             entity.HasOne(d => d.Chapter).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.ChapterId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lessons_Chapter");
         });
 
         modelBuilder.Entity<LessonContent>(entity =>
         {
-            entity.HasKey(e => e.ContentId).HasName("PK__LessonCo__2907A81E67E66E8E");
+            entity.HasKey(e => e.ContentId).HasName("PK__LessonCo__2907A81E0574D749");
 
             entity.HasIndex(e => new { e.LessonId, e.OrderIndex }, "IX_LessonContents_Lesson_Order");
 
@@ -458,16 +456,16 @@ public partial class LearningPlatformContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.VideoUrl).HasMaxLength(500);
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.LessonContents)
                 .HasForeignKey(d => d.LessonId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_LessonContents_Lesson");
         });
 
         modelBuilder.Entity<Library>(entity =>
         {
-            entity.HasKey(e => e.LibraryId).HasName("PK__Librarie__A136475FDA3FF79B");
+            entity.HasKey(e => e.LibraryId).HasName("PK__Librarie__A136475F60AB60B8");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Name).HasMaxLength(200);
@@ -480,7 +478,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E120DA5A3E2");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E1246E72CAE");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
@@ -494,29 +492,63 @@ public partial class LearningPlatformContext : DbContext
                 .HasConstraintName("FK_Notifications_User");
         });
 
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.OrderId).HasName("PK__Orders__C3905BCF2D965192");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValue("VND");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(12, 2)");
+
+            entity.HasOne(d => d.Buyer).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.BuyerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Orders_User");
+        });
+
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.ItemId).HasName("PK__OrderIte__727E838BEDC4FB4C");
+
+            entity.Property(e => e.Price).HasColumnType("decimal(12, 2)");
+
+            entity.HasOne(d => d.Course).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrderItems_Course");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_OrderItems_Order");
+        });
+
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A385FB83FD4");
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A38D5990A46");
 
             entity.Property(e => e.Amount).HasColumnType("decimal(12, 2)");
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.Provider)
                 .HasMaxLength(40)
                 .IsUnicode(false);
-            entity.Property(e => e.ProviderRef).HasMaxLength(120);
+            entity.Property(e => e.ProviderRef).HasMaxLength(200);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.Purchase).WithMany(p => p.Payments)
-                .HasForeignKey(d => d.PurchaseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Payments_Purchase");
+            entity.HasOne(d => d.Order).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_Payments_Order");
         });
 
         modelBuilder.Entity<Question>(entity =>
         {
-            entity.HasKey(e => e.QuestionId).HasName("PK__Question__0DC06FACC089F6BE");
+            entity.HasKey(e => e.QuestionId).HasName("PK__Question__0DC06FACA15F1129");
 
             entity.Property(e => e.Points)
                 .HasDefaultValue(1m)
@@ -537,7 +569,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionClozeBlank>(entity =>
         {
-            entity.HasKey(e => e.BlankId).HasName("PK__Question__F2BD63E792260166");
+            entity.HasKey(e => e.BlankId).HasName("PK__Question__F2BD63E7D863FE86");
 
             entity.Property(e => e.AcceptRegex).HasMaxLength(400);
             entity.Property(e => e.CorrectText).HasMaxLength(400);
@@ -550,7 +582,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionOption>(entity =>
         {
-            entity.HasKey(e => e.OptionId).HasName("PK__Question__92C7A1FFD15289E7");
+            entity.HasKey(e => e.OptionId).HasName("PK__Question__92C7A1FFD74642E5");
 
             entity.HasOne(d => d.OptionMedia).WithMany(p => p.QuestionOptions)
                 .HasForeignKey(d => d.OptionMediaId)
@@ -564,7 +596,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<QuestionRangeAnswer>(entity =>
         {
-            entity.HasKey(e => e.RangeId).HasName("PK__Question__6899CA140FF58E7F");
+            entity.HasKey(e => e.RangeId).HasName("PK__Question__6899CA14EF73FB91");
 
             entity.Property(e => e.MaxValue).HasColumnType("decimal(12, 4)");
             entity.Property(e => e.MinValue).HasColumnType("decimal(12, 4)");
@@ -578,7 +610,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Reminder>(entity =>
         {
-            entity.HasKey(e => e.ReminderId).HasName("PK__Reminder__01A83087BAC46A54");
+            entity.HasKey(e => e.ReminderId).HasName("PK__Reminder__01A83087F85448BC");
 
             entity.Property(e => e.RelatedType)
                 .HasMaxLength(20)
@@ -595,16 +627,16 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A6642A4E0");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AFBE627BB");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6F7ED17F5").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6A098F8F5").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(50);
         });
 
         modelBuilder.Entity<SavedItem>(entity =>
         {
-            entity.HasKey(e => e.SavedItemId).HasName("PK__SavedIte__1CBC88C8D86B565E");
+            entity.HasKey(e => e.SavedItemId).HasName("PK__SavedIte__1CBC88C8EC7DF7EA");
 
             entity.Property(e => e.AddedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.ContentType)
@@ -624,7 +656,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<ShoppingCart>(entity =>
         {
-            entity.HasKey(e => e.CartId).HasName("PK__Shopping__51BCD7B78FE9E882");
+            entity.HasKey(e => e.CartId).HasName("PK__Shopping__51BCD7B7C43CC63D");
 
             entity.HasIndex(e => e.UserId, "UQ_ShoppingCarts_UserId").IsUnique();
 
@@ -638,11 +670,11 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.TagId).HasName("PK__Tags__657CF9AC657D5A31");
+            entity.HasKey(e => e.TagId).HasName("PK__Tags__657CF9ACE6461BCF");
 
-            entity.HasIndex(e => e.Name, "UQ__Tags__737584F635F164D6").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Tags__737584F658F22BCC").IsUnique();
 
-            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB62E156923").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Tags__BC7B5FB6571E0B70").IsUnique();
 
             entity.Property(e => e.Name).HasMaxLength(80);
             entity.Property(e => e.Slug).HasMaxLength(100);
@@ -650,7 +682,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<Test>(entity =>
         {
-            entity.HasKey(e => e.TestId).HasName("PK__Tests__8CC33160D5F865A0");
+            entity.HasKey(e => e.TestId).HasName("PK__Tests__8CC331602E3C05C8");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.GradingMode)
@@ -670,7 +702,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<TestAttempt>(entity =>
         {
-            entity.HasKey(e => e.AttemptId).HasName("PK__TestAtte__891A68E6FC752032");
+            entity.HasKey(e => e.AttemptId).HasName("PK__TestAtte__891A68E64392AB4D");
 
             entity.Property(e => e.MaxScore).HasColumnType("decimal(6, 2)");
             entity.Property(e => e.Score).HasColumnType("decimal(6, 2)");
@@ -692,9 +724,9 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C35D98B2E");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CE98FF591");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534827EE305").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D1053455164E7D").IsUnique();
 
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -718,7 +750,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<UserInterest>(entity =>
         {
-            entity.HasKey(e => e.UserInterestId).HasName("PK__UserInte__28E6EBFE0362D39C");
+            entity.HasKey(e => e.UserInterestId).HasName("PK__UserInte__28E6EBFEF254DB87");
 
             entity.HasIndex(e => new { e.UserId, e.CategoryId }, "UQ_UserInterests_User_Category").IsUnique();
 
@@ -737,7 +769,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__UserProf__1788CC4CE8EFABA6");
+            entity.HasKey(e => e.UserId).HasName("PK__UserProf__1788CC4C494B0A05");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.Bio).HasMaxLength(500);
@@ -755,7 +787,7 @@ public partial class LearningPlatformContext : DbContext
 
         modelBuilder.Entity<UserSetting>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__UserSett__1788CC4C8AC44352");
+            entity.HasKey(e => e.UserId).HasName("PK__UserSett__1788CC4C101AA23F");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.EmailOptIn).HasDefaultValue(true);

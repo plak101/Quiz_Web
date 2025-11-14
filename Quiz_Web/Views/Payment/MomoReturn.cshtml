@@ -1,11 +1,18 @@
-@{
-    ViewData["Title"] = "K?t qu? thanh to�n";
+﻿@{
+    ViewData["Title"] = "Kết quả thanh toán";
     var resultCode = ViewBag.ResultCode as string;
     var message = ViewBag.Message as string;
     var orderId = ViewBag.OrderId as string;
     var amount = ViewBag.Amount as string;
     var transId = ViewBag.TransId as string;
     var isSuccess = resultCode == "0";
+
+    // Parse amount safely for display
+    decimal amt = 0;
+    if (!string.IsNullOrEmpty(amount))
+    {
+        decimal.TryParse(amount, out amt);
+    }
 }
 
 <div class="payment-result-container">
@@ -19,9 +26,9 @@
                             <div class="success-animation mb-4">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 100px;"></i>
                             </div>
-                            <h2 class="text-success mb-3">Thanh to�n th�nh c�ng!</h2>
+                            <h2 class="text-success mb-3">Thanh toán thành công!</h2>
                             <p class="text-muted mb-4">
-                                C?m ?n b?n ?� mua h�ng. ??n h�ng c?a b?n ?� ???c x? l� th�nh c�ng.
+                                Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đã được xử lý thành công.
                             </p>
                         }
                         else
@@ -29,34 +36,34 @@
                             <div class="error-animation mb-4">
                                 <i class="bi bi-x-circle-fill text-danger" style="font-size: 100px;"></i>
                             </div>
-                            <h2 class="text-danger mb-3">Thanh to�n th?t b?i!</h2>
+                            <h2 class="text-danger mb-3">Thanh toán thất bại!</h2>
                             <p class="text-muted mb-4">
                                 @message
                             </p>
                         }
 
                         <div class="transaction-details bg-light p-4 rounded mb-4 text-start">
-                            <h5 class="mb-3">Th�ng tin giao d?ch</h5>
+                            <h5 class="mb-3">Thông tin giao dịch</h5>
                             <div class="row mb-2">
-                                <div class="col-6 text-muted">M� ??n h�ng:</div>
+                                <div class="col-6 text-muted">Mã đơn hàng:</div>
                                 <div class="col-6 text-end"><strong>@orderId</strong></div>
                             </div>
                             @if (!string.IsNullOrEmpty(transId))
                             {
                                 <div class="row mb-2">
-                                    <div class="col-6 text-muted">M� giao d?ch:</div>
+                                    <div class="col-6 text-muted">Mã giao dịch:</div>
                                     <div class="col-6 text-end"><strong>@transId</strong></div>
                                 </div>
                             }
                             @if (!string.IsNullOrEmpty(amount))
                             {
                                 <div class="row mb-2">
-                                    <div class="col-6 text-muted">S? ti?n:</div>
-                                    <div class="col-6 text-end"><strong>@(decimal.Parse(amount).ToString("N0")) ?</strong></div>
+                                    <div class="col-6 text-muted">Số tiền:</div>
+                                    <div class="col-6 text-end"><strong>@(amt > 0 ? amt.ToString("N0") + " ₫" : amount)</strong></div>
                                 </div>
                             }
                             <div class="row">
-                                <div class="col-6 text-muted">Th?i gian:</div>
+                                <div class="col-6 text-muted">Thời gian:</div>
                                 <div class="col-6 text-end"><strong>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</strong></div>
                             </div>
                         </div>
@@ -64,20 +71,20 @@
                         <div class="d-grid gap-2">
                             @if (isSuccess)
                             {
-                                <a href="/my-courses" class="btn btn-success btn-lg">
-                                    <i class="bi bi-book me-2"></i>Xem kh�a h?c c?a t�i
+                                <a href="=@Url.Action("Index","Library")" class="btn btn-success btn-lg">
+                                    <i class="bi bi-book me-2"></i>Xem khóa học của tôi
                                 </a>
                                 <a href="/courses" class="btn btn-outline-primary">
-                                    <i class="bi bi-arrow-left me-2"></i>Ti?p t?c mua s?m
+                                    <i class="bi bi-arrow-left me-2"></i>Tiếp tục mua sắm
                                 </a>
                             }
                             else
                             {
                                 <a href="/checkout" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>Th? l?i
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Thử lại
                                 </a>
                                 <a href="/courses" class="btn btn-outline-secondary">
-                                    <i class="bi bi-house me-2"></i>V? trang ch?
+                                    <i class="bi bi-house me-2"></i>Về trang chủ
                                 </a>
                             }
                         </div>
