@@ -161,5 +161,49 @@ namespace Quiz_Web.Services
                 return false;
             }
         }
-    }
+		public async Task<MoMoQueryResponse> QueryTransactionAsync(string orderId)
+		{
+			var requestId = Guid.NewGuid().ToString();
+
+			var rawSignature =
+				"accessKey=" + _settings.AccessKey +
+				"&orderId=" + orderId +
+				"&partnerCode=" + _settings.PartnerCode +
+				"&requestId=" + requestId;
+
+			var signature = GenerateSignature(rawSignature);
+
+			var body = new
+			{
+				partnerCode = _settings.PartnerCode,
+				requestId = requestId,
+				orderId = orderId,
+				signature = signature,
+				lang = "vi"
+			};
+
+			var json = JsonSerializer.Serialize(body);
+			var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+			var response = await _httpClient.PostAsync("https://test-payment.momo.vn/v2/gateway/api/query", content);
+
+			var result = await response.Content.ReadAsStringAsync();
+			return JsonSerializer.Deserialize<MoMoQueryResponse>(result);
+		}
+
+	}
+}
+public class MoMoQueryResponse
+{
+	public string partnerCode { get; set; }
+	public string orderId { get; set; }
+	public string requestId { get; set; }
+	public long amount { get; set; }
+	public long responseTime { get; set; }
+	public string message { get; set; }
+	public int resultCode { get; set; }
+	public long transId { get; set; }
+	public string payType { get; set; }
+	public string extraData { get; set; }
+	public string signature { get; set; }
 }
