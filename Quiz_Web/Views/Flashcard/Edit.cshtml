@@ -19,7 +19,7 @@
 <section class="py-5">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 mx-auto">
+            <div class="col-lg-10 mx-auto">
                 <!-- Alert Messages -->
                 @if (TempData["Error"] != null)
                 {
@@ -30,7 +30,7 @@
                 }
 
                 <!-- Flashcard Form Card -->
-                <div class="card shadow-sm">
+                <div class="card shadow-sm mb-4">
                     <div class="card-header bg-info text-white">
                         <h4 class="mb-0">
                             <i class="fa-solid fa-layer-group me-2"></i>Thông tin bộ Flashcard
@@ -42,6 +42,7 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="SetId" />
                             <input type="hidden" asp-for="CoverUrl" />
+                            <input type="hidden" id="FlashcardsJson" name="FlashcardsJson" />
                             
                             <!-- Title -->
                             <div class="mb-4">
@@ -133,6 +134,28 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Flashcards List Card -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa-solid fa-layer-group me-2"></i>Danh sách thẻ học
+                        </h4>
+                        <button type="button" class="btn btn-light btn-sm" onclick="addNewFlashcard()">
+                            <i class="fa-solid fa-plus me-1"></i>Thêm thẻ mới
+                        </button>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="flashcardsList">
+                            <!-- Flashcards will be loaded here -->
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -140,11 +163,260 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/flashcard-form.css" asp-append-version="true" />
+    <style>
+        .flashcard-item {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .flashcard-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #0d6efd;
+        }
+        
+        .flashcard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .flashcard-number {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        .drag-handle {
+            cursor: move;
+            color: #6c757d;
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .no-flashcards {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .no-flashcards i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
 }
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script>
+        let flashcards = [];
+        let flashcardCounter = 0;
+
+        // Load existing flashcards
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadExistingFlashcards();
+            initializeSortable();
+        });
+
+        // Load flashcards from API
+        async function loadExistingFlashcards() {
+            const setId = @Model.SetId;
+            
+            try {
+                const response = await fetch(`/api/flashcards/${setId}`);
+                const data = await response.json();
+                
+                if (data.success && data.flashcards && data.flashcards.length > 0) {
+                    flashcards = data.flashcards;
+                    flashcardCounter = flashcards.length;
+                    renderFlashcards();
+                } else {
+                    showNoFlashcardsMessage();
+                }
+            } catch (error) {
+                console.error('Error loading flashcards:', error);
+                showNoFlashcardsMessage();
+            }
+        }
+
+        // Render all flashcards
+        function renderFlashcards() {
+            const container = document.getElementById('flashcardsList');
+            
+            if (flashcards.length === 0) {
+                showNoFlashcardsMessage();
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            flashcards.forEach((card, index) => {
+                const cardHtml = createFlashcardHtml(card, index);
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // Create HTML for a flashcard
+        function createFlashcardHtml(card, index) {
+            return `
+                <div class="flashcard-item" data-index="${index}">
+                    <div class="flashcard-header">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-grip-vertical drag-handle"></i>
+                            <span class="flashcard-number">Thẻ ${index + 1}</span>
+                        </div>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeFlashcard(${index})">
+                            <i class="fa-solid fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Mặt trước <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="3" 
+                                      placeholder="Nhập nội dung mặt trước" 
+                                      onchange="updateFlashcard(${index}, 'frontText', this.value)"
+                                      required>${card.frontText || ''}</textarea>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Mặt sau <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="3" 
+                                      placeholder="Nhập nội dung mặt sau" 
+                                      onchange="updateFlashcard(${index}, 'backText', this.value)"
+                                      required>${card.backText || ''}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Gợi ý (tùy chọn)</label>
+                        <input type="text" class="form-control" 
+                               placeholder="Nhập gợi ý cho thẻ này" 
+                               value="${card.hint || ''}"
+                               onchange="updateFlashcard(${index}, 'hint', this.value)">
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show message when no flashcards
+        function showNoFlashcardsMessage() {
+            const container = document.getElementById('flashcardsList');
+            container.innerHTML = `
+                <div class="no-flashcards">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <h5>Chưa có thẻ học nào</h5>
+                    <p class="text-muted">Nhấn nút "Thêm thẻ mới" để bắt đầu tạo flashcard</p>
+                </div>
+            `;
+        }
+
+        // Add new flashcard
+        function addNewFlashcard() {
+            const newCard = {
+                frontText: '',
+                backText: '',
+                hint: '',
+                orderIndex: flashcards.length
+            };
+            
+            flashcards.push(newCard);
+            renderFlashcards();
+            
+            // Scroll to the new card
+            setTimeout(() => {
+                const newCardElement = document.querySelector(`.flashcard-item[data-index="${flashcards.length - 1}"]`);
+                if (newCardElement) {
+                    newCardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+
+        // Update flashcard data
+        function updateFlashcard(index, field, value) {
+            if (flashcards[index]) {
+                flashcards[index][field] = value;
+            }
+        }
+
+        // Remove flashcard
+        function removeFlashcard(index) {
+            if (confirm('Bạn có chắc muốn xóa thẻ này?')) {
+                flashcards.splice(index, 1);
+                // Update orderIndex
+                flashcards.forEach((card, idx) => {
+                    card.orderIndex = idx;
+                });
+                renderFlashcards();
+            }
+        }
+
+        // Initialize Sortable for drag and drop
+        function initializeSortable() {
+            const container = document.getElementById('flashcardsList');
+            
+            new Sortable(container, {
+                animation: 150,
+                handle: '.drag-handle',
+                onEnd: function() {
+                    // Update flashcards array based on new order
+                    const items = container.querySelectorAll('.flashcard-item');
+                    const newFlashcards = [];
+                    
+                    items.forEach((item, index) => {
+                        const oldIndex = parseInt(item.dataset.index);
+                        const card = flashcards[oldIndex];
+                        card.orderIndex = index;
+                        newFlashcards.push(card);
+                    });
+                    
+                    flashcards = newFlashcards;
+                    renderFlashcards();
+                }
+            });
+        }
+
+        // Form submission
+        document.getElementById('flashcardForm')?.addEventListener('submit', function(e) {
+            // Validate
+            const title = document.querySelector('input[name="Title"]')?.value.trim();
+            if (!title) {
+                e.preventDefault();
+                alert('Vui lòng nhập tiêu đề bộ flashcard!');
+                return;
+            }
+
+            // Check if all flashcards have required fields
+            let hasError = false;
+            flashcards.forEach((card, index) => {
+                if (!card.frontText || !card.frontText.trim()) {
+                    hasError = true;
+                    alert(`Thẻ ${index + 1}: Vui lòng nhập nội dung mặt trước!`);
+                }
+                if (!card.backText || !card.backText.trim()) {
+                    hasError = true;
+                    alert(`Thẻ ${index + 1}: Vui lòng nhập nội dung mặt sau!`);
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault();
+                return;
+            }
+
+            // Set flashcards JSON data
+            document.getElementById('FlashcardsJson').value = JSON.stringify(flashcards);
+        });
+
         // Image preview
         document.getElementById('coverFile')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -157,15 +429,6 @@
                 reader.readAsDataURL(file);
             } else {
                 document.getElementById('imagePreview').style.display = 'none';
-            }
-        });
-
-        // Form validation
-        document.getElementById('flashcardForm')?.addEventListener('submit', function(e) {
-            const title = document.querySelector('input[name="Title"]')?.value.trim();
-            if (!title) {
-                e.preventDefault();
-                alert('Vui lòng nhập tiêu đề bộ flashcard!');
             }
         });
     </script>

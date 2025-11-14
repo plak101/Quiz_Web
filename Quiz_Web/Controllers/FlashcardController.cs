@@ -238,7 +238,7 @@ namespace Quiz_Web.Controllers
         [Authorize]
         [HttpPost("edit/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, EditFlashcardSetViewModel model, IFormFile? coverFile)
+        public async Task<IActionResult> Edit(int id, EditFlashcardSetViewModel model, IFormFile? coverFile, string? flashcardsJson)
         {
             if (id != model.SetId) return BadRequest();
 
@@ -279,6 +279,47 @@ namespace Quiz_Web.Controllers
             {
                 TempData["Error"] = "Không thể cập nhật bộ flashcard.";
                 return View("Edit", model);
+            }
+
+            // ✅ CẬP NHẬT FLASHCARDS NẾU CÓ THAY ĐỔI
+            if (!string.IsNullOrWhiteSpace(flashcardsJson))
+            {
+                try
+                {
+                    var flashcardsData = JsonSerializer.Deserialize<List<FlashcardDataViewModel>>(
+                        flashcardsJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (flashcardsData != null)
+                    {
+                        // Xóa tất cả flashcards cũ của set này
+                        _flashcardService.DeleteAllFlashcardsInSet(id, userId);
+
+                        // Thêm lại flashcards mới
+                        foreach (var flashcardData in flashcardsData)
+                        {
+                            var flashcardModel = new CreateFlashcardViewModel
+                            {
+                                SetId = id,
+                                FrontText = flashcardData.FrontText,
+                                BackText = flashcardData.BackText,
+                                Hint = flashcardData.Hint,
+                                OrderIndex = flashcardData.OrderIndex
+                            };
+
+                            _flashcardService.CreateFlashcard(flashcardModel, userId);
+                        }
+
+                        _logger.LogInformation($"Updated {flashcardsData.Count} flashcards for set {id}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating flashcards");
+                    TempData["Error"] = "Cập nhật bộ flashcard thành công nhưng có lỗi khi cập nhật các thẻ.";
+                    return RedirectToAction("Detail", new { id = updated.SetId });
+                }
             }
 
             TempData["Success"] = "Cập nhật bộ flashcard thành công!";

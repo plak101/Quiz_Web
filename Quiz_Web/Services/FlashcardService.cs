@@ -356,6 +356,36 @@ namespace Quiz_Web.Services
                 return false;
             }
         }
+
+        public bool DeleteAllFlashcardsInSet(int setId, int ownerId)
+        {
+            try
+            {
+                // Verify ownership of the set
+                var set = _context.FlashcardSets
+                    .FirstOrDefault(fs => fs.SetId == setId && fs.OwnerId == ownerId && !fs.IsDeleted);
+                
+                if (set == null) return false;
+
+                // Get all flashcards in this set
+                var flashcards = _context.Flashcards
+                    .Where(f => f.SetId == setId)
+                    .ToList();
+
+                // Remove all flashcards
+                _context.Flashcards.RemoveRange(flashcards);
+                _context.SaveChanges();
+
+                _logger.LogInformation($"Deleted {flashcards.Count} flashcards from set {setId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting all flashcards in set {SetId}", setId);
+                return false;
+            }
+        }
+
         public async Task<IEnumerable<FlashcardSet>> GetPublicFlashcardSetsAsync()
         {
             try
