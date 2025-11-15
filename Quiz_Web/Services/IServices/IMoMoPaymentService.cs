@@ -8,5 +8,7 @@ namespace Quiz_Web.Services.IServices
         bool ValidateSignature(MoMoIpnRequest ipnRequest);
         string GenerateSignature(string rawData);
         Task<bool> ProcessPaymentCallbackAsync(MoMoIpnRequest ipnRequest);
-    }
+        public Task<MoMoQueryResponse> QueryTransactionAsync(string orderId);
+
+	}
 }

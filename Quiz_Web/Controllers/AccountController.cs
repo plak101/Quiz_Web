@@ -78,8 +78,16 @@ namespace Quiz_Web.Controllers
 						return Json(new { status = WebConstants.SUCCESS, redirectUrl = "/Onboarding" });
 					}
 
-					var redirect = (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) ? returnUrl : "/";
-					return Json(new { status = WebConstants.SUCCESS, redirectUrl = redirect });
+					if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+					{
+						return Json(new { status = WebConstants.SUCCESS, redirectUrl = returnUrl });
+					}
+
+					// Nếu không có returnUrl → điều hướng theo role
+					var role = user.Role?.Name?.ToLower() ?? "";
+
+					string redirectUrl = role == "admin" ? "/admin" : "/";
+					return Json(new { status = WebConstants.SUCCESS, redirectUrl = redirectUrl });
 				}
 				else
 				{
