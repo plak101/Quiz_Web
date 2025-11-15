@@ -33,18 +33,18 @@ namespace Quiz_Web.Controllers.API
 
                 if (test == null)
                 {
-                    return NotFound(new { success = false, message = "Kh�ng t�m th?y b�i ki?m tra" });
+                    return NotFound(new { success = false, message = "Không tìm thấy bài kiểm tra" });
                 }
 
                 // Check if test is open (if OpenAt and CloseAt are set)
                 if (test.OpenAt.HasValue && DateTime.UtcNow < test.OpenAt.Value)
                 {
-                    return BadRequest(new { success = false, message = "B�i ki?m tra ch?a m?" });
+                    return BadRequest(new { success = false, message = "Bài kiểm tra chưa mở" });
                 }
 
                 if (test.CloseAt.HasValue && DateTime.UtcNow > test.CloseAt.Value)
                 {
-                    return BadRequest(new { success = false, message = "B�i ki?m tra ?� ?�ng" });
+                    return BadRequest(new { success = false, message = "Bài kiểm tra đã đóng" });
                 }
 
                 // Check max attempts
@@ -54,7 +54,7 @@ namespace Quiz_Web.Controllers.API
 
                 if (test.MaxAttempts.HasValue && attemptCount >= test.MaxAttempts.Value)
                 {
-                    return BadRequest(new { success = false, message = "B?n ?� h?t l??t l�m b�i" });
+                    return BadRequest(new { success = false, message = "Bạn đã hết lượt làm bài" });
                 }
 
                 var response = new
@@ -90,7 +90,7 @@ namespace Quiz_Web.Controllers.API
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading test {TestId}", testId);
-                return StatusCode(500, new { success = false, message = "C� l?i x?y ra khi t?i b�i ki?m tra" });
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi tải bài kiểm tra" });
             }
         }
 
@@ -109,7 +109,7 @@ namespace Quiz_Web.Controllers.API
 
                 if (test == null)
                 {
-                    return NotFound(new { success = false, message = "Kh�ng t�m th?y b�i ki?m tra" });
+                    return NotFound(new { success = false, message = "Không tìm thấy bài kiểm tra" });
                 }
 
                 // Create test attempt
@@ -121,7 +121,8 @@ namespace Quiz_Web.Controllers.API
                     SubmittedAt = DateTime.UtcNow,
                     Status = "Graded",
                     TimeSpentSec = request.TimeSpentSec,
-                    MaxScore = test.MaxScore ?? test.Questions.Sum(q => q.Points)
+                    // ✅ FIX: Luôn tính MaxScore từ tổng điểm Questions, không dùng test.MaxScore
+                    MaxScore = test.Questions.Sum(q => q.Points)
                 };
 
                 _context.TestAttempts.Add(attempt);
@@ -140,7 +141,7 @@ namespace Quiz_Web.Controllers.API
                     bool isCorrect = false;
                     decimal questionScore = 0;
 
-                    // ? NORMALIZE QUESTION TYPE
+                    // Normalize question type
                     string questionType = NormalizeQuestionType(question.Type);
 
                     _logger.LogInformation("Grading QuestionId={0}, Type={1}, NormalizedType={2}", 
@@ -158,7 +159,7 @@ namespace Quiz_Web.Controllers.API
                             {
                                 isCorrect = true;
                                 questionScore = question.Points;
-                                correctAnswersCount++; // ? ??m c�u ?�ng
+                                correctAnswersCount++;
                             }
                         }
                     }
@@ -181,7 +182,7 @@ namespace Quiz_Web.Controllers.API
                         {
                             isCorrect = true;
                             questionScore = question.Points;
-                            correctAnswersCount++; // ? ??m c�u ?�ng
+                            correctAnswersCount++;
                         }
                     }
 
@@ -219,16 +220,16 @@ namespace Quiz_Web.Controllers.API
                     attemptId = attempt.AttemptId,
                     score = totalScore,
                     maxScore = attempt.MaxScore,
-                    correctAnswers = correctAnswersCount, // ? S? c�u ?�ng
-                    totalQuestions = totalQuestions, // ? T?ng s? c�u
+                    correctAnswers = correctAnswersCount,
+                    totalQuestions = totalQuestions,
                     percentage = Math.Round(percentage, 1),
-                    message = percentage >= 60 ? "Ch�c m?ng! B?n ?� ??t!" : "B?n ch?a ??t. H�y c? g?ng l?n sau!"
+                    message = percentage >= 60 ? "Chúc mừng! Bạn đã đạt!" : "Bạn chưa đạt. Hãy cố gắng lần sau!"
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error submitting test");
-                return StatusCode(500, new { success = false, message = "C� l?i x?y ra khi n?p b�i" });
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra khi nộp bài" });
             }
         }
 
@@ -245,11 +246,11 @@ namespace Quiz_Web.Controllers.API
 
             return lowerType switch
             {
-                "mcq_single" or "multiple_choice" or "single_choice" or "tr?c nghi?m (1 ?�p �n)" => "MCQ_Single",
-                "mcq_multi" or "multiple_answer" or "multi_choice" or "tr?c nghi?m (nhi?u ?�p �n)" => "MCQ_Multi",
-                "truefalse" or "true_false" or "?�ng/sai" or "?�ng sai" => "TrueFalse",
-                "shorttext" or "short_text" or "short_answer" or "c�u h?i ng?n" => "ShortText",
-                "cloze" or "fill_in_blank" or "?i?n khuy?t" => "Cloze",
+                "mcq_single" or "multiple_choice" or "single_choice" or "trắc nghiệm (1 đáp án)" => "MCQ_Single",
+                "mcq_multi" or "multiple_answer" or "multi_choice" or "trắc nghiệm (nhiều đáp án)" => "MCQ_Multi",
+                "truefalse" or "true_false" or "đúng/sai" or "đúng sai" => "TrueFalse",
+                "shorttext" or "short_text" or "short_answer" or "câu hỏi ngắn" => "ShortText",
+                "cloze" or "fill_in_blank" or "điền khuyết" => "Cloze",
                 "range" or "number_range" => "Range",
                 _ => type // Return original if no match
             };
