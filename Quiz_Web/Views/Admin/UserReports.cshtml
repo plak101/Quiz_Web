@@ -7,10 +7,10 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Báo cáo người dùng</h2>
     <div class="btn-group">
-        <button type="button" class="btn btn-success" onclick="exportToCSV()">
+        <button type="button" class="btn btn-success" onclick="doExportCSV()">
             <i class="bi bi-file-earmark-spreadsheet"></i> Xuất CSV
         </button>
-        <button type="button" class="btn btn-primary" onclick="exportToExcel()">
+        <button type="button" class="btn btn-primary" onclick="doExportExcel()">
             <i class="bi bi-file-earmark-excel"></i> Xuất Excel
         </button>
     </div>
@@ -91,7 +91,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="~/js/admin/export-reports.js"></script>
     <script>
-        function exportToCSV() { window.exportToCSV('Báo cáo người dùng'); }
-        function exportToExcel() { window.exportToExcel('Báo cáo người dùng'); }
+        // ✅ FIX: Đổi tên function để tránh đệ quy vô hạn
+        function doExportCSV() { 
+            exportToCSV('Báo cáo người dùng'); 
+        }
+        function doExportExcel() { 
+            exportToExcel('Báo cáo người dùng'); 
+        }
     </script>
 }

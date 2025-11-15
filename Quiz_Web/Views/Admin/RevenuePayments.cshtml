@@ -23,7 +23,8 @@
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h4>@Model.TotalRevenue.ToString("C0")</h4>
-                    <p class="mb-0">Tổng doanh thu</p>
+                    <p class="mb-0">Doanh thu Admin (40%)</p>
+                    <small class="text-white-50">Phí nền tảng - Instructor nhận 60%</small>
                 </div>
             </div>
         </div>
@@ -42,7 +43,8 @@
         <div class="col-md-8">
             <div class="card bg-light">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Doanh thu theo tháng</h5>
+                    <h5 class="mb-0">Doanh thu Admin theo tháng (40%)</h5>
+                    <small class="text-white-50">Phí nền tảng - Instructor nhận 60%</small>
                 </div>
                 <div class="card-body">
                     <canvas id="monthlyRevenueChart" height="300"></canvas>
@@ -52,7 +54,7 @@
         <div class="col-md-4">
             <div class="card bg-light">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Doanh thu theo phương thức thanh toán</h5>
+                    <h5 class="mb-0">Doanh thu Admin theo phương thức (40%)</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="paymentMethodChart" height="300"></canvas>
@@ -66,7 +68,8 @@
         <div class="col-12">
             <div class="card bg-light">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">Top 10 khóa học bán chạy</h5>
+                    <h5 class="mb-0">Top 10 khóa học - Doanh thu Admin (40%)</h5>
+                    <small class="text-muted">60% còn lại được chia cho instructor</small>
                 </div>
                 <div class="card-body">
                     <canvas id="topSellingChart" height="400"></canvas>
@@ -86,7 +89,7 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.MonthlyRevenue.Select(x => x.Label))),
                 datasets: [{
-                    label: 'Doanh thu',
+                    label: 'Doanh thu Admin (40%)',
                     data: @Html.Raw(Json.Serialize(Model.MonthlyRevenue.Select(x => x.Value))),
                     borderColor: '#28a745',
                     backgroundColor: 'rgba(40, 167, 69, 0.3)',
@@ -106,6 +109,18 @@
                                     style: 'currency',
                                     currency: 'VND'
                                 }).format(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Doanh thu Admin (40%): ' + new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }).format(context.parsed.y);
                             }
                         }
                     }
@@ -131,7 +146,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.label + ': ' + new Intl.NumberFormat('vi-VN', {
+                                return context.label + ' (Admin 40%): ' + new Intl.NumberFormat('vi-VN', {
                                     style: 'currency',
                                     currency: 'VND'
                                 }).format(context.raw);
@@ -149,7 +164,7 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.TopSellingCourses.Select(x => x.Label))),
                 datasets: [{
-                    label: 'Doanh thu',
+                    label: 'Doanh thu Admin (40%)',
                     data: @Html.Raw(Json.Serialize(Model.TopSellingCourses.Select(x => x.Value))),
                     backgroundColor: 'rgba(255, 159, 64, 0.8)'
                 }]
@@ -175,7 +190,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN', {
+                                return 'Doanh thu Admin (40%): ' + new Intl.NumberFormat('vi-VN', {
                                     style: 'currency',
                                     currency: 'VND'
                                 }).format(context.raw);

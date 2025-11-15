@@ -53,12 +53,6 @@ namespace Quiz_Web.Controllers
 			return View(data);
 		}
 
-		public IActionResult SystemActivity()
-		{
-			var data = _dashboardService.GetSystemActivity();
-			return View(data);
-		}
-
 		// DASHBOARD API ENDPOINTS
 		[HttpGet]
 		public JsonResult GetOverviewData()
@@ -92,13 +86,6 @@ namespace Quiz_Web.Controllers
 		public JsonResult GetLearningResultsData()
 		{
 			var data = _dashboardService.GetLearningResults();
-			return Json(data);
-		}
-
-		[HttpGet]
-		public JsonResult GetSystemActivityData()
-		{
-			var data = _dashboardService.GetSystemActivity();
 			return Json(data);
 		}
 
@@ -811,25 +798,115 @@ namespace Quiz_Web.Controllers
 
 		public async Task<IActionResult> TestReports()
 		{
+			// ✅ Xử lý null-safe và đảm bảo luôn trả về dữ liệu hợp lệ
+			var totalTests = await _context.Tests.CountAsync();
+			var totalAttempts = await _context.TestAttempts.CountAsync();
+
+			var recentAttempts = await _context.TestAttempts
+				.Include(a => a.User)
+				.Include(a => a.Test)
+				.OrderByDescending(a => a.StartedAt)
+				.Take(15)
+				.Select(a => new
+				{
+					FullName = a.User.FullName ?? "Unknown",
+					Title = a.Test.Title ?? "Unknown Test",
+					Score = a.Score,
+					MaxScore = a.MaxScore,
+					StartedAt = a.StartedAt
+				})
+				.ToListAsync();
+
+			var topScores = await _context.TestAttempts
+				.Include(a => a.User)
+				.Include(a => a.Test)
+				.Where(a => a.Score.HasValue && a.MaxScore.HasValue && a.MaxScore > 0)
+				.OrderByDescending(a => (decimal)a.Score!.Value / a.MaxScore!.Value)
+				.Take(15)
+				.Select(a => new
+				{
+					FullName = a.User.FullName ?? "Unknown",
+					Title = a.Test.Title ?? "Unknown Test",
+					Score = a.Score!.Value,
+					MaxScore = a.MaxScore!.Value,
+					Percentage = (decimal)a.Score!.Value / a.MaxScore!.Value * 100
+				})
+				.ToListAsync();
+
 			var data = new
 			{
-				TotalTests = await _context.Tests.CountAsync(),
-				TotalAttempts = await _context.TestAttempts.CountAsync(),
-				RecentAttempts = await _context.TestAttempts.Include(a => a.User).Include(a => a.Test).OrderByDescending(a => a.StartedAt).Take(15).Select(a => new { a.User.FullName, a.Test.Title, a.Score, a.MaxScore, a.StartedAt }).ToListAsync(),
-				TopScores = await _context.TestAttempts.Include(a => a.User).Include(a => a.Test).Where(a => a.Score.HasValue && a.MaxScore.HasValue && a.MaxScore > 0).OrderByDescending(a => (decimal)a.Score / a.MaxScore).Take(15).Select(a => new { a.User.FullName, a.Test.Title, a.Score, a.MaxScore, Percentage = (decimal)a.Score / a.MaxScore * 100 }).ToListAsync()
+				TotalTests = totalTests,
+				TotalAttempts = totalAttempts,
+				RecentAttempts = recentAttempts,
+				TopScores = topScores
 			};
+
 			return View(data);
 		}
 
 		public async Task<IActionResult> RevenueReports()
 		{
+			// ✅ DEBUG: In ra log để kiểm tra dữ liệu
+			var allPurchases = await _context.CoursePurchases.ToListAsync();
+			var paidPurchases = await _context.CoursePurchases.Where(p => p.Status == "Paid").ToListAsync();
+			
+			Console.WriteLine($"=== REVENUE REPORTS DEBUG ===");
+			Console.WriteLine($"Total CoursePurchases: {allPurchases.Count}");
+			Console.WriteLine($"Paid CoursePurchases: {paidPurchases.Count}");
+			Console.WriteLine($"Statuses: {string.Join(", ", allPurchases.Select(p => p.Status).Distinct())}");
+
+			// ✅ Tính tổng doanh thu từ CoursePurchases (100%)
+			var totalGrossRevenue = await _context.CoursePurchases
+				.Where(p => p.Status == "Paid")
+				.SumAsync(p => (decimal?)p.PricePaid) ?? 0;
+
+			var monthlyGrossRevenue = await _context.CoursePurchases
+				.Where(p => p.Status == "Paid" && p.PurchasedAt >= DateTime.UtcNow.AddDays(-30))
+				.SumAsync(p => (decimal?)p.PricePaid) ?? 0;
+
+			Console.WriteLine($"Total Gross Revenue: {totalGrossRevenue}");
+			Console.WriteLine($"Monthly Gross Revenue: {monthlyGrossRevenue}");
+
+			// ✅ Tính 40% cho admin
+			var totalRevenue = totalGrossRevenue * 0.40m;
+			var monthlyRevenue = monthlyGrossRevenue * 0.40m;
+
+			// ✅ Lấy giao dịch gần đây với null-safe
+			var recentPurchases = await _context.CoursePurchases
+				.Include(p => p.Buyer)
+				.Include(p => p.Course)
+				.Where(p => p.Status == "Paid")
+				.OrderByDescending(p => p.PurchasedAt)
+				.Take(15)
+				.Select(p => new { 
+					FullName = p.Buyer != null ? p.Buyer.FullName : "Unknown",
+					Title = p.Course != null ? p.Course.Title : "Unknown Course",
+					PricePaid = p.PricePaid,
+					PurchasedAt = p.PurchasedAt
+				})
+				.ToListAsync();
+
+			Console.WriteLine($"Recent Purchases Count: {recentPurchases.Count}");
+
+			// ✅ TopPayments từ Payments table
+			var topPayments = await _context.Payments
+				.Where(p => p.Status == "Paid")
+				.OrderByDescending(p => p.Amount)
+				.Take(10)
+				.Select(p => new { p.Amount, p.PaidAt })
+				.ToListAsync();
+
+			Console.WriteLine($"Top Payments Count: {topPayments.Count}");
+			Console.WriteLine($"=== END DEBUG ===");
+
 			var data = new
 			{
-				TotalRevenue = await _context.CoursePurchases.Where(p => p.Status == "Paid").SumAsync(p => p.PricePaid),
-				MonthlyRevenue = await _context.CoursePurchases.Where(p => p.Status == "Paid" && p.PurchasedAt >= DateTime.UtcNow.AddDays(-30)).SumAsync(p => p.PricePaid),
-				RecentPurchases = await _context.CoursePurchases.Include(p => p.Buyer).Include(p => p.Course).Where(p => p.Status == "Paid").OrderByDescending(p => p.PurchasedAt).Take(15).Select(p => new { p.Buyer.FullName, p.Course.Title, p.PricePaid, p.PurchasedAt }).ToListAsync(),
-				TopPayments = await _context.Payments.Where(p => p.Status == "completed").OrderByDescending(p => p.Amount).Take(10).Select(p => new { p.Amount, p.PaidAt }).ToListAsync()
+				TotalRevenue = totalRevenue, // 40% cho admin
+				MonthlyRevenue = monthlyRevenue, // 40% cho admin
+				RecentPurchases = recentPurchases,
+				TopPayments = topPayments
 			};
+
 			return View(data);
 		}
 

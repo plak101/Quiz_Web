@@ -63,8 +63,13 @@ namespace Quiz_Web.Controllers
 					var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 					await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-					// Check if user needs onboarding (first-time login)
-					// Check both UserProfile and UserInterests
+					// Admin goes directly to admin dashboard
+					if (user.RoleId == 1) // Admin role
+					{
+						return Json(new { status = WebConstants.SUCCESS, redirectUrl = "/admin" });
+					}
+
+					// Check if user needs onboarding (first-time login) for non-admin users
 					var hasProfile = _userService.HasUserProfile(user.UserId);
 					var hasInterests = _userService.HasUserInterests(user.UserId);
 					

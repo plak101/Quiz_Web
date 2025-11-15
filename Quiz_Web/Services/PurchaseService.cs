@@ -123,13 +123,18 @@ namespace Quiz_Web.Services
 
 			if (!exists)
 			{
+				// ✅ LẤY GIÁ KHÓA HỌC THỰC TẾ thay vì hardcode = 0
+				var course = await _context.Courses.FindAsync(courseId);
+				var price = course?.Price ?? 0;
+
 				_context.CoursePurchases.Add(new CoursePurchase
 				{
 					BuyerId = userId,
 					CourseId = courseId,
-					PricePaid = 0,
+					PricePaid = price, // ✅ Lưu giá thực của khóa học
 					Currency = "VND",
-					Status = "Paid"
+					Status = "Paid",
+					PurchasedAt = DateTime.UtcNow // ✅ Thêm thời gian mua
 				});
 
 				await _context.SaveChangesAsync();
