@@ -64,7 +64,8 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h4>@Model.TotalRevenue.ToString("C0")</h4>
-                            <p class="mb-0">Tổng doanh thu</p>
+                            <p class="mb-0">Doanh thu Admin (40%)</p>
+                            <small class="text-white-50">Phí nền tảng</small>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-dollar-sign fa-2x"></i>
@@ -90,7 +91,8 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5>Doanh thu theo tháng</h5>
+                    <h5>Doanh thu Admin theo tháng (40%)</h5>
+                    <small class="text-muted">Phí nền tảng - Instructor nhận 60%</small>
                 </div>
                 <div class="card-body">
                     <canvas id="revenueChart" height="300"></canvas>
@@ -137,7 +139,7 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.RevenueData.Select(x => x.Label))),
                 datasets: [{
-                    label: 'Doanh thu',
+                    label: 'Doanh thu Admin (40%)',
                     data: @Html.Raw(Json.Serialize(Model.RevenueData.Select(x => x.Value))),
                     borderColor: '#28a745',
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
@@ -156,6 +158,18 @@
                                     style: 'currency',
                                     currency: 'VND'
                                 }).format(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Doanh thu Admin (40%): ' + new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }).format(context.parsed.y);
                             }
                         }
                     }

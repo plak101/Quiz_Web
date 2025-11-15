@@ -18,30 +18,36 @@ namespace Quiz_Web.Services
             var totalUsers = _context.Users.Count();
             var totalCourses = _context.Courses.Count();
             var totalTests = _context.Tests.Count();
-            var totalRevenue = _context.Payments.Where(p => p.Status == "completed").Sum(p => (decimal?)p.Amount) ?? 0;
+            
+            // ✅ SỬA: Tính 40% tổng doanh thu cho admin (phí nền tảng)
+            var totalPayments = _context.Payments.Where(p => p.Status == "Paid").Sum(p => (decimal?)p.Amount) ?? 0;
+            var totalRevenue = totalPayments * 0.40m; // Admin nhận 40%, instructor nhận 60%
 
-            var userGrowthData = _context.Users
+            // ✅ SỬA: Lấy dữ liệu từ 6 tháng trước để có đủ điểm cho đường biểu đồ
+            var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+            var userGrowthDataFromDb = _context.Users
+                .Where(u => u.CreatedAt >= sixMonthsAgo)
                 .GroupBy(u => new { u.CreatedAt.Year, u.CreatedAt.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Count,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
 
-            var revenueData = _context.Payments
-                .Where(p => p.Status == "completed" && p.PaidAt.HasValue)
+            // ✅ Tạo đầy đủ 6 tháng với giá trị 0 cho tháng không có dữ liệu
+            var userGrowthData = GenerateMonthlyData(sixMonthsAgo, DateTime.Now, userGrowthDataFromDb, (data, y, m) => 
+                data.FirstOrDefault(x => x.Year == y && x.Month == m)?.Count ?? 0);
+
+            // ✅ SỬA: Tính 40% doanh thu theo tháng cho admin với 6 tháng dữ liệu
+            var revenueDataFromDb = _context.Payments
+                .Where(p => p.Status == "Paid" && p.PaidAt.HasValue && p.PaidAt >= sixMonthsAgo)
                 .GroupBy(p => new { p.PaidAt.Value.Year, p.PaidAt.Value.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(p => p.Amount) })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Total,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
+
+            // ✅ Tạo đầy đủ 6 tháng với giá trị 0 cho tháng không có dữ liệu
+            var revenueData = GenerateMonthlyData(sixMonthsAgo, DateTime.Now, revenueDataFromDb, (data, y, m) =>
+            {
+                var monthData = data.FirstOrDefault(x => x.Year == y && x.Month == m);
+                return monthData != null ? monthData.Total * 0.40m : 0; // Admin nhận 40%
+            });
 
             return new DashboardOverviewViewModel
             {
@@ -70,29 +76,30 @@ namespace Quiz_Web.Services
                 Color = index < colors.Length ? colors[index] : "#6c757d"
             }).ToList();
 
-            var newUsersPerMonth = _context.Users
-                .Where(u => u.CreatedAt >= DateTime.Now.AddMonths(-12))
+            // ✅ SỬA: Luôn hiển thị 12 tháng để thấy rõ xu hướng
+            var twelveMonthsAgo = DateTime.Now.AddMonths(-12);
+            var newUsersDataFromDb = _context.Users
+                .Where(u => u.CreatedAt >= twelveMonthsAgo)
                 .GroupBy(u => new { u.CreatedAt.Year, u.CreatedAt.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Count,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
 
-            var activeUsersData = _context.TestAttempts
-                .Where(ta => ta.StartedAt >= DateTime.Now.AddDays(-30))
+            var newUsersPerMonth = GenerateMonthlyData(twelveMonthsAgo, DateTime.Now, newUsersDataFromDb, (data, y, m) =>
+                data.FirstOrDefault(x => x.Year == y && x.Month == m)?.Count ?? 0);
+
+            // ✅ SỬA: Active users - hiển thị 30 ngày với đầy đủ các ngày
+            var thirtyDaysAgo = DateTime.Now.AddDays(-30).Date;
+            var activeUsersDataFromDb = _context.TestAttempts
+                .Where(ta => ta.StartedAt >= thirtyDaysAgo)
                 .GroupBy(ta => ta.StartedAt.Date)
                 .Select(g => new { Date = g.Key, UserIds = g.Select(ta => ta.UserId).Distinct() })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = g.Date.ToString("dd/MM"),
-                    Value = g.UserIds.Count(),
-                    Date = g.Date
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
+
+            var activeUsersData = GenerateDailyData(thirtyDaysAgo, DateTime.Now.Date, activeUsersDataFromDb, (data, date) =>
+            {
+                var dayData = data.FirstOrDefault(x => x.Date == date);
+                return dayData?.UserIds.Count() ?? 0;
+            });
 
             return new UserAnalyticsViewModel
             {
@@ -106,29 +113,26 @@ namespace Quiz_Web.Services
 
         public LearningActivitiesViewModel GetLearningActivities()
         {
-            var testsCompletedData = _context.TestAttempts
-                .Where(ta => ta.SubmittedAt.HasValue && ta.SubmittedAt >= DateTime.Now.AddMonths(-6))
+            // ✅ SỬA: Hiển thị 6 tháng đầy đủ
+            var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+            
+            var testsCompletedDataFromDb = _context.TestAttempts
+                .Where(ta => ta.SubmittedAt.HasValue && ta.SubmittedAt >= sixMonthsAgo)
                 .GroupBy(ta => new { ta.SubmittedAt.Value.Year, ta.SubmittedAt.Value.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Count,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
 
-            var coursesEnrolledData = _context.CoursePurchases
-                .Where(cp => cp.PurchasedAt >= DateTime.Now.AddMonths(-6))
+            var testsCompletedData = GenerateMonthlyData(sixMonthsAgo, DateTime.Now, testsCompletedDataFromDb, (data, y, m) =>
+                data.FirstOrDefault(x => x.Year == y && x.Month == m)?.Count ?? 0);
+
+            var coursesEnrolledDataFromDb = _context.CoursePurchases
+                .Where(cp => cp.PurchasedAt >= sixMonthsAgo)
                 .GroupBy(cp => new { cp.PurchasedAt.Year, cp.PurchasedAt.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Count,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
+
+            var coursesEnrolledData = GenerateMonthlyData(sixMonthsAgo, DateTime.Now, coursesEnrolledDataFromDb, (data, y, m) =>
+                data.FirstOrDefault(x => x.Year == y && x.Month == m)?.Count ?? 0);
 
             var popularCourses = _context.CoursePurchases
                 .Join(_context.Courses, cp => cp.CourseId, c => c.CourseId, (cp, c) => c.Title)
@@ -154,58 +158,78 @@ namespace Quiz_Web.Services
 
         public RevenuePaymentsViewModel GetRevenuePayments()
         {
-            var monthlyRevenue = _context.Payments
-                .Where(p => p.Status == "completed" && p.PaidAt.HasValue && p.PaidAt >= DateTime.Now.AddMonths(-12))
+            // ✅ SỬA: Tính 40% doanh thu hàng tháng cho admin với 12 tháng đầy đủ
+            var twelveMonthsAgo = DateTime.Now.AddMonths(-12);
+            var monthlyRevenueFromDb = _context.Payments
+                .Where(p => p.Status == "Paid" && p.PaidAt.HasValue && p.PaidAt >= twelveMonthsAgo)
                 .GroupBy(p => new { p.PaidAt.Value.Year, p.PaidAt.Value.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(p => p.Amount) })
-                .ToList()
-                .Select(g => new ChartDataPoint
-                {
-                    Label = $"{g.Month}/{g.Year}",
-                    Value = g.Total,
-                    Date = new DateTime(g.Year, g.Month, 1)
-                }).OrderBy(x => x.Date).ToList();
+                .ToList();
 
+            var monthlyRevenue = GenerateMonthlyData(twelveMonthsAgo, DateTime.Now, monthlyRevenueFromDb, (data, y, m) =>
+            {
+                var monthData = data.FirstOrDefault(x => x.Year == y && x.Month == m);
+                return monthData != null ? monthData.Total * 0.40m : 0; // Admin nhận 40%
+            });
+
+            // ✅ SỬA: Tính 40% doanh thu theo phương thức thanh toán cho admin
             var revenueBySource = _context.Payments
-                .Where(p => p.Status == "completed")
+                .Where(p => p.Status == "Paid")
                 .GroupBy(p => p.Provider ?? "Unknown")
                 .Select(g => new { Provider = g.Key, Total = g.Sum(p => p.Amount) })
                 .ToList()
                 .Select(g => new PieChartData
                 {
                     Label = g.Provider,
-                    Value = g.Total,
+                    Value = g.Total * 0.40m, // Admin nhận 40%
                     Color = GetPaymentMethodColor(g.Provider)
                 }).ToList();
 
+            // ✅ SỬA: Tính 40% doanh thu cho từng khóa học (phần của admin)
+            // Lấy giá gốc từ Courses thay vì PricePaid để tránh trường hợp = 0
             var topSellingCourses = _context.CoursePurchases
-                .Join(_context.Courses, cp => cp.CourseId, c => c.CourseId, (cp, c) => new { c.Title, cp.PricePaid })
+                .Where(cp => cp.Status == "Paid") // ✅ Chỉ lấy purchase đã thanh toán
+                .Join(_context.Courses, cp => cp.CourseId, c => c.CourseId, (cp, c) => new { 
+                    c.Title, 
+                    ActualPrice = cp.PricePaid > 0 ? cp.PricePaid : c.Price // ✅ Nếu PricePaid = 0 thì lấy giá gốc
+                })
                 .GroupBy(x => x.Title)
-                .Select(g => new { Title = g.Key, Total = g.Sum(x => x.PricePaid) })
+                .Select(g => new { 
+                    Title = g.Key, 
+                    Total = g.Sum(x => x.ActualPrice),
+                    Count = g.Count() // ✅ Đếm số lượng mua
+                })
                 .ToList()
                 .Select(g => new BarChartData
                 {
-                    Label = g.Title ?? "Unknown",
-                    Value = g.Total,
+                    Label = $"{g.Title ?? "Unknown"} ({g.Count} mua)", // ✅ Hiển thị số lượng mua
+                    Value = g.Total * 0.40m, // Admin nhận 40%
                     Category = "Revenue"
                 }).OrderByDescending(x => x.Value).Take(10).ToList();
 
-            var currentMonthRevenue = _context.Payments
-                .Where(p => p.Status == "completed" && p.PaidAt.HasValue && p.PaidAt.Value.Month == DateTime.Now.Month && p.PaidAt.Value.Year == DateTime.Now.Year)
+            // ✅ SỬA: Tính 40% doanh thu tháng hiện tại và tháng trước
+            var currentMonthTotal = _context.Payments
+                .Where(p => p.Status == "Paid" && p.PaidAt.HasValue && p.PaidAt.Value.Month == DateTime.Now.Month && p.PaidAt.Value.Year == DateTime.Now.Year)
                 .Sum(p => (decimal?)p.Amount) ?? 0;
+            var currentMonthRevenue = currentMonthTotal * 0.40m; // Admin nhận 40%
 
-            var lastMonthRevenue = _context.Payments
-                .Where(p => p.Status == "completed" && p.PaidAt.HasValue && p.PaidAt.Value.Month == DateTime.Now.AddMonths(-1).Month && p.PaidAt.Value.Year == DateTime.Now.AddMonths(-1).Year)
+            var lastMonthTotal = _context.Payments
+                .Where(p => p.Status == "Paid" && p.PaidAt.HasValue && p.PaidAt.Value.Month == DateTime.Now.AddMonths(-1).Month && p.PaidAt.Value.Year == DateTime.Now.AddMonths(-1).Year)
                 .Sum(p => (decimal?)p.Amount) ?? 0;
+            var lastMonthRevenue = lastMonthTotal * 0.40m; // Admin nhận 40%
 
             var monthlyGrowth = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+
+            // ✅ SỬA: Tính 40% tổng doanh thu cho admin
+            var totalPayments = _context.Payments.Where(p => p.Status == "Paid").Sum(p => (decimal?)p.Amount) ?? 0;
+            var totalRevenue = totalPayments * 0.40m; // Admin nhận 40%
 
             return new RevenuePaymentsViewModel
             {
                 MonthlyRevenue = monthlyRevenue,
                 RevenueBySource = revenueBySource,
                 TopSellingCourses = topSellingCourses,
-                TotalRevenue = _context.Payments.Where(p => p.Status == "completed").Sum(p => (decimal?)p.Amount) ?? 0,
+                TotalRevenue = totalRevenue,
                 MonthlyGrowth = monthlyGrowth
             };
         }
@@ -310,6 +334,55 @@ namespace Quiz_Web.Services
                 TotalLogins = _context.AuditLogs.Count(al => al.Action == "Login" && al.CreatedAt >= DateTime.Now.AddDays(-30)),
                 SystemErrors = _context.ErrorLogs.Count(el => el.CreatedAt >= DateTime.Now.AddDays(-30))
             };
+        }
+
+        // ✅ Helper method: Tạo dữ liệu đầy đủ theo tháng
+        private List<ChartDataPoint> GenerateMonthlyData<T>(
+            DateTime startDate, 
+            DateTime endDate, 
+            List<T> dataFromDb, 
+            Func<List<T>, int, int, decimal> getValue)
+        {
+            var result = new List<ChartDataPoint>();
+            var current = new DateTime(startDate.Year, startDate.Month, 1);
+            var end = new DateTime(endDate.Year, endDate.Month, 1);
+
+            while (current <= end)
+            {
+                result.Add(new ChartDataPoint
+                {
+                    Label = $"{current.Month}/{current.Year}",
+                    Value = getValue(dataFromDb, current.Year, current.Month),
+                    Date = current
+                });
+                current = current.AddMonths(1);
+            }
+
+            return result;
+        }
+
+        // ✅ Helper method: Tạo dữ liệu đầy đủ theo ngày
+        private List<ChartDataPoint> GenerateDailyData<T>(
+            DateTime startDate,
+            DateTime endDate,
+            List<T> dataFromDb,
+            Func<List<T>, DateTime, decimal> getValue)
+        {
+            var result = new List<ChartDataPoint>();
+            var current = startDate;
+
+            while (current <= endDate)
+            {
+                result.Add(new ChartDataPoint
+                {
+                    Label = current.ToString("dd/MM"),
+                    Value = getValue(dataFromDb, current),
+                    Date = current
+                });
+                current = current.AddDays(1);
+            }
+
+            return result;
         }
 
         private string GetRoleColor(string? roleName)
