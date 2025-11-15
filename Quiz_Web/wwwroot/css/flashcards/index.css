@@ -165,11 +165,12 @@
 }
 
 .flashcard-front .card-content p {
-    color: #2d2d2d;
+    color: #f57c00 !important;
+    font-weight: 600;
 }
 
 .flashcard-back .card-content p {
-    color: white;
+    color: white !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 

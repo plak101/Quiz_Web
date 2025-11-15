@@ -439,6 +439,16 @@ function showTestResult(contentId, result) {
     
     const isPassed = result.percentage >= 60;
     
+    // ✅ FIX: Decode HTML entities và ensure UTF-8 encoding
+    const decodeHtml = (html) => {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = html;
+        return txt.value;
+    };
+    
+    // ✅ Safely decode message
+    const safeMessage = decodeHtml(result.message || (isPassed ? 'Chúc mừng! Bạn đã vượt qua bài kiểm tra' : 'Bạn chưa đạt yêu cầu'));
+    
     container.innerHTML = `
         <div class="test-result text-center py-5">
             <div class="result-icon mb-4">
@@ -446,7 +456,7 @@ function showTestResult(contentId, result) {
                    style="font-size: 5rem;"></i>
             </div>
             <h3 class="${isPassed ? 'text-success' : 'text-danger'} mb-3">
-                ${result.message}
+                ${safeMessage}
             </h3>
             <div class="score-display mb-4">
                 <h1 class="display-3 fw-bold mb-0">
