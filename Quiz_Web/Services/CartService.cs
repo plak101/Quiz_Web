@@ -130,6 +130,13 @@ namespace Quiz_Web.Services
                     return false;
                 }
 
+                // Check if user is the owner of the course
+                if (course.OwnerId == userId)
+                {
+                    _logger.LogWarning("User {UserId} cannot add their own course {CourseId} to cart", userId, courseId);
+                    return false;
+                }
+
                 // Check if user already purchased (completed only)
                 var alreadyPurchased = await _context.CoursePurchases
                     .AnyAsync(cp => cp.BuyerId == userId && cp.CourseId == courseId && cp.Status == "completed");
