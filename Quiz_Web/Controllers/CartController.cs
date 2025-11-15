@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Quiz_Web.Models.EF;
 using Quiz_Web.Services.IServices;
 using System.Security.Claims;
 
@@ -12,12 +14,18 @@ namespace Quiz_Web.Controllers
         private readonly ICartService _cartService;
         private readonly IPurchaseService _purchaseService;
         private readonly ILogger<CartController> _logger;
+        private readonly LearningPlatformContext _context;
 
-        public CartController(ICartService cartService, IPurchaseService purchaseService, ILogger<CartController> logger)
+        public CartController(
+            ICartService cartService, 
+            IPurchaseService purchaseService, 
+            ILogger<CartController> logger,
+            LearningPlatformContext context)
         {
             _cartService = cartService;
             _purchaseService = purchaseService;
             _logger = logger;
+            _context = context;
         }
 
         private int GetCurrentUserId()
@@ -68,6 +76,15 @@ namespace Quiz_Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
+                
+                // ✅ NEW: Check if user is the owner of the course
+                var course = await _context.Courses
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId);
+                
+                if (course != null && course.OwnerId == userId)
+                {
+                    return Json(new { success = false, message = "Bạn không thể mua khóa học của chính mình" });
+                }
                 
                 var hasPurchased = await _purchaseService.HasUserPurchasedCourseAsync(userId, courseId);
                 if (hasPurchased)
