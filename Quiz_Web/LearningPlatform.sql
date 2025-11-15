@@ -88,24 +88,6 @@ CREATE TABLE dbo.Files (
 );
 GO
 
-CREATE TABLE dbo.Tags (
-    TagId INT IDENTITY(1,1) PRIMARY KEY,
-    Name  NVARCHAR(80)  NOT NULL UNIQUE,
-    Slug  NVARCHAR(100) NOT NULL UNIQUE
-);
-GO
-
-/* Cho phép gắn thẻ cho nhiều loại nội dung chính */
-CREATE TABLE dbo.ContentTags (
-    ContentTagId INT IDENTITY(1,1) PRIMARY KEY,
-    ContentType  VARCHAR(20) NOT NULL, -- Course/Chapter/Lesson/FlashcardSet/Test
-    ContentId    INT         NOT NULL,
-    TagId        INT         NOT NULL,
-    CONSTRAINT CK_ContentTags_Type CHECK (ContentType IN ('Course','Chapter','Lesson','FlashcardSet','Test')),
-    CONSTRAINT FK_ContentTags_Tag FOREIGN KEY (TagId) REFERENCES dbo.Tags(TagId)
-);
-GO
-
 /* =========================================================
    3) FLASHCARDS (Quizlet-like)
    ========================================================= */
@@ -479,7 +461,7 @@ CREATE TABLE OrderItems (
         REFERENCES Orders(OrderId) ON DELETE CASCADE,
 
     CONSTRAINT FK_OrderItems_Course FOREIGN KEY (CourseId)
-        REFERENCES Courses(CourseId)
+        REFERENCES Courses(CourseId) ON DELETE CASCADE
 );
 CREATE TABLE Payments (
     PaymentId INT IDENTITY(1,1) PRIMARY KEY,
@@ -602,16 +584,6 @@ CREATE TABLE dbo.AuditLogs (
 );
 GO
 
-CREATE TABLE dbo.ErrorLogs (
-    ErrorId   INT IDENTITY(1,1) PRIMARY KEY,
-    Severity  VARCHAR(10)     NOT NULL, -- Info/Warn/Error
-    Message   NVARCHAR(4000)  NOT NULL,
-    Stack     NVARCHAR(MAX)   NULL,
-    Context   NVARCHAR(MAX)   NULL,
-    CreatedAt DATETIME2(7)    NOT NULL CONSTRAINT DF_ErrorLogs_CreatedAt DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT CK_ErrorLogs_Severity CHECK (Severity IN ('Info','Warn','Error'))
-);
-GO
 
 CREATE TABLE dbo.UserInterests (
     UserInterestId INT IDENTITY(1,1) PRIMARY KEY,
@@ -646,7 +618,7 @@ CREATE TABLE dbo.CartItems (
     AddedAt    DATETIME2(7) NOT NULL CONSTRAINT DF_CartItems_AddedAt DEFAULT SYSUTCDATETIME(),
     
     CONSTRAINT FK_CartItems_Cart FOREIGN KEY (CartId) REFERENCES dbo.ShoppingCarts(CartId),
-    CONSTRAINT FK_CartItems_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId),
+    CONSTRAINT FK_CartItems_Course FOREIGN KEY (CourseId) REFERENCES dbo.Courses(CourseId) ON DELETE CASCADE,
     
     -- Đảm bảo không thêm trùng 1 khóa học vào giỏ
     CONSTRAINT UQ_CartItems_Cart_Course UNIQUE (CartId, CourseId)
@@ -667,9 +639,9 @@ VALUES
 GO
 
 /* Tag mẫu */
-INSERT INTO dbo.Tags (Name, Slug)
-VALUES (N'Lập trình', 'lap-trinh'), (N'SQL', 'sql'), (N'C#', 'csharp');
-GO
+--INSERT INTO dbo.Tags (Name, Slug)
+--VALUES (N'Lập trình', 'lap-trinh'), (N'SQL', 'sql'), (N'C#', 'csharp');
+--GO
 
 /* Flashcard mẫu */
 INSERT INTO dbo.FlashcardSets (OwnerId, Title, Description, Visibility, Language)
@@ -749,12 +721,12 @@ VALUES (1, 'Test', 1, N'Kiểm tra nhanh SQL', 3);
 GO
 
 /* Gắn tag cho Course, Chapter, Lesson, Test */
-INSERT INTO dbo.ContentTags (ContentType, ContentId, TagId)
-VALUES ('Course', 1, 2),   -- SQL
-       ('Chapter',1, 2),
-       ('Lesson', 1, 2),
-       ('Test',   1, 2);
-GO
+--INSERT INTO dbo.ContentTags (ContentType, ContentId, TagId)
+--VALUES ('Course', 1, 2),   -- SQL
+--       ('Chapter',1, 2),
+--       ('Lesson', 1, 2),
+--       ('Test',   1, 2);
+--GO
 /* =========================================================
    SEED DATA DEMO REVIEWS
    ========================================================= */
@@ -768,4 +740,3 @@ GO
 SELECT Title, AverageRating, TotalReviews FROM dbo.Courses;
 GO
 
-select * from CoursePurchases
